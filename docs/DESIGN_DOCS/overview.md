@@ -18,11 +18,11 @@
 
 | ディレクトリ | コンテキスト名 |
 | --- | --- |
-| [DESIGN_DOC/events/](events) | イベントコンテキスト |
-| [DESIGN_DOC/attendance/](attendance) | 出欠コンテキスト |
-| [DESIGN_DOC/auth/](auth) | 認証コンテキスト |
+| [DESIGN_DOCS/events/](events) | イベントコンテキスト |
+| [DESIGN_DOCS/attendance/](attendance) | 出欠コンテキスト |
+| [DESIGN_DOCS/auth/](auth) | 認証コンテキスト |
 
-> 個別機能への導線は `DESIGN_DOC/README.md` の機能一覧に統一し、overview ではディレクトリとコンテキスト名のみ管理する。
+> 個別機能への導線は `DESIGN_DOCS/README.md` の機能一覧に統一し、overview ではディレクトリとコンテキスト名のみ管理する。
 
 ## 横断テーマ
 
