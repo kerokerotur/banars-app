@@ -22,7 +22,7 @@
 | [DESIGN_DOC/attendance/](attendance) | 出欠コンテキスト |
 | [DESIGN_DOC/auth/](auth) | 認証コンテキスト |
 
-> 各コンテキストの詳細仕様は該当ディレクトリ配下のファイルを参照し、本 overview ではリンクのみ提供する。
+> 個別機能への導線は `DESIGN_DOC/README.md` の機能一覧に統一し、overview ではディレクトリとコンテキスト名のみ管理する。
 
 ## 横断テーマ
 

@@ -7,13 +7,21 @@ banars アプリの技術設計ドキュメントを集約しています。変�
 2. コンテキスト別ディレクトリ: イベント・出欠・認証など、各コンテキスト配下の機能別 Markdown を参照します。
 3. 必要に応じて PRD や実装コードへ往復し、意思決定の背景と実装戦略に齟齬がないかを確認します。
 
-## ディレクトリ構成と機能
-| パス | 説明 | 代表機能 / 詳細ドキュメント |
+## 機能一覧とコンテキスト
+| 機能 | コンテキスト (ディレクトリ) | 詳細ドキュメント |
 | --- | --- | --- |
-| `overview.md` | 全体アーキテクチャと横断テーマのサマリ。 | アプリ構成・技術選定を集約。 |
-| `events/` | イベント作成と公開のフローを管理。 | [`event_overview.md`](events/event_overview.md)（イベント一覧/詳細の要件）、[`event_creation.md`](events/event_creation.md)（開催登録フロー）。 |
-| `attendance/` | 出欠収集とリマインドの設計。 | [`attendance_status.md`](attendance/attendance_status.md)（出欠のステータス管理）、[`reminder_flow.md`](attendance/reminder_flow.md)（通知と締切リマインダ）。 |
-| `auth/` | LINE 認証を中心としたアカウント管理。 | [`line_login.md`](auth/line_login.md)（LINE トークン検証と Supabase セッション化）、[`signup_flow.md`](auth/signup_flow.md)（会員登録ハンドオフ）。 |
+| 全体アーキテクチャ / 横断テーマ | 全体 (`overview.md`) | [`overview.md`](overview.md) |
+| イベント一覧 | イベント (`events/`) | [`event_list.md`](events/event_list.md) |
+| イベント詳細 | イベント (`events/`) | [`event_detail.md`](events/event_detail.md) |
+| イベント作成 | イベント (`events/`) | [`event_create.md`](events/event_create.md) |
+| イベント削除 | イベント (`events/`) | [`event_delete.md`](events/event_delete.md) |
+| イベント編集 | イベント (`events/`) | [`event_edit.md`](events/event_edit.md) |
+| 出欠一覧 | 出欠 (`attendance/`) | [`attendance_list.md`](attendance/attendance_list.md) |
+| 出欠登録 | 出欠 (`attendance/`) | [`attendance_register.md`](attendance/attendance_register.md) |
+| 出欠編集 | 出欠 (`attendance/`) | [`attendance_edit.md`](attendance/attendance_edit.md) |
+| 出欠リマインド | 出欠 (`attendance/`) | [`attendance_remind.md`](attendance/attendance_remind.md) |
+| LINE ログイン | 認証 (`auth/`) | [`line_login.md`](auth/line_login.md) |
+| 初回登録 | 認証 (`auth/`) | [`initial_signup.md`](auth/initial_signup.md) |
 
 ## 更新チェックリスト
 - コンテキストやファイルを追加・改訂したら、`overview.md` のリンク/サマリとこの README の表を同時に更新する。
