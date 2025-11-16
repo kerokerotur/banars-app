@@ -1,1 +1,0 @@
- /Users/kei/program/banars-app/apps/mobile/.dart_tool/flutter_build/11f1f4d07dc0a6382070e43fe4e74097/native_assets.json: 

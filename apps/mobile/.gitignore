@@ -1,1 +1,39 @@
-build/*
+# 共通: Flutter/IDE キャッシュ
+.DS_Store
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.melos_tool/
+.metadata
+*.iml
+
+# ビルド成果物
+build/
+**/build/
+coverage/
+
+# Android 固有
+android/.gradle/
+android/.cxx/
+android/local.properties
+android/key.properties
+android/app/google-services.json
+android/app/google-services-dev.json
+
+# iOS 固有
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/ephemeral/
+ios/.symlinks/
+ios/Pods/
+ios/Runner.xcworkspace/
+ios/Runner.xcodeproj/project.xcworkspace/
+ios/Runner.xcodeproj/xcuserdata/
+ios/Runner.xcworkspace/xcuserdata/
+
+# Desktop (将来 macOS / Windows をビルドした場合の一時物)
+macos/Flutter/ephemeral/
+windows/flutter/ephemeral/
