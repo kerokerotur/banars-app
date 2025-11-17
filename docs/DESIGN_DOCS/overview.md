@@ -22,6 +22,8 @@
 | [DESIGN_DOCS/attendance/](attendance) | 出欠コンテキスト |
 | [DESIGN_DOCS/auth/](auth) | 認証コンテキスト |
 
+> テーブル定義はコンテキスト配下（例: `auth/tables.md`）に集約し、共通仕様として管理する。
+
 > 個別機能への導線は `DESIGN_DOCS/README.md` の機能一覧に統一し、overview ではディレクトリとコンテキスト名のみ管理する。
 
 ## 横断テーマ
