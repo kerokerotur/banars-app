@@ -13,7 +13,7 @@
 - 変更差分を確認できる「更新内容サマリ」を保存前に表示（開始日時と会場のみ差分強調）。
 
 ## データフロー
-- 更新操作は Supabase の `update()` を使用し、`updated_by` と `updated_at` を必ず更新。
+- 更新操作は Supabase の `update()` を使用し、`updated_user` と `updated_at` を必ず更新。
 - 変更後に Edge Function `notifications_enqueue` に `type=event_updated` で通知要求を送信。
 - 重要フィールド（日時/会場）が変わった場合は `event_change_logs` テーブルへ差分を INSERT。
 

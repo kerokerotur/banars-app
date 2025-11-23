@@ -7,6 +7,15 @@ banars アプリの技術設計ドキュメントを集約しています。変�
 2. コンテキスト別ディレクトリ: イベント・出欠・認証など、各コンテキスト配下の機能別 Markdown を参照します。
 3. 必要に応じて PRD（[`../PRD.md`](../PRD.md)）や実装コードへ往復し、意思決定の背景と実装戦略に齟齬がないかを確認します。
 
+## データモデル運用ルール
+- データモデル（テーブル定義/列仕様）は必ずコンテキスト単位の `tables.md` に集約します。例: `events/tables.md`, `auth/tables.md`。
+- 1 コンテキストにつき 1 ファイルを原則とし、派生資料は同ディレクトリ内に置きます（他ファイルへ分散させない）。
+- 命名規則・型の方針・共通のバリデーションルールなど、コンテキスト横断で共有したい内容は本 README に追記し、`tables.md` から参照します。
+- 機能ドキュメントにはテーブルの抜粋を転載せず、`tables.md` へのリンクで参照するだけに留めます。
+- 日時カラムは `*_datetime` の命名で `timestamptz (UTC)` を採用し、クライアントで端末タイムゾーンへ変換して表示します（監査列の `created_at` / `updated_at` は既存命名を継続）。
+- カラム定義の表は [`template_tables.md`](template_tables.md) のフォーマットを使用します。列構成は「カラム / 型 / 必須 / 説明 / 制約」とし、必須列には `○` を入れます（任意列は空欄）。デフォルト値専用列は設けず、必要な場合は「制約」に記載します。
+- 各テーブルは監査メタデータとして `created_at` / `created_user` / `updated_at` / `updated_user` の 4 列を必ず持ち、説明欄は「メタデータ」と記載します。
+
 ## 機能一覧とコンテキスト
 | 機能 | コンテキスト (ディレクトリ) | 詳細ドキュメント |
 | --- | --- | --- |
@@ -16,6 +25,7 @@ banars アプリの技術設計ドキュメントを集約しています。変�
 | イベント作成 | イベント (`events/`) | [`event_create.md`](events/event_create.md) |
 | イベント削除 | イベント (`events/`) | [`event_delete.md`](events/event_delete.md) |
 | イベント編集 | イベント (`events/`) | [`event_edit.md`](events/event_edit.md) |
+| イベントデータモデル | イベント (`events/`) | [`tables.md`](events/tables.md) |
 | 出欠一覧 | 出欠 (`attendance/`) | [`attendance_list.md`](attendance/attendance_list.md) |
 | 出欠登録 | 出欠 (`attendance/`) | [`attendance_register.md`](attendance/attendance_register.md) |
 | 出欠編集 | 出欠 (`attendance/`) | [`attendance_edit.md`](attendance/attendance_edit.md) |

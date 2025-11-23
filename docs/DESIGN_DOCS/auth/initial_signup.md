@@ -30,7 +30,7 @@ sequenceDiagram
     App->>Member: ホームへ遷移 / 完了通知 & inviteToken 破棄
 ```
 
-1. **Member→App**: 招待リンクをタップすると `inviteToken` が付与された状態でアプリが起動する。現状は枠数制限を設けず、`expires_at` のみで有効性を管理する。
+1. **Member→App**: 招待リンクをタップすると `inviteToken` が付与された状態でアプリが起動する。現状は枠数制限を設けず、`expires_datetime` のみで有効性を管理する。
 2. **App→App**: `SignupState` が `inviteToken` を Riverpod に保存。セッション中は保持し、ログアウトや完了時にクリアする。
 3. **App→LINE (SDK)**: Supabase セッションが無い場合、LINE Flutter SDK を用いて認可エンドポイントへ遷移し、PKCE チャレンジを付与してログインを開始。
 4. **LINE→App**: 認証完了後、LINE がリダイレクト URI へ auth code + state を付与して戻す（SDK がハンドル）。
@@ -67,7 +67,7 @@ sequenceDiagram
   ```
 - **Process**
   1. LINE JWKS で `lineTokens.idToken` を検証し、`aud` を突合（`nonce` は今回未利用）。
- 2. `invite_tokens` で `token_hash` 一致と `expires_at` > now を検証。
+2. `invite_tokens` で `token_hash` 一致と `expires_datetime` > now を検証。
  3. `users` / `user_details` を INSERT（または upsert）。既存ユーザーがいれば `already_registered` を返す。
   4. Supabase Admin API で Auth ユーザーを作成/更新し、`sessionTransferToken`（例: magic link 用 OTP, 有効期限デフォルト 5 分想定）を発行。
 - **Output**
