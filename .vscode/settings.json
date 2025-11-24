@@ -1,0 +1,9 @@
+{
+  "dart.flutterSdkPath": "apps/mobile/.fvm/versions/3.32.0",
+  "dart.sdkPath": "apps/mobile/.fvm/versions/3.32.0/bin/cache/dart-sdk",
+  "dart.projectSearchDepth": 4,
+  "dart.flutterSdkPaths": [
+    "apps/mobile/.fvm/versions/3.32.0",
+    "/Users/kei/fvm/versions/3.32.0"
+  ]
+}
