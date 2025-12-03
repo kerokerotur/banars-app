@@ -21,7 +21,7 @@ sequenceDiagram
     LINE-->>App: displayName / pictureUrl を返す
     App->>Edge: `POST /initial_signup` (inviteToken + tokens + lineProfile)
     Edge->>LINE: JWKS or verify endpointで ID Token を検証
-    Edge->>DB: `invite_tokens` 検証 & `users` / `user_details` upsert
+    Edge->>DB: `invite_token` 検証 & `user` / `user_detail` upsert
     Edge->>Supabase: Admin API で Auth ユーザー作成 / セッショントークン発行
     Supabase-->>Edge: `sessionTransferToken` (例: one-time OTP) を返す
     Edge-->>App: 登録結果 + sessionTransferToken
@@ -38,15 +38,15 @@ sequenceDiagram
 6. **App→LINE (Profile)**: 取得した Access Token を SDK 経由で Profile API へ渡し、displayName / pictureUrl を取得。
 7. **App→Edge**: `inviteToken` と LINE から得た ID Token / Profile 情報を `POST /initial_signup` に送信。Edge Function 側が以降の検証と登録を担当する。
 8. **Edge→LINE**: JWKS 取得 or verify API を通じて ID Token を検証し、署名や `nonce` を確認。
-9. **Edge→DB**: `invite_tokens` 検証、既存 `users` 確認、未登録なら `users` / `user_details` upsert を単一トランザクションで実施。
+9. **Edge→DB**: `invite_token` 検証、既存 `user` 確認、未登録なら `user` / `user_detail` upsert を単一トランザクションで実施。
 10. **Edge→Supabase**: Service Role（`supabase.auth.admin`）で Supabase Auth ユーザーを作成/更新し、`auth.admin.generateLink(type='magiclink')` などで一度きりの `sessionTransferToken` を発行。
 11. **Edge→App**: トークンと登録結果を返す。既存ユーザーだった場合は `already_registered` を返し、`sessionTransferToken` は渡さない。
 12. **App→Supabase**: 受け取った `sessionTransferToken` を `verifyOtp({ type: 'magiclink' })` などで交換し、最終的な Supabase セッション (`auth.uid()`) を取得。
 13. **App→Member**: 成功したら `inviteToken` を破棄しホームへ遷移。失敗時はエラー表示と再試行導線を提供。
 
 ## データモデル / API
-- 本機能が利用するテーブル仕様は `auth/tables.md` に集約（`users`, `user_details`, `invite_tokens`）。初回登録はこれら 3 テーブルを Edge Function 経由で更新する。
-- `users` には `auth.uid()` と LINE ユーザ ID をマッピングし、`user_details` に LINE 由来のプロフィール情報を同期する。`invite_tokens` は有効期限のみを持ち、枠数制限は設けない。
+- 本機能が利用するテーブル仕様は `auth/tables.md` に集約（`user`, `user_detail`, `invite_token`）。初回登録はこれら 3 テーブルを Edge Function 経由で更新する。
+- `user` には `auth.uid()` と LINE ユーザ ID をマッピングし、`user_detail` に LINE 由来のプロフィール情報を同期する。`invite_token` は有効期限のみを持ち、枠数制限は設けない。
 
 ### Edge Function / API: `POST /functions/v1/initial_signup`
 - **Input**
@@ -67,8 +67,8 @@ sequenceDiagram
   ```
 - **Process**
   1. LINE JWKS で `lineTokens.idToken` を検証し、`aud` を突合（`nonce` は今回未利用）。
-2. `invite_tokens` で `token_hash` 一致と `expires_datetime` > now を検証。
- 3. `users` / `user_details` を INSERT（または upsert）。既存ユーザーがいれば `already_registered` を返す。
+2. `invite_token` で `token_hash` 一致と `expires_datetime` > now を検証。
+ 3. `user` / `user_detail` を INSERT（または upsert）。既存ユーザーがいれば `already_registered` を返す。
   4. Supabase Admin API で Auth ユーザーを作成/更新し、`sessionTransferToken`（例: magic link 用 OTP, 有効期限デフォルト 5 分想定）を発行。
 - **Output**
   ```json
@@ -80,12 +80,12 @@ sequenceDiagram
 - **エラーコード例**: `token_not_found`, `token_expired`, `already_registered`。
 
 ## 権限・セキュリティ
-- Edge Function は Supabase Auth 認証済みユーザーのみ実行可。`auth.uid()` を `users.id` に使うため、他人のアカウントで初回登録することはできない。
-- `invite_tokens` へのアクセスは `role = 'manager'` の運営のみ `select/insert` を許可。メンバーは Edge Function 経由でしか検証できない。
+- Edge Function は Supabase Auth 認証済みユーザーのみ実行可。`auth.uid()` を `user.id` に使うため、他人のアカウントで初回登録することはできない。
+- `invite_token` へのアクセスは `role = 'manager'` の運営のみ `select/insert` を許可。メンバーは Edge Function 経由でしか検証できない。
 - Edge Function は Supabase の Service Role キー（管理用シークレット）を利用するため、Supabase Secrets にのみ保存し、HTTP リクエスト越しに露出させない。
 - `sessionTransferToken` を返す際は HTTPS 前提で 1 回だけ使用可の OTP を採用する。
 - Riverpod に保存した `inviteToken` はログアウト時・登録完了時に必ず破棄し、端末内に残さない。
-- `users.line_user_id` にユニーク制約を設け、LINE 側でアカウント乗っ取りがあっても二重登録されないようにする。
+- `user.line_user_id` にユニーク制約を設け、LINE 側でアカウント乗っ取りがあっても二重登録されないようにする。
 - LINE ID Token の検証では JWKS のキャッシュ時間 (`kid` 切替) を考慮し、`aud`/`iss`/`exp`/`nonce` を必ず検証する。
 
 ## エラー・フォールバック

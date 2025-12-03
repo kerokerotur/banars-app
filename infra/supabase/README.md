@@ -1,29 +1,29 @@
 # Supabase ディレクトリ運用ルール
 
 ## 役割
-- Supabase CLI (`supabase db push`, `supabase functions deploy` など) に関する設定・スクリプト・成果物を一元管理します。
-- テーブル定義や RLS など、データ層のソースコードはすべてここでバージョン管理し、Flutter/Edge Function 実装から独立させます。
+- Supabase CLI (`supabase db push`, `supabase functions deploy` など) に関する設定や成果物を管理します。
+- データ層のソースコード (DDL / RLS / Edge Functions) をここでバージョン管理し、アプリ実装から独立させます。
 
 ## ディレクトリ構成
-- `migrations/`: SQL ベースのマイグレーション。DDL と RLS をここで管理します。
-- `functions/`: Edge Function のビルド成果物を配置予定（未作成の場合は空で可）。
-- `config/`, `seed.sql` など: 必要に応じて追加し、本 README に反映します。
+- `config.toml`: Supabase CLI の設定。
+- `migrations/`: Supabase CLI が生成する SQL マイグレーション。**1 ファイルにつき 1 テーブル（または 1 つの共通オブジェクト）だけを扱い、他テーブルの操作を混在させない**ことで、ファイル名から意図を読み取れるようにします。
+- `functions/`: Edge Functions（ビルド物）を配置予定。必要になったら README を更新してください。
+- `.vscode/`: CLI 作業用の推奨設定 (任意)。
 
-## マイグレーション命名規則
-- Flyway 風のバージョニングを採用します。`V<整数>__<スネークケース説明>.sql` としてください。
-  - 例: `V1__create_initial_signup_tables.sql`, `V2__add_events_tables.sql`
-  - 整数は 1 からの単調増加。ブランチ間の競合が起きた場合は後勝ち側がリネームして番号を進めます。
-- 既存の 2025 日付ベースファイルは順次この命名規則へ移行します。
+## マイグレーション作成・命名規則
+- **ファイルは必ず Supabase CLI で生成すること。手書きで `touch` したり、既存ファイルをコピーして作らない。**
+- コマンド例: `supabase migration new create_users`。CLI が `YYYYMMDDHHMMSS_create_users.sql` 形式のファイルを `migrations/` に生成します（タイムスタンプ + スネークケース名）。
+- 1 ファイルにつき 1 テーブル（もしくは 1 つの共通コンポーネント）を扱う。複数テーブルの DDL/RLS を同じファイルに入れない。
+- 共通トリガー／関数など、テーブルに紐付かないものを追加する場合は `supabase migration new setup_updated_at_trigger` など CLI で別ファイル化する。
 
 ## SQL コーディング規約
-- SQL 予約語 (CREATE, ALTER, INSERT, UPDATE, DELETE, SELECT, BEGIN など) は **必ず大文字**で記述します。
-- スキーマ/テーブル/カラム名は `snake_case` を維持し、小文字で統一します。
-- `timezone('utc', now())` のような関数呼び出しは PostgreSQL 標準関数名に合わせて小文字/大文字を混在させても構いません。
+- 予約語 (CREATE, ALTER, GRANT など) はすべて大文字。
+- テーブル/カラム名は `snake_case` 小文字。
+- `timezone('utc', now())` のような関数呼び出しは PostgreSQL の命名に倣い小文字で問題ありません。
 
 ## 運用フロー
-1. 新規マイグレーションを作成するときは `migrations/` にファイルを追加し、本 README の規則に従った名称を付けます。
-2. ローカルで `supabase db push` を実行し、エラーがないことを確認します。
-3. 適用後は関連する DESIGN_DOCS を更新し、PR の説明に適用手順を記載します。
+1. `supabase migration new <name>` を実行して `infra/supabase/migrations/` にファイルを作成し、前述の 1 テーブル 1 ファイルルールを必ず守る。
+2. ローカルで `supabase db push` または `supabase db reset` を実行し、エラーがないことを確認。
+3. 関連する DESIGN_DOCS / README に差分があれば同時に更新し、PR で適用手順を共有。
 
-## 参考
-- ディレクトリ全体の目的は `infra/README.md` を参照してください。
+`infra/README.md` も併せて参照し、IaC 全体の方針を把握してください。

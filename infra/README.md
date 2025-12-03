@@ -8,4 +8,4 @@
 更新時の基本方針:
 1. 設計のソースオブトゥルースは `docs/` 配下の PRD / DESIGN_DOCS。インフラ変更も必ずそちらの意図を満たすか確認します。
 2. 変更単位ごとに README やドキュメントへ追記し、他メンバーが運用手順を再現できる状態を維持します。
-3. Supabase 関連のコマンドは `infra/supabase/README.md` のルールに従い、CLI で実行した履歴を残せるようにします。
+3. Supabase 関連のコマンドは `infra/supabase/README.md` のルールに従い、**CLI（`supabase migration new ...` 等）経由でのみファイルを生成**し、実行ログを残せるようにします。

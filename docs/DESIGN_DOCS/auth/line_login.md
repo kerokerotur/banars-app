@@ -17,7 +17,7 @@ sequenceDiagram
     App->>LINE: auth code + code_verifier で Token Endpoint を呼び ID Token を取得
     App->>Edge: `POST /login_with_line` (idToken)
     Edge->>LINE: JWKS で ID Token 実署名検証（`aud`/`exp`/`iss`）
-    Edge->>DB: `users.line_user_id` で既存ユーザー検索
+    Edge->>DB: `user.line_user_id` で既存ユーザー検索
     Edge-->>App: { sessionTransferToken } または `user_not_found`
     App->>Supabase: `verifyOtp` で sessionTransferToken をセッションへ交換
     Supabase-->>App: Supabase セッション (`auth.uid()`)
@@ -30,13 +30,13 @@ sequenceDiagram
 4. **App→LINE**: code + code_verifier でトークン交換し ID Token を取得（Access Token は保持するが以降は使わない）。
 5. **App→Edge**: ID Token を `login_with_line` へ送信。
 6. **Edge→LINE**: JWKS で署名検証し、`aud`/`exp`/`iss` を確認（nonce は未使用）。
-7. **Edge→DB**: `users.line_user_id` に一致するレコードを検索。見つからなければ `user_not_found`。
+7. **Edge→DB**: `user.line_user_id` に一致するレコードを検索。見つからなければ `user_not_found`。
 8. **Edge→App**: 既存ユーザーなら Admin API で発行した `sessionTransferToken` を返却。
 9. **App→Supabase**: `verifyOtp({ type: 'magiclink', token: sessionTransferToken })` で Supabase セッションを取得。
 10. **App→Member**: セッション確立後ホームへ遷移。
 
 ## データモデル / API
-- 参照テーブル: `users`（`auth/tables.md`）。`user_details` は更新しない。
+- 参照テーブル: `user`（`auth/tables.md`）。`user_detail` は更新しない。
 - Edge Function: `POST /login_with_line`
   - **Input**
     ```json
@@ -46,7 +46,7 @@ sequenceDiagram
     ```
   - **Process**
     1. LINE JWKS で ID Token を検証。
-    2. `users.line_user_id` で既存ユーザーを検索。
+    2. `user.line_user_id` で既存ユーザーを検索。
     3. 見つからなければ `user_not_found`。
     4. 見つかれば Admin API で Auth ユーザーの `sessionTransferToken` を発行し返却。
   - **Output (成功)**
@@ -65,7 +65,7 @@ sequenceDiagram
 ## 権限・セキュリティ
 - Edge Function は匿名呼び出し可とするが、Service Role キーは Supabase Secrets にのみ保存しレスポンスへ露出させない。
 - ID Token 検証の必須チェック: 署名、`aud`/`iss`/`exp`。`nonce` は未使用であることを明記。
-- `users.line_user_id` にユニーク制約を設定し、多重登録を防止。
+- `user.line_user_id` にユニーク制約を設定し、多重登録を防止。
 
 ## エラー・フォールバック
 - `user_not_found`: 「チームに未登録です。招待リンクから初回登録を行ってください。」等の案内（UI 文言は後日確定）。
