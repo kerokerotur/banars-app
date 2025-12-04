@@ -3,8 +3,9 @@ import { createClient, type PostgrestError, type SupabaseClient } from "@supabas
 import {
   InitialSignupError,
   type InitialSignupErrorCode,
-  prepareInitialSignupContext,
-} from "../../../../core/auth/usecases/initial_signup/domain.ts"
+  executeInitialSignupUseCase,
+  parseInitialSignupRequest,
+} from "../../../../core/auth/usecases/initial_signup/index.ts"
 
 const JSON_HEADERS = { "Content-Type": "application/json" }
 
@@ -46,9 +47,16 @@ export function createInitialSignupHandler(
       )
     }
 
+    let requestPayload
+    try {
+      requestPayload = parseInitialSignupRequest(body)
+    } catch (error) {
+      return handleError(error)
+    }
+
     let context
     try {
-      context = await prepareInitialSignupContext(body, {
+      context = await executeInitialSignupUseCase(requestPayload, {
         lineChannelId: deps.lineChannelId,
         lineJwksUrl: deps.lineJwksUrl,
       })
