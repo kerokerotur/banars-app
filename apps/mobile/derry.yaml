@@ -1,0 +1,16 @@
+# Flutter/FVM command shortcuts managed via derry.
+scripts:
+  setup:
+    - fvm flutter pub get
+  analyze:
+    - fvm flutter analyze
+  test:
+    - fvm flutter test
+  run-dev:
+    - fvm flutter run
+  build-apk:
+    - fvm flutter build apk --release
+  build-ios:
+    - fvm flutter build ios --release
+  clean:
+    - fvm flutter clean
