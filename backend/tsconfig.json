@@ -17,7 +17,12 @@
     ],
     "types": [
       "vitest/globals"
-    ]
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@core/*": ["./core/*"],
+      "@adapters/*": ["./adapters/*"]
+    }
   },
   "include": [
     "./**/*.ts"

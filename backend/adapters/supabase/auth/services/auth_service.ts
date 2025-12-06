@@ -2,8 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type {
   IAuthService,
   CreateAuthUserParams,
-} from "../../../../core/auth/domain/service/iauth_service.ts"
-import { InitialSignupError } from "../../../../core/auth/domain/errors/initial_signup_error.ts"
+} from "@core/auth/domain/service/iauth_service.ts"
+import { InitialSignupError } from "@core/auth/domain/errors/initial_signup_error.ts"
 
 /**
  * Supabase Auth実装の認証サービス

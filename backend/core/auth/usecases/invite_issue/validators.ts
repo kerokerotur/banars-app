@@ -1,4 +1,4 @@
-import { InviteIssueError } from "../../domain/errors/invite_issue_error.ts"
+import { InviteIssueError } from "@core/auth/domain/errors/invite_issue_error.ts"
 import type { InviteIssueRequest } from "./types.ts"
 
 const DEFAULT_EXPIRES_IN_DAYS = 7

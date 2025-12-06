@@ -1,10 +1,10 @@
-import { hashInviteToken } from "../../domain/entity/invite_token.ts"
-import { buildLineProfile } from "../../domain/entity/line_profile.ts"
-import { InitialSignupError } from "../../domain/errors/initial_signup_error.ts"
+import { hashInviteToken } from "@core/auth/domain/entity/invite_token.ts"
+import { buildLineProfile } from "@core/auth/domain/entity/line_profile.ts"
+import { InitialSignupError } from "@core/auth/domain/errors/initial_signup_error.ts"
 import {
   DEFAULT_LINE_ISSUER,
   verifyLineIdToken,
-} from "../../domain/service/line_token_verifier.ts"
+} from "@core/auth/domain/service/line_token_verifier.ts"
 import type {
   InitialSignupDependencies,
   InitialSignupUseCaseRequest,

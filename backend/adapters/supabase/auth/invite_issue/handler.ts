@@ -1,11 +1,11 @@
 import { Hono } from "hono"
 import { zValidator } from "@hono/zod-validator"
 
-import { executeInviteIssueUseCase } from "../../../../core/auth/usecases/invite_issue/index.ts"
-import { supabaseMiddleware } from "../../../_shared/middleware/supabase.ts"
-import { authMiddleware } from "../../../_shared/middleware/auth.ts"
-import { errorHandler } from "../../../_shared/middleware/error.ts"
-import type { HonoVariables } from "../../../_shared/types/hono.ts"
+import { executeInviteIssueUseCase } from "@core/auth/usecases/invite_issue/index.ts"
+import { supabaseMiddleware } from "@adapters/_shared/middleware/supabase.ts"
+import { authMiddleware } from "@adapters/_shared/middleware/auth.ts"
+import { errorHandler } from "@adapters/_shared/middleware/error.ts"
+import type { HonoVariables } from "@adapters/_shared/types/hono.ts"
 import { inviteIssueRequestSchema } from "./schemas.ts"
 import { SupabaseInviteTokenRepository } from "../repositories/invite_token_repository.ts"
 

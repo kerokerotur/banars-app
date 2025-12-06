@@ -11,5 +11,5 @@ export type {
 } from "./types.ts"
 export {
   InitialSignupError,
-} from "../../domain/errors/initial_signup_error.ts"
-export type { InitialSignupErrorCode } from "../../domain/errors/initial_signup_error.ts"
+} from "@core/auth/domain/errors/initial_signup_error.ts"
+export type { InitialSignupErrorCode } from "@core/auth/domain/errors/initial_signup_error.ts"

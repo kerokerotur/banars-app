@@ -25,4 +25,4 @@ export interface InitialSignupUseCaseResponse {
 }
 
 export type { LineProfilePayload }
-import type { LineProfilePayload } from "../../domain/entity/line_profile.ts"
+import type { LineProfilePayload } from "@core/auth/domain/entity/line_profile.ts"

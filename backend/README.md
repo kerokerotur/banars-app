@@ -176,6 +176,40 @@ app.post("/", async (c) => {
 
 アダプタからは core の `usecases` のみ import し、core 側へ Supabase SDK を逆流させない。`handler.ts` は Hono アプリを返す関数として実装し、infra 層からは `app.fetch` を `Deno.serve` に渡すだけの薄いエントリポイントとする。
 
+## パスエイリアス（Path Aliases）
+
+相対パス import の冗長性を排除し、可読性と保守性を向上させるため、パスエイリアスを使用しています。
+
+### 利用可能なエイリアス
+
+| エイリアス | 解決先 | 用途 |
+| --- | --- | --- |
+| `@core/*` | `backend/core/*` | core 層（usecases、domain）のインポート |
+| `@adapters/*` | `backend/adapters/*` | adapters 層（repositories、services、middleware）のインポート |
+
+### 設定箇所
+
+**TypeScript / Node.js 環境（テスト実行時）:**
+- `tsconfig.json`: `compilerOptions.paths` でエイリアスを定義
+- `vite.config.ts`: `resolve.alias` で Vitest が解決できるように設定
+
+**Deno 環境（Supabase Edge Functions）:**
+- `infra/supabase/functions/deno.json`: `imports` フィールドで Deno Import Maps としてエイリアスを定義
+
+### 使用例
+
+**相対パスの場合（非推奨）:**
+```typescript
+import { executeInitialSignupUseCase } from "../../../../core/auth/usecases/initial_signup/index.ts"
+import { supabaseMiddleware } from "../../../_shared/middleware/supabase.ts"
+```
+
+**エイリアスを使用する場合（推奨）:**
+```typescript
+import { executeInitialSignupUseCase } from "@core/auth/usecases/initial_signup/index.ts"
+import { supabaseMiddleware } from "@adapters/_shared/middleware/supabase.ts"
+```
+
 ## テスト実行 (Vite + Vitest)
 - 依存インストール: `cd backend && npm install`
 - 単発実行: `npm test` （`vitest run` を呼び出し、`core/` と `adapters/` 配下の `*.test.ts` / `*.spec.ts` を対象にする）

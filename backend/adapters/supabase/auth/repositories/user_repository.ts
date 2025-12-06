@@ -3,11 +3,11 @@ import type {
   IUserRepository,
   User,
   UpsertUserParams,
-} from "../../../../core/auth/domain/irepository/user_repository.ts"
+} from "@core/auth/domain/irepository/user_repository.ts"
 import {
   InitialSignupError,
   type InitialSignupErrorCode,
-} from "../../../../core/auth/domain/errors/initial_signup_error.ts"
+} from "@core/auth/domain/errors/initial_signup_error.ts"
 
 /**
  * Supabase実装のユーザーリポジトリ

@@ -3,9 +3,9 @@ import type {
   IInviteTokenRepository,
   InsertInviteTokenParams,
   InviteToken,
-} from "../../../../core/auth/domain/irepository/invite_token_repository.ts"
-import { InitialSignupError } from "../../../../core/auth/domain/errors/initial_signup_error.ts"
-import { InviteIssueError } from "../../../../core/auth/domain/errors/invite_issue_error.ts"
+} from "@core/auth/domain/irepository/invite_token_repository.ts"
+import { InitialSignupError } from "@core/auth/domain/errors/initial_signup_error.ts"
+import { InviteIssueError } from "@core/auth/domain/errors/invite_issue_error.ts"
 
 /**
  * Supabase実装の招待トークンリポジトリ

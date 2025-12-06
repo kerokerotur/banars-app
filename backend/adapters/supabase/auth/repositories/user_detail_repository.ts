@@ -2,11 +2,11 @@ import type { SupabaseClient, PostgrestError } from "@supabase/supabase-js"
 import type {
   IUserDetailRepository,
   UpsertUserDetailParams,
-} from "../../../../core/auth/domain/irepository/user_detail_repository.ts"
+} from "@core/auth/domain/irepository/user_detail_repository.ts"
 import {
   InitialSignupError,
   type InitialSignupErrorCode,
-} from "../../../../core/auth/domain/errors/initial_signup_error.ts"
+} from "@core/auth/domain/errors/initial_signup_error.ts"
 
 /**
  * Supabase実装のユーザー詳細リポジトリ
