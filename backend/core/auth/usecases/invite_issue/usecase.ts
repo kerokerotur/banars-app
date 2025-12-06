@@ -1,4 +1,4 @@
-import { hashInviteToken } from "../../entities/invite_token.ts"
+import { hashInviteToken } from "../../domain/entity/invite_token.ts"
 import type { ValidatedInviteIssueRequest } from "./validators.ts"
 import type { InviteIssueResult } from "./types.ts"
 

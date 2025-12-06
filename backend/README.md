@@ -19,12 +19,14 @@
 
 | ディレクトリ | 役割 |
 | --- | --- |
-| `entities/` | ドメインエンティティ・値オブジェクトを定義。永続化フォーマットへ依存しない。 |
-| `services/` | ドメインサービスやポリシー計算。複数ユースケースから再利用するビジネスルールを配置。 |
-| `ports/` | リポジトリや外部サービス呼び出しの抽象インターフェース。adapters 層で具象実装を持たせる。 |
-| `usecases/` | アプリケーションサービス層。入力 DTO を受け取り、entities/services/ports を組み合わせたユースケースを実装する。Edge Function からはここを import する。 |
+| `usecases/` | アプリケーションサービス層。入力 DTO を受け取り、domain 層を組み合わせたユースケースを実装する。Edge Function からはここを import する。 |
+| `domain/` | ドメイン層を集約するディレクトリ。entity、service、irepository、errors を含む。 |
+| `domain/entity/` | ドメインエンティティ・値オブジェクトを定義。永続化フォーマットへ依存しない。 |
+| `domain/service/` | ドメインサービスやポリシー計算。複数ユースケースから再利用するビジネスルールを配置。 |
+| `domain/irepository/` | リポジトリや外部サービス呼び出しの抽象インターフェース。adapters 層で具象実装を持たせる。 |
+| `domain/errors/` | コンテキスト固有のドメインエラークラスを配置。 |
 | `__tests__/` | 各ユースケースやサービスのユニットテスト。外部 SDK をモックし、core のみで完結させる。 |
-| `__mocks__/` | ports やサービスを切り替えるテスト用モック群。 |
+| `__mocks__/` | irepository やサービスを切り替えるテスト用モック群。 |
 
 `shared/` ではコンテキスト横断で利用する `errors/`, `value_objects/`, `utils/` を管理する。新しい共通ルールを追加する際は、該当する DESIGN_DOCS の記述と README を同時に更新する。
 
@@ -51,9 +53,10 @@
 - Node.js 18 以降（`fetch` / `Request` 標準実装を含む）が前提。`@supabase/supabase-js` などランタイム依存も npm 経由で解決される。
 
 ## 運用ルール
-1. core 層からは Deno / Node ランタイム API や Supabase SDK を直接参照しない。必要があれば ports で抽象化して adapters 層に実装する。
+1. core 層からは Deno / Node ランタイム API や Supabase SDK を直接参照しない。必要があれば domain/irepository で抽象化して adapters 層に実装する。
 2. コンテキストを新設・改修する場合、先に `docs/DESIGN_DOCS/overview.md` と各コンテキスト配下のドキュメントを更新し、コードの配置規約を揃える。
 3. Edge Function を実装する際は、`usecases` フォルダ内にユースケースを追加し、adapters からユースケースを呼び出す構造を徹底する。
 4. テストは core 配下で完結させ、外部依存を追加したい場合は必ずユーザーに確認した上で方針を更新する。
+5. ドメイン層のファイルは `domain/entity/`、`domain/service/`、`domain/irepository/`、`domain/errors/` に適切に配置し、レイヤー間の依存関係を明確にする。
 
 この README にない運用ルールを追加・変更する場合は、本書と `AGENTS.md` をセットで更新し、次回以降のセッションで参照できるようにしてください。

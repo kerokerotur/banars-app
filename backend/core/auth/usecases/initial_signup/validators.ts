@@ -1,4 +1,4 @@
-import { InitialSignupError } from "../../errors/initial_signup_error.ts"
+import { InitialSignupError } from "../../domain/errors/initial_signup_error.ts"
 import type {
   InitialSignupUseCaseRequest,
   LineProfilePayload,
