@@ -8,6 +8,7 @@
 
 開発環境・コマンド運用:
 - Flutter 関連の CLI コマンドを実行する際は、必ず FVM を用いて `fvm flutter <command>` の形式で実行し、直接 `flutter` を呼び出さないこと。
+- Supabase Edge Functions を新規作成する際は、必ず `supabase functions new <function名>` を先に実行すること。CLI が `functions/` ディレクトリと `config.toml` への設定を自動生成するため、手動でファイルを作成しない。生成後に `index.ts` と `deno.json` を編集して実装を行う。
 
 PRD を扱う際の手順（AI 用）:
 - PRD の更新前に、背景/目的、ステークホルダー、要件（機能・体験）の 3 章に情報が揃っているか確認する。小規模アプリのため、章 4〜7 は追加しない。
