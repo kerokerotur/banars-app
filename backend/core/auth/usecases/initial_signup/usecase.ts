@@ -15,6 +15,7 @@ export async function executeInitialSignupUseCase(
   request: InitialSignupUseCaseRequest,
   deps: InitialSignupDependencies,
 ): Promise<InitialSignupUseCaseResponse> {
+  // LINE ID Tokenの検証
   const claims = await verifyLineIdToken(request.lineTokens.idToken, {
     jwksUrl: deps.lineJwksUrl,
     audience: deps.lineChannelId,
@@ -34,14 +35,64 @@ export async function executeInitialSignupUseCase(
     )
   }
 
+  // 招待トークンの検証
   const inviteTokenHash = await hashInviteToken(request.inviteToken)
+  await deps.inviteTokenRepository.findByHashAndValidate(inviteTokenHash)
+
+  // 既存ユーザーチェック
+  const existingUser = await deps.userRepository.findByLineId(claims.sub)
+  if (existingUser) {
+    return {
+      userId: existingUser.id,
+      sessionTransferToken: null,
+    }
+  }
+
+  // Supabase Emailの生成
+  const supabaseEmail = deriveSupabaseEmail(claims.sub, claims.email ?? null)
+
+  // Supabase Authユーザー作成
+  const authUserId = await deps.authService.createUser({
+    email: supabaseEmail,
+    lineUserId: claims.sub,
+    displayName: profile.displayName,
+    avatarUrl: profile.avatarUrl,
+  })
+
+  // ユーザーレコード作成
+  await deps.userRepository.upsert({
+    id: authUserId,
+    lineUserId: claims.sub,
+    status: "active",
+  })
+
+  // ユーザー詳細作成
+  await deps.userDetailRepository.upsert({
+    userId: authUserId,
+    displayName: profile.displayName,
+    avatarUrl: profile.avatarUrl,
+    syncedDatetime: new Date(),
+  })
+
+  // セッショントークン発行
+  const sessionTransferToken = await deps.authService.generateSessionToken(
+    supabaseEmail,
+  )
 
   return {
-    inviteToken: request.inviteToken,
-    inviteTokenHash,
-    lineUserId: claims.sub,
-    lineDisplayName: profile.displayName,
-    avatarUrl: profile.avatarUrl,
-    email: claims.email ? claims.email.toLowerCase() : null,
+    userId: authUserId,
+    sessionTransferToken,
   }
+}
+
+function deriveSupabaseEmail(lineUserId: string, claimedEmail: string | null) {
+  if (claimedEmail && isValidEmail(claimedEmail)) {
+    return claimedEmail.toLowerCase()
+  }
+  const normalizedId = lineUserId.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()
+  return `line_${normalizedId}@line.local`
+}
+
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }

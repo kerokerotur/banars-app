@@ -13,15 +13,15 @@ export interface InitialSignupDependencies {
   lineChannelId: string
   lineJwksUrl: string
   expectedLineIssuer?: string
+  inviteTokenRepository: import("../../domain/irepository/invite_token_repository.ts").IInviteTokenRepository
+  userRepository: import("../../domain/irepository/user_repository.ts").IUserRepository
+  userDetailRepository: import("../../domain/irepository/user_detail_repository.ts").IUserDetailRepository
+  authService: import("../../domain/service/iauth_service.ts").IAuthService
 }
 
 export interface InitialSignupUseCaseResponse {
-  inviteToken: string
-  inviteTokenHash: string
-  lineUserId: string
-  lineDisplayName: string
-  avatarUrl: string | null
-  email: string | null
+  userId: string
+  sessionTransferToken: string | null
 }
 
 export type { LineProfilePayload }

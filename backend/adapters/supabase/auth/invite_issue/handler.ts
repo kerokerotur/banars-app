@@ -1,14 +1,13 @@
 import { Hono } from "hono"
 import { zValidator } from "@hono/zod-validator"
-import type { SupabaseClient } from "@supabase/supabase-js"
 
 import { executeInviteIssueUseCase } from "../../../../core/auth/usecases/invite_issue/index.ts"
-import { InviteIssueError } from "../../../../core/auth/domain/errors/invite_issue_error.ts"
 import { supabaseMiddleware } from "../../../_shared/middleware/supabase.ts"
 import { authMiddleware } from "../../../_shared/middleware/auth.ts"
 import { errorHandler } from "../../../_shared/middleware/error.ts"
 import type { HonoVariables } from "../../../_shared/types/hono.ts"
 import { inviteIssueRequestSchema } from "./schemas.ts"
+import { SupabaseInviteTokenRepository } from "../repositories/invite_token_repository.ts"
 
 export interface InviteIssueHandlerDeps {
   supabaseUrl: string
@@ -39,18 +38,21 @@ export function createInviteIssueHandler(deps: InviteIssueHandlerDeps) {
     const supabaseClient = c.get("supabaseClient")
     const userId = c.get("userId")!
 
-    // ユースケース実行
-    const result = await executeInviteIssueUseCase({
-      expiresInDays: body.expiresInDays ?? 7,
-    })
+    // リポジトリのインスタンス化
+    const inviteTokenRepository = new SupabaseInviteTokenRepository(
+      supabaseClient,
+    )
 
-    // DBにトークンを保存
-    await insertInviteToken(supabaseClient, {
-      tokenHash: result.tokenHash,
-      expiresDatetime: result.expiresAt.toISOString(),
-      issuedBy: userId,
-      createdUser: userId,
-    })
+    // ユースケース実行（リポジトリをDI）
+    const result = await executeInviteIssueUseCase(
+      {
+        expiresInDays: body.expiresInDays ?? 7,
+        issuedBy: userId,
+      },
+      {
+        inviteTokenRepository,
+      },
+    )
 
     return c.json({
       token: result.token,
@@ -59,30 +61,4 @@ export function createInviteIssueHandler(deps: InviteIssueHandlerDeps) {
   })
 
   return app
-}
-
-async function insertInviteToken(
-  client: SupabaseClient,
-  params: {
-    tokenHash: string
-    expiresDatetime: string
-    issuedBy: string
-    createdUser: string
-  },
-): Promise<void> {
-  const { error } = await client.from("invite_token").insert({
-    token_hash: params.tokenHash,
-    expires_datetime: params.expiresDatetime,
-    issued_by: params.issuedBy,
-    created_user: params.createdUser,
-  })
-
-  if (error) {
-    throw new InviteIssueError(
-      "internal_error",
-      "招待トークンの保存に失敗しました。",
-      500,
-      { reason: error.message },
-    )
-  }
 }

@@ -7,10 +7,12 @@ const MAX_EXPIRES_IN_DAYS = 30
 
 export interface ValidatedInviteIssueRequest {
   expiresInDays: number
+  issuedBy: string
 }
 
 export function parseInviteIssueRequest(
   body: unknown,
+  issuedBy: string,
 ): ValidatedInviteIssueRequest {
   if (body !== null && typeof body !== "object") {
     throw new InviteIssueError(
@@ -39,6 +41,6 @@ export function parseInviteIssueRequest(
     )
   }
 
-  return { expiresInDays }
+  return { expiresInDays, issuedBy }
 }
 

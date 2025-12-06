@@ -30,6 +30,124 @@
 
 `shared/` ではコンテキスト横断で利用する `errors/`, `value_objects/`, `utils/` を管理する。新しい共通ルールを追加する際は、該当する DESIGN_DOCS の記述と README を同時に更新する。
 
+## リポジトリパターンとDI（依存性注入）
+
+本プロジェクトでは、**依存性逆転の原則（DIP）**に従い、core 層が外部実装に依存しない設計を採用しています。
+
+### 基本原則
+
+1. **core 層はインターフェースのみに依存**
+   - `domain/irepository/` にリポジトリインターフェースを定義
+   - `domain/service/` にサービスインターフェースを定義
+   - usecase は具象クラスではなく、これらのインターフェースに依存
+
+2. **adapters 層で具象実装を提供**
+   - `adapters/supabase/auth/repositories/` にリポジトリ実装
+   - `adapters/supabase/auth/services/` にサービス実装
+   - Supabase SDK やその他の外部ライブラリはここでのみ使用
+
+3. **handler 層でDI（依存性注入）を実施**
+   - リポジトリとサービスのインスタンスを生成
+   - usecase 実行時に依存関係を注入
+
+### ディレクトリ構成例（auth コンテキスト）
+
+```
+core/auth/
+├── domain/
+│   ├── entity/                    # ドメインエンティティ
+│   ├── service/
+│   │   └── iauth_service.ts       # サービスインターフェース
+│   ├── irepository/
+│   │   ├── invite_token_repository.ts   # リポジトリインターフェース
+│   │   ├── user_repository.ts
+│   │   └── user_detail_repository.ts
+│   └── errors/                    # ドメインエラー
+└── usecases/
+    └── initial_signup/
+        └── usecase.ts             # インターフェースに依存
+
+adapters/supabase/auth/
+├── repositories/                  # リポジトリ実装
+│   ├── invite_token_repository.ts # Supabase実装
+│   ├── user_repository.ts
+│   └── user_detail_repository.ts
+├── services/                      # サービス実装
+│   └── auth_service.ts            # Supabase Auth実装
+└── initial_signup/
+    └── handler.ts                 # DIを行う
+```
+
+### 実装パターン
+
+#### 1. インターフェース定義（core/auth/domain/irepository/）
+
+```typescript
+export interface IUserRepository {
+  findByLineId(lineUserId: string): Promise<User | null>
+  upsert(params: UpsertUserParams): Promise<void>
+}
+```
+
+#### 2. 具象実装（adapters/supabase/auth/repositories/）
+
+```typescript
+export class SupabaseUserRepository implements IUserRepository {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async findByLineId(lineUserId: string): Promise<User | null> {
+    // Supabase SDKを使った実装
+  }
+}
+```
+
+#### 3. usecase での利用（core/auth/usecases/）
+
+```typescript
+export interface InitialSignupDependencies {
+  userRepository: IUserRepository  // インターフェースに依存
+  // ...
+}
+
+export async function executeInitialSignupUseCase(
+  request: InitialSignupUseCaseRequest,
+  deps: InitialSignupDependencies,
+) {
+  // リポジトリを使用（具象クラスは知らない）
+  const user = await deps.userRepository.findByLineId(lineUserId)
+}
+```
+
+#### 4. handler でのDI（adapters/supabase/auth/initial_signup/）
+
+```typescript
+app.post("/", async (c) => {
+  const supabaseClient = c.get("supabaseClient")
+
+  // 具象実装をインスタンス化
+  const userRepository = new SupabaseUserRepository(supabaseClient)
+
+  // usecase に注入
+  const result = await executeInitialSignupUseCase(request, {
+    userRepository,
+  })
+})
+```
+
+### メリット
+
+✅ **テスタビリティ**
+- core 層のテストではリポジトリをモックに差し替え可能
+- 外部 SDK に依存しないユニットテストが書ける
+
+✅ **ポータビリティ**
+- Supabase 以外のバックエンド（Firebase、AWS など）への移行が容易
+- インターフェースを維持したまま実装を切り替え可能
+
+✅ **関心の分離**
+- ビジネスロジック（core）とインフラ（adapters）が明確に分離
+- core 層は純粋な TypeScript のみ、Deno/Node 非依存
+
 ## adapters/ の構成と責務
 - `supabase/`: Supabase Edge Function 用アダプタ。`auth/`, `events/`, `attendance/` の各コンテキスト単位でフォルダを切り、さらに機能単位（例: `initial_signup/`）へ階層化する。
 - `_shared/`: 複数ホスティングで共通になるミドルウェア、型定義等を集約する。
