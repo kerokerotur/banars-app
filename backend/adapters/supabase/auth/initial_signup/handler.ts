@@ -1,13 +1,16 @@
-import { createClient, type PostgrestError, type SupabaseClient } from "@supabase/supabase-js"
+import { Hono } from "hono"
+import { zValidator } from "@hono/zod-validator"
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js"
 
+import { executeInitialSignupUseCase } from "../../../../core/auth/usecases/initial_signup/index.ts"
 import {
   InitialSignupError,
   type InitialSignupErrorCode,
-  executeInitialSignupUseCase,
-  parseInitialSignupRequest,
-} from "../../../../core/auth/usecases/initial_signup/index.ts"
-
-const JSON_HEADERS = { "Content-Type": "application/json" }
+} from "../../../../core/auth/domain/errors/initial_signup_error.ts"
+import { supabaseMiddleware } from "../../../_shared/middleware/supabase.ts"
+import { errorHandler } from "../../../_shared/middleware/error.ts"
+import type { HonoVariables } from "../../../_shared/types/hono.ts"
+import { initialSignupRequestSchema } from "./schemas.ts"
 
 export interface InitialSignupHandlerDeps {
   supabaseUrl: string
@@ -16,104 +19,103 @@ export interface InitialSignupHandlerDeps {
   lineJwksUrl: string
 }
 
-export function createInitialSignupHandler(
-  deps: InitialSignupHandlerDeps,
-): (req: Request) => Promise<Response> {
-  const adminClient = createClient(deps.supabaseUrl, deps.serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  })
+export function createInitialSignupHandler(deps: InitialSignupHandlerDeps) {
+  const app = new Hono<{ Variables: HonoVariables }>()
 
-  return async function handler(req: Request): Promise<Response> {
-    if (req.method !== "POST") {
-      return new Response(
-        JSON.stringify({
-          code: "method_not_allowed",
-          message: "POST のみサポートしています。",
-        }),
-        { status: 405, headers: JSON_HEADERS },
-      )
-    }
+  // エラーハンドリング
+  app.onError(errorHandler)
 
-    let body: unknown
-    try {
-      body = await req.json()
-    } catch (_) {
-      return jsonError(
-        new InitialSignupError(
-          "invalid_request",
-          "JSON ボディを解析できませんでした。",
-          400,
-        ),
-      )
-    }
+  // Supabaseクライアント注入
+  app.use(
+    "*",
+    supabaseMiddleware({
+      supabaseUrl: deps.supabaseUrl,
+      serviceRoleKey: deps.serviceRoleKey,
+    }),
+  )
 
-    let requestPayload
-    try {
-      requestPayload = parseInitialSignupRequest(body)
-    } catch (error) {
-      return handleError(error)
-    }
+  // POSTエンドポイント
+  app.post("/", zValidator("json", initialSignupRequestSchema), async (c) => {
+    const body = c.req.valid("json")
+    const supabaseClient = c.get("supabaseClient")
 
-    let context
-    try {
-      context = await executeInitialSignupUseCase(requestPayload, {
+    // ユースケース実行
+    const context = await executeInitialSignupUseCase(
+      {
+        inviteToken: body.inviteToken,
+        lineTokens: body.lineTokens,
+        lineProfile: {
+          lineUserId: body.lineProfile.lineUserId,
+          displayName: body.lineProfile.displayName,
+          avatarUrl: body.lineProfile.avatarUrl ?? null,
+        },
+      },
+      {
         lineChannelId: deps.lineChannelId,
         lineJwksUrl: deps.lineJwksUrl,
+      },
+    )
+
+    // 招待トークンの検証
+    await assertInviteTokenValid(supabaseClient, context.inviteTokenHash)
+
+    // 既存ユーザーチェック
+    const existingUser = await findUserByLineId(
+      supabaseClient,
+      context.lineUserId,
+    )
+    if (existingUser) {
+      return c.json({
+        userId: existingUser.id,
+        sessionTransferToken: null,
       })
-    } catch (error) {
-      return handleError(error)
     }
 
-    try {
-      await assertInviteTokenValid(adminClient, context.inviteTokenHash)
+    // Supabase Emailの生成
+    const supabaseEmail = deriveSupabaseEmail(
+      context.lineUserId,
+      context.email,
+    )
 
-      const existingUser = await findUserByLineId(adminClient, context.lineUserId)
-      if (existingUser) {
-        return jsonResponse({
-          userId: existingUser.id,
-          sessionTransferToken: null,
-        })
-      }
+    // Supabase Authユーザー作成
+    const authUserId = await createSupabaseAuthUser(supabaseClient, {
+      email: supabaseEmail,
+      lineUserId: context.lineUserId,
+      displayName: context.lineDisplayName,
+      avatarUrl: context.avatarUrl,
+    })
 
-      const supabaseEmail = deriveSupabaseEmail(
-        context.lineUserId,
-        context.email,
-      )
+    // ユーザーレコード作成
+    await upsertUserRecord(supabaseClient, {
+      id: authUserId,
+      line_user_id: context.lineUserId,
+      status: "active",
+    })
 
-      const authUserId = await createSupabaseAuthUser(adminClient, {
-        email: supabaseEmail,
-        lineUserId: context.lineUserId,
-        displayName: context.lineDisplayName,
-        avatarUrl: context.avatarUrl,
-      })
+    // ユーザー詳細作成
+    await upsertUserDetail(supabaseClient, {
+      user_id: authUserId,
+      display_name: context.lineDisplayName,
+      avatar_url: context.avatarUrl,
+      synced_datetime: new Date().toISOString(),
+    })
 
-      await upsertUserRecord(adminClient, {
-        id: authUserId,
-        line_user_id: context.lineUserId,
-        status: "active",
-      })
+    // セッショントークン発行
+    const sessionTransferToken = await issueSessionTransferToken(
+      supabaseClient,
+      supabaseEmail,
+    )
 
-      await upsertUserDetail(adminClient, {
-        user_id: authUserId,
-        display_name: context.lineDisplayName,
-        avatar_url: context.avatarUrl,
-        synced_datetime: new Date().toISOString(),
-      })
+    return c.json({
+      userId: authUserId,
+      sessionTransferToken,
+    })
+  })
 
-      const sessionTransferToken = await issueSessionTransferToken(
-        adminClient,
-        supabaseEmail,
-      )
-
-      return jsonResponse({
-        userId: authUserId,
-        sessionTransferToken,
-      })
-    } catch (error) {
-      return handleError(error)
-    }
-  }
+  return app
 }
+
+// ===== Helper Functions =====
 
 async function assertInviteTokenValid(
   client: SupabaseClient,
@@ -310,24 +312,6 @@ function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
-function jsonResponse(body: Record<string, unknown>, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: JSON_HEADERS,
-  })
-}
-
-function jsonError(error: InitialSignupError) {
-  return new Response(
-    JSON.stringify({
-      code: error.code,
-      message: error.message,
-      details: error.details ?? null,
-    }),
-    { status: error.status, headers: JSON_HEADERS },
-  )
-}
-
 function wrapPostgrestError(
   error: PostgrestError,
   code: InitialSignupErrorCode,
@@ -337,18 +321,4 @@ function wrapPostgrestError(
     reason: error.message,
     details: error.details,
   })
-}
-
-function handleError(error: unknown) {
-  if (error instanceof InitialSignupError) {
-    return jsonError(error)
-  }
-  console.error("[initial_signup] unexpected error", error)
-  return jsonError(
-    new InitialSignupError(
-      "internal_error",
-      "内部エラーが発生しました。",
-      500,
-    ),
-  )
 }

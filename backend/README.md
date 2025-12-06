@@ -32,18 +32,31 @@
 
 ## adapters/ の構成と責務
 - `supabase/`: Supabase Edge Function 用アダプタ。`auth/`, `events/`, `attendance/` の各コンテキスト単位でフォルダを切り、さらに機能単位（例: `initial_signup/`）へ階層化する。
-- `_shared/`: 複数ホスティングで共通になる HTTP レスポンスユーティリティ等があればこちらへ集約する。
+- `_shared/`: 複数ホスティングで共通になるミドルウェア、型定義等を集約する。
+
+### Hono Web Framework の使用
+アダプタ層では Hono (https://hono.dev) を使用してルーティング、バリデーション、ミドルウェアを実装する。
+
+**主要な依存ライブラリ:**
+- `hono`: Web フレームワーク本体
+- `zod`: スキーマバリデーション
+- `@hono/zod-validator`: Hono と Zod の統合
+
+**共通ミドルウェア (`_shared/middleware/`):**
+- `supabase.ts`: Supabase Admin Client を注入するミドルウェア
+- `auth.ts`: JWT 検証とロール確認を行うミドルウェア
+- `error.ts`: core 層のドメインエラーを HTTP レスポンスに変換するエラーハンドラ
 
 各機能フォルダの基本構成（例: `supabase/auth/initial_signup/`）
 
 | ディレクトリ / ファイル | 役割 |
 | --- | --- |
-| `handler.ts` | Request/Response の I/O 境界を実装し、core の usecase を呼び出す。Supabase SDK・外部 API 呼び出しはここに閉じる。 |
-| `schemas/` | HTTP ボディやクエリの型定義、バリデーション（必要に応じて）。 |
-| `mappers/` | core DTO と外部フォーマットの変換。
+| `handler.ts` | Hono アプリを作成し、ルーティング、ミドルウェア、core の usecase 呼び出しを実装。Supabase SDK・外部 API 呼び出しはここに閉じる。 |
+| `schemas.ts` | Zod スキーマによるリクエストボディの型定義とバリデーション。 |
+| `mappers/` | core DTO と外部フォーマットの変換（必要に応じて）。 |
 | `__tests__/` | アダプタ単体の結合テスト。Supabase SDK をモックし、core の振る舞いとの差分を確認する。 |
 
-アダプタからは core の `usecases` のみ import し、core 側へ Supabase SDK を逆流させない。Deno / Node 固有 API を利用する場合はアダプタ層に閉じ、infra 層からは `handler` を生成して `Deno.serve` に渡すだけの薄いエントリポイントとする。
+アダプタからは core の `usecases` のみ import し、core 側へ Supabase SDK を逆流させない。`handler.ts` は Hono アプリを返す関数として実装し、infra 層からは `app.fetch` を `Deno.serve` に渡すだけの薄いエントリポイントとする。
 
 ## テスト実行 (Vite + Vitest)
 - 依存インストール: `cd backend && npm install`
@@ -58,5 +71,8 @@
 3. Edge Function を実装する際は、`usecases` フォルダ内にユースケースを追加し、adapters からユースケースを呼び出す構造を徹底する。
 4. テストは core 配下で完結させ、外部依存を追加したい場合は必ずユーザーに確認した上で方針を更新する。
 5. ドメイン層のファイルは `domain/entity/`、`domain/service/`、`domain/irepository/`、`domain/errors/` に適切に配置し、レイヤー間の依存関係を明確にする。
+6. アダプタ層では Hono を使用し、ルーティング、ミドルウェア、バリデーション（Zod）を活用する。リクエストバリデーションは `schemas.ts` に Zod スキーマとして定義する。
+7. 認証が必要なエンドポイントでは `authMiddleware()` を使用し、必要に応じて `requiredRole` オプションでロール検証を行う。
+8. エラーハンドリングは `app.onError(errorHandler)` で一元化し、core 層のドメインエラーを適切な HTTP レスポンスに変換する。
 
 この README にない運用ルールを追加・変更する場合は、本書と `AGENTS.md` をセットで更新し、次回以降のセッションで参照できるようにしてください。

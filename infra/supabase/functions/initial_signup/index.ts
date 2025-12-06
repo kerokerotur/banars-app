@@ -1,6 +1,6 @@
 import { createInitialSignupHandler } from "../../../../backend/adapters/supabase/auth/initial_signup/handler.ts"
 
-const handler = createInitialSignupHandler({
+const app = createInitialSignupHandler({
   supabaseUrl: requireEnv("SUPABASE_URL"),
   serviceRoleKey: requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
   lineChannelId: requireEnv("LINE_CHANNEL_ID"),
@@ -8,7 +8,7 @@ const handler = createInitialSignupHandler({
     "https://api.line.me/oauth2/v2.1/certs",
 })
 
-Deno.serve(handler)
+Deno.serve(app.fetch)
 
 function requireEnv(key: string): string {
   const value = Deno.env.get(key)

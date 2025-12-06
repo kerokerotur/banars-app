@@ -30,7 +30,6 @@
 - **新規作成時は必ず CLI を使用する**: `supabase functions new <function名>` を実行すること。CLI が `functions/<function名>/` ディレクトリと `config.toml` への設定を自動生成する。手動でファイルやディレクトリを作成しない。
 - **生成後の編集**: CLI が生成した `index.ts` と `deno.json` を編集して実装を行う。
 - **アーキテクチャ**: Edge Function のエントリポイント (`index.ts`) は薄く保ち、ビジネスロジックは `backend/` 配下のコア層・アダプター層に実装する。
-- **依存関係**: 外部パッケージは各関数の `deno.json` の `imports` に追加する。
 
 ### Edge Function 新規作成の手順
 ```bash
@@ -40,7 +39,101 @@ supabase functions new <function名>
 
 生成されるファイル:
 - `functions/<function名>/index.ts` - エントリポイント
-- `functions/<function名>/deno.json` - 依存関係マッピング
+- `functions/<function名>/deno.json` - 依存関係マッピング（空の imports で生成）
 - `config.toml` への設定追加（自動）
+
+## Edge Functions 依存関係管理
+
+### Deno の依存解決の仕組み
+
+Denoは以下の順序で`deno.json`を探索し、**複数のファイルが見つかった場合はマージ**します：
+
+1. `functions/<function名>/deno.json` （関数固有の依存）
+2. `functions/deno.json` （全関数共通の依存）
+
+この仕組みを利用して、**ハイブリッド構成**で依存関係を管理します。
+
+### ディレクトリ構成
+
+```
+functions/
+├── deno.json                    # 全Edge Function共通の依存関係
+├── initial_signup/
+│   ├── index.ts
+│   └── deno.json                # この関数固有の依存関係（空でもOK）
+└── invite_issue/
+    ├── index.ts
+    └── deno.json                # この関数固有の依存関係（空でもOK）
+```
+
+### functions/deno.json（共通依存）
+
+全Edge Functionで使用する共通ライブラリを定義：
+
+```json
+{
+  "imports": {
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.45.4",
+    "jose": "npm:jose@5.2.4",
+    "hono": "jsr:@hono/hono@^4.6.14",
+    "zod": "npm:zod@^3.23.8",
+    "@hono/zod-validator": "npm:@hono/zod-validator@^0.4.1"
+  }
+}
+```
+
+**管理ルール:**
+- プロジェクト全体で使う基本ライブラリのみを記載
+- バージョン更新時は一箇所を変更するだけで全関数に反映
+- Supabase CLI で `supabase functions new` を実行しても**上書きされない**
+
+### functions/<function名>/deno.json（関数固有依存）
+
+各Edge Function固有のライブラリを定義：
+
+```json
+{
+  "imports": {
+    "some-library": "npm:some-library@1.0.0"
+  }
+}
+```
+
+**管理ルール:**
+- Supabase CLI で `supabase functions new` を実行すると**空の imports で自動生成**
+- この関数でのみ使うライブラリがある場合に追記
+- 親の `functions/deno.json` と自動的にマージされる
+- 空の `{}` のままでも問題ない（親の依存のみ使う場合）
+
+### 依存関係の追加手順
+
+**ケース1: 全関数で使う共通ライブラリを追加**
+
+```bash
+# functions/deno.json を編集
+{
+  "imports": {
+    "new-library": "npm:new-library@1.0.0"  # ← 追加
+  }
+}
+```
+
+**ケース2: 特定の関数でのみ使うライブラリを追加**
+
+```bash
+# functions/specific_function/deno.json を編集
+{
+  "imports": {
+    "specific-library": "npm:specific-library@1.0.0"  # ← 追加
+  }
+}
+```
+
+### バージョン管理のベストプラクティス
+
+1. **共通ライブラリはバージョンを固定** (`@2.45.4` のように exact version)
+2. **Hono/Zodは互換範囲を指定** (`^4.6.14` のように semver range)
+3. **バージョン更新時は全Edge Functionのテストを実行**してから反映
+4. **関数固有の依存は最小限にとどめる**（可能な限り共通化）
 
 `infra/README.md` も併せて参照し、IaC 全体の方針を把握してください。

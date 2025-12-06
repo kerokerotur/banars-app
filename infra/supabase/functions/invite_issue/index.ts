@@ -1,11 +1,11 @@
 import { createInviteIssueHandler } from "../../../../backend/adapters/supabase/auth/invite_issue/handler.ts"
 
-const handler = createInviteIssueHandler({
+const app = createInviteIssueHandler({
   supabaseUrl: requireEnv("SUPABASE_URL"),
   serviceRoleKey: requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
 })
 
-Deno.serve(handler)
+Deno.serve(app.fetch)
 
 function requireEnv(key: string): string {
   const value = Deno.env.get(key)

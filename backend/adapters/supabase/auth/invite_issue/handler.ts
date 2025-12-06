@@ -1,134 +1,64 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js"
+import { Hono } from "hono"
+import { zValidator } from "@hono/zod-validator"
+import type { SupabaseClient } from "@supabase/supabase-js"
 
-import {
-  InviteIssueError,
-  executeInviteIssueUseCase,
-  parseInviteIssueRequest,
-} from "../../../../core/auth/usecases/invite_issue/index.ts"
-
-const JSON_HEADERS = { "Content-Type": "application/json" }
+import { executeInviteIssueUseCase } from "../../../../core/auth/usecases/invite_issue/index.ts"
+import { InviteIssueError } from "../../../../core/auth/domain/errors/invite_issue_error.ts"
+import { supabaseMiddleware } from "../../../_shared/middleware/supabase.ts"
+import { authMiddleware } from "../../../_shared/middleware/auth.ts"
+import { errorHandler } from "../../../_shared/middleware/error.ts"
+import type { HonoVariables } from "../../../_shared/types/hono.ts"
+import { inviteIssueRequestSchema } from "./schemas.ts"
 
 export interface InviteIssueHandlerDeps {
   supabaseUrl: string
   serviceRoleKey: string
 }
 
-export function createInviteIssueHandler(
-  deps: InviteIssueHandlerDeps,
-): (req: Request) => Promise<Response> {
-  const adminClient = createClient(deps.supabaseUrl, deps.serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  })
+export function createInviteIssueHandler(deps: InviteIssueHandlerDeps) {
+  const app = new Hono<{ Variables: HonoVariables }>()
 
-  return async function handler(req: Request): Promise<Response> {
-    if (req.method !== "POST") {
-      return new Response(
-        JSON.stringify({
-          code: "method_not_allowed",
-          message: "POST のみサポートしています。",
-        }),
-        { status: 405, headers: JSON_HEADERS },
-      )
-    }
+  // エラーハンドリング
+  app.onError(errorHandler)
 
-    // JWT検証
-    const authHeader = req.headers.get("Authorization")
-    if (!authHeader?.startsWith("Bearer ")) {
-      return jsonError(
-        new InviteIssueError(
-          "unauthorized",
-          "Authorization ヘッダーが必要です。",
-          401,
-        ),
-      )
-    }
+  // Supabaseクライアント注入
+  app.use(
+    "*",
+    supabaseMiddleware({
+      supabaseUrl: deps.supabaseUrl,
+      serviceRoleKey: deps.serviceRoleKey,
+    }),
+  )
 
-    const token = authHeader.slice(7)
-    let userId: string
-    let userRole: string | null
+  // JWT検証 + manager権限チェック
+  app.use("*", authMiddleware({ requiredRole: "manager" }))
 
-    try {
-      const { data, error } = await adminClient.auth.getUser(token)
-      if (error || !data.user) {
-        return jsonError(
-          new InviteIssueError(
-            "unauthorized",
-            "無効なトークンです。",
-            401,
-          ),
-        )
-      }
-      userId = data.user.id
-      userRole = data.user.app_metadata?.role ?? null
-    } catch (_) {
-      return jsonError(
-        new InviteIssueError(
-          "unauthorized",
-          "トークンの検証に失敗しました。",
-          401,
-        ),
-      )
-    }
+  // POSTエンドポイント
+  app.post("/", zValidator("json", inviteIssueRequestSchema), async (c) => {
+    const body = c.req.valid("json")
+    const supabaseClient = c.get("supabaseClient")
+    const userId = c.get("userId")!
 
-    // ロール検証
-    if (userRole !== "manager") {
-      return jsonError(
-        new InviteIssueError(
-          "forbidden",
-          "この操作には manager 権限が必要です。",
-          403,
-        ),
-      )
-    }
-
-    // リクエストボディの解析
-    let body: unknown = {}
-    try {
-      const text = await req.text()
-      if (text) {
-        body = JSON.parse(text)
-      }
-    } catch (_) {
-      return jsonError(
-        new InviteIssueError(
-          "invalid_request",
-          "JSON ボディを解析できませんでした。",
-          400,
-        ),
-      )
-    }
-
-    let validatedRequest
-    try {
-      validatedRequest = parseInviteIssueRequest(body)
-    } catch (error) {
-      return handleError(error)
-    }
-
-    let result
-    try {
-      result = await executeInviteIssueUseCase(validatedRequest)
-    } catch (error) {
-      return handleError(error)
-    }
+    // ユースケース実行
+    const result = await executeInviteIssueUseCase({
+      expiresInDays: body.expiresInDays ?? 7,
+    })
 
     // DBにトークンを保存
-    try {
-      await insertInviteToken(adminClient, {
-        tokenHash: result.tokenHash,
-        expiresDatetime: result.expiresAt.toISOString(),
-        issuedBy: userId,
-        createdUser: userId,
-      })
-    } catch (error) {
-      return handleError(error)
-    }
+    await insertInviteToken(supabaseClient, {
+      tokenHash: result.tokenHash,
+      expiresDatetime: result.expiresAt.toISOString(),
+      issuedBy: userId,
+      createdUser: userId,
+    })
 
-    return jsonResponse({
+    return c.json({
       token: result.token,
       expiresAt: result.expiresAt.toISOString(),
     })
-  }
+  })
+
+  return app
 }
 
 async function insertInviteToken(
@@ -156,36 +86,3 @@ async function insertInviteToken(
     )
   }
 }
-
-function jsonResponse(body: Record<string, unknown>, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: JSON_HEADERS,
-  })
-}
-
-function jsonError(error: InviteIssueError) {
-  return new Response(
-    JSON.stringify({
-      code: error.code,
-      message: error.message,
-      details: error.details ?? null,
-    }),
-    { status: error.status, headers: JSON_HEADERS },
-  )
-}
-
-function handleError(error: unknown) {
-  if (error instanceof InviteIssueError) {
-    return jsonError(error)
-  }
-  console.error("[invite_issue] unexpected error", error)
-  return jsonError(
-    new InviteIssueError(
-      "internal_error",
-      "内部エラーが発生しました。",
-      500,
-    ),
-  )
-}
-

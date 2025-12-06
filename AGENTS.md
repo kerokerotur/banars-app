@@ -9,6 +9,12 @@
 開発環境・コマンド運用:
 - Flutter 関連の CLI コマンドを実行する際は、必ず FVM を用いて `fvm flutter <command>` の形式で実行し、直接 `flutter` を呼び出さないこと。
 - Supabase Edge Functions を新規作成する際は、必ず `supabase functions new <function名>` を先に実行すること。CLI が `functions/` ディレクトリと `config.toml` への設定を自動生成するため、手動でファイルを作成しない。生成後に `index.ts` と `deno.json` を編集して実装を行う。
+- Edge Functions の依存関係は **ハイブリッド構成** で管理する:
+  - `infra/supabase/functions/deno.json` に全関数共通の依存（Hono、Zod、Supabase等）を定義する。
+  - `infra/supabase/functions/<function名>/deno.json` に関数固有の依存を追記する（Supabase CLI が空のimportsで生成）。
+  - Denoは両方の設定を自動的にマージするため、共通依存は一箇所で管理できる。
+  - 新しい依存を追加する場合、全関数で使うなら親の `deno.json`、特定関数でのみ使うなら個別の `deno.json` に追記すること。
+  - 詳細は `infra/supabase/README.md` の「Edge Functions 依存関係管理」セクションを参照。
 
 PRD を扱う際の手順（AI 用）:
 - PRD の更新前に、背景/目的、ステークホルダー、要件（機能・体験）の 3 章に情報が揃っているか確認する。小規模アプリのため、章 4〜7 は追加しない。
