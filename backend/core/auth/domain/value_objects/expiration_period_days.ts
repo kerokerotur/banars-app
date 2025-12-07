@@ -1,14 +1,14 @@
 import { ValueObject } from "@core/shared/value_objects/value_object.ts"
 import { InviteIssueError } from "../errors/invite_issue_error.ts"
 
-const DEFAULT_EXPIRES_IN_DAYS = 7
-const MIN_EXPIRES_IN_DAYS = 1
-const MAX_EXPIRES_IN_DAYS = 30
+const DEFAULT_EXPIRATION_PERIOD_DAYS = 7
+const MIN_EXPIRATION_PERIOD_DAYS = 1
+const MAX_EXPIRATION_PERIOD_DAYS = 30
 
 /**
- * 招待トークンの有効期限日数を表す値オブジェクト
+ * 招待トークンの有効期間日数を表す値オブジェクト
  */
-export class ExpiresInDays extends ValueObject<number> {
+export class ExpirationPeriodDays extends ValueObject<number> {
   /**
    * @param value - 検証済みの日数
    */
@@ -17,31 +17,31 @@ export class ExpiresInDays extends ValueObject<number> {
   }
 
   /**
-   * 未検証の値から有効期限日数を生成する
+   * 未検証の値から有効期間日数を生成する
    * @param value - 日数（1-30の範囲）。未指定の場合はデフォルト値（7日）
-   * @returns バリデーション済みの有効期限日数
+   * @returns バリデーション済みの有効期間日数
    * @throws {InviteIssueError} 値が範囲外または不正な場合
    */
-  static fromRaw(value?: number): ExpiresInDays {
-    const days = value ?? DEFAULT_EXPIRES_IN_DAYS
+  static fromRaw(value?: number): ExpirationPeriodDays {
+    const days = value ?? DEFAULT_EXPIRATION_PERIOD_DAYS
 
     if (typeof days !== "number" || !Number.isInteger(days)) {
       throw new InviteIssueError(
         "invalid_request",
-        "expiresInDays は整数で指定してください。",
+        "expirationDays は整数で指定してください。",
         400,
       )
     }
 
-    if (days < MIN_EXPIRES_IN_DAYS || days > MAX_EXPIRES_IN_DAYS) {
+    if (days < MIN_EXPIRATION_PERIOD_DAYS || days > MAX_EXPIRATION_PERIOD_DAYS) {
       throw new InviteIssueError(
         "invalid_request",
-        `expiresInDays は ${MIN_EXPIRES_IN_DAYS}〜${MAX_EXPIRES_IN_DAYS} の範囲で指定してください。`,
+        `expirationDays は ${MIN_EXPIRATION_PERIOD_DAYS}〜${MAX_EXPIRATION_PERIOD_DAYS} の範囲で指定してください。`,
         400,
       )
     }
 
-    return new ExpiresInDays(days)
+    return new ExpirationPeriodDays(days)
   }
 
   /**
@@ -62,3 +62,4 @@ export class ExpiresInDays extends ValueObject<number> {
     return expiresAt
   }
 }
+

@@ -1,7 +1,7 @@
 import { zValidator } from "@hono/zod-validator"
 
 import { executeInviteIssueUseCase } from "@core/auth/usecases/invite_issue/index.ts"
-import { ExpiresInDays } from "@core/auth/domain/value_objects/expires_in_days.ts"
+import { ExpirationPeriodDays } from "@core/auth/domain/value_objects/expiration_period_days.ts"
 import { createBaseHonoApp } from "@adapters/_shared/base/hono_app_factory.ts"
 import { authMiddleware } from "@adapters/_shared/middleware/auth.ts"
 import { inviteIssueRequestSchema } from "./schemas.ts"
@@ -25,7 +25,7 @@ export function createInviteIssueHandler(deps: InviteIssueHandlerDeps) {
     const userId = c.get("userId")!
 
     // 値オブジェクトを生成（バリデーションは fromRaw で実施）
-    const expiresInDays = ExpiresInDays.fromRaw(body.expiresInDays)
+    const expirationDays = ExpirationPeriodDays.fromRaw(body.expirationDays)
 
     // リポジトリファクトリーを使用してリポジトリを生成
     const factory = new AuthRepositoryFactory(supabaseClient)
@@ -33,7 +33,7 @@ export function createInviteIssueHandler(deps: InviteIssueHandlerDeps) {
 
     // ユースケース実行（リポジトリをDI）
     const result = await executeInviteIssueUseCase(
-      { expiresInDays, issuedBy: userId },
+      { expirationDays, issuedBy: userId },
       { inviteTokenRepository },
     )
 

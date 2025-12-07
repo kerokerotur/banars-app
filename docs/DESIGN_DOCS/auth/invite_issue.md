@@ -40,10 +40,10 @@ sequenceDiagram
 - **Input**
   ```json
   {
-    "expiresInDays": 7
+    "expirationDays": 7
   }
   ```
-  - `expiresInDays`: 有効期限（日数）。省略時はデフォルト 7 日。1〜30 の範囲で指定可能。
+  - `expirationDays`: 有効期間（日数）。省略時はデフォルト 7 日。1〜30 の範囲で指定可能。
 
 - **Process**
   1. Authorization ヘッダーから JWT を取得し、Supabase Auth で検証。
@@ -52,7 +52,7 @@ sequenceDiagram
   4. 生トークンを SHA256 でハッシュ化し、`token_hash` を得る。
   5. `invite_token` テーブルに INSERT:
      - `token_hash`: ハッシュ値
-     - `expires_datetime`: `now() + expiresInDays days`
+     - `expires_datetime`: `now() + expirationDays days`
      - `issued_by`: 発行者の `user_id`
      - `created_user`: 発行者の `user_id`
 
@@ -69,7 +69,7 @@ sequenceDiagram
 - **エラーコード**:
   - `unauthorized` (401): JWT が無効または未指定。
   - `forbidden` (403): `role` が `manager` でない。
-  - `invalid_request` (400): `expiresInDays` が範囲外。
+  - `invalid_request` (400): `expirationDays` が範囲外。
   - `internal_error` (500): DB 操作の失敗など。
 
 ### 招待リンクの形式

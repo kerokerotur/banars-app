@@ -14,8 +14,8 @@ export async function executeInviteIssueUseCase(
   const inviteToken = InviteToken.fromRaw(tokenValue)
   const tokenHash = await inviteToken.hash()
 
-  // ExpiresInDays値オブジェクトから有効期限を計算
-  const expiresAt = request.expiresInDays.calculateExpiresAt()
+  // ExpirationPeriodDays値オブジェクトから有効期限を計算
+  const expiresAt = request.expirationDays.calculateExpiresAt()
 
   // リポジトリを使ってトークンを保存
   await deps.inviteTokenRepository.insert({
@@ -30,4 +30,3 @@ export async function executeInviteIssueUseCase(
     expiresAt,
   }
 }
-
