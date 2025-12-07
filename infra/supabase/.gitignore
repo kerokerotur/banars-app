@@ -6,3 +6,6 @@
 .env.keys
 .env.local
 .env.*.local
+
+# Edge Functions バンドル出力
+functions/*/dist/

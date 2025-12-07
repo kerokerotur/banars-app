@@ -1,4 +1,4 @@
-import { createInviteIssueHandler } from "../../../../backend/adapters/supabase/auth/invite_issue/handler.ts"
+import { createInviteIssueHandler } from "@adapters/supabase/auth/invite_issue/handler.ts"
 
 const app = createInviteIssueHandler({
   supabaseUrl: requireEnv("SUPABASE_URL"),

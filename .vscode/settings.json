@@ -5,5 +5,8 @@
   "dart.flutterSdkPaths": [
     "apps/mobile/.fvm/versions/3.32.0",
     "/Users/kei/fvm/versions/3.32.0"
-  ]
+  ],
+  "deno.enable": true,
+  "deno.enablePaths": ["infra/supabase/functions"],
+  "deno.config": "infra/supabase/functions/deno.json"
 }

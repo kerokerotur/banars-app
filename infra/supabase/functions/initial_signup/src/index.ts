@@ -1,4 +1,4 @@
-import { createInitialSignupHandler } from "../../../../backend/adapters/supabase/auth/initial_signup/handler.ts"
+import { createInitialSignupHandler } from "@adapters/supabase/auth/initial_signup/handler.ts"
 
 const app = createInitialSignupHandler({
   supabaseUrl: requireEnv("SUPABASE_URL"),

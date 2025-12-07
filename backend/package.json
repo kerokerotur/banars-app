@@ -4,7 +4,8 @@
   "description": "Supabase Edge Function アダプタと core ロジックのテスト実行環境 (Vite + Vitest)",
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "bundle-functions": "npx tsx scripts/bundle-functions.ts"
   },
   "keywords": [],
   "author": "",
@@ -18,7 +19,10 @@
     "@hono/zod-validator": "^0.4.1"
   },
   "devDependencies": {
+    "smol-toml": "^1.3.1",
     "@types/node": "^24.10.1",
+    "esbuild": "^0.24.2",
+    "tsx": "^4.19.2",
     "typescript": "^5.9.3",
     "vite": "^7.2.6",
     "vitest": "^4.0.15"

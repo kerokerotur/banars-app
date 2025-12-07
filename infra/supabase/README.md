@@ -58,17 +58,65 @@
 - **新規作成時は必ず CLI を使用する**: `supabase functions new <function名>` を実行すること。CLI が `functions/<function名>/` ディレクトリと `config.toml` への設定を自動生成する。手動でファイルやディレクトリを作成しない。
 - **生成後の編集**: CLI が生成した `index.ts` と `deno.json` を編集して実装を行う。
 - **アーキテクチャ**: Edge Function のエントリポイント (`index.ts`) は薄く保ち、ビジネスロジックは `backend/` 配下のコア層・アダプター層に実装する。
+- **デプロイ時はバンドルが必須**: `backend/` 配下のコードを参照するため、デプロイ前に必ずバンドルを実行する。
 
 ### Edge Function 新規作成の手順
 ```bash
+# 1. CLI で関数を作成
 cd infra/supabase
 supabase functions new <function名>
+
+# 2. バンドルを実行（index.ts が src/ に移動され、config.toml が自動更新される）
+cd ../..  # プロジェクトルートへ
+make bundle-functions
 ```
 
-生成されるファイル:
-- `functions/<function名>/index.ts` - エントリポイント
+生成・変換されるファイル:
+- `functions/<function名>/src/index.ts` - ソースコード（CLI 生成後にバンドル時に自動移動）
+- `functions/<function名>/dist/index.ts` - バンドル出力（gitignore、デプロイ対象）
 - `functions/<function名>/deno.json` - 依存関係マッピング（空の imports で生成）
-- `config.toml` への設定追加（自動）
+- `config.toml` への設定追加（自動）+ entrypoint の自動修正
+
+## Edge Functions バンドル
+
+### なぜバンドルが必要か
+
+Edge Function のエントリポイント (`src/index.ts`) は `backend/` 配下のコア層・アダプター層を参照しますが、Supabase CLI は `functions/` ディレクトリ内のファイルのみをアップロードします。そのため、デプロイ前に esbuild で全ての依存関係を含めたバンドルを生成します。
+
+### バンドルコマンド
+
+```bash
+# プロジェクトルートで実行
+make bundle-functions    # バンドルのみ
+make deploy-functions    # バンドル + デプロイ
+```
+
+### バンドルスクリプトの動作
+
+`backend/scripts/bundle-functions.ts` は以下を自動実行します：
+
+1. **ファイル構造の自動変換**: `index.ts` が存在し `src/index.ts` がない場合、自動的に `src/` へ移動
+2. **バンドル生成**: `src/index.ts` を esbuild でバンドルし `dist/index.ts` へ出力
+3. **config.toml 更新**: 各関数の `entrypoint` を `dist/index.ts` に自動修正
+
+### ディレクトリ構成（バンドル後）
+
+```
+functions/
+├── deno.json                    # 全Edge Function共通の依存関係
+├── initial_signup/
+│   ├── src/
+│   │   └── index.ts             # ソースコード
+│   ├── dist/
+│   │   └── index.ts             # バンドル出力（gitignore）
+│   └── deno.json
+└── invite_issue/
+    ├── src/
+    │   └── index.ts
+    ├── dist/
+    │   └── index.ts
+    └── deno.json
+```
 
 ## Edge Functions 依存関係管理
 

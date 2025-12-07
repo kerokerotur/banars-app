@@ -10,7 +10,8 @@
 - Flutter 関連の CLI コマンドを実行する際は、必ず FVM を用いて `fvm flutter <command>` の形式で実行し、直接 `flutter` を呼び出さないこと。
 - core/domain/ 配下のクラス（entity、value_objects、service）には必ずユニットテストを実装する。詳細は `backend/README.md` の「ドメイン層のテストルール」を参照。
 - 値オブジェクト（Value Object）を新規作成する際は、必ず `backend/core/shared/value_objects/value_object.ts` の基底クラス `ValueObject<T>` を継承すること。これにより等価性判定（`equals` メソッド）が統一される。
-- Supabase Edge Functions を新規作成する際は、必ず `supabase functions new <function名>` を先に実行すること。CLI が `functions/` ディレクトリと `config.toml` への設定を自動生成するため、手動でファイルを作成しない。生成後に `index.ts` と `deno.json` を編集して実装を行う。
+- Supabase Edge Functions を新規作成する際は、必ず `supabase functions new <function名>` を先に実行すること。CLI が `functions/` ディレクトリと `config.toml` への設定を自動生成するため、手動でファイルを作成しない。生成後に `make bundle-functions` を実行すると、`index.ts` が `src/index.ts` に自動移動され、`config.toml` の `entrypoint` も自動修正される。その後 `src/index.ts` と `deno.json` を編集して実装を行う。
+- Edge Functions のデプロイ時は必ず `make deploy-functions` を使用すること。このコマンドはバンドル（`backend/` 配下のコードを含める）と config.toml の更新を自動で行ってからデプロイする。`supabase functions deploy` を直接実行しないこと。
 - Edge Functions の依存関係は **ハイブリッド構成** で管理する:
   - `infra/supabase/functions/deno.json` に全関数共通の依存（Hono、Zod、Supabase等）を定義する。
   - `infra/supabase/functions/<function名>/deno.json` に関数固有の依存を追記する（Supabase CLI が空のimportsで生成）。
