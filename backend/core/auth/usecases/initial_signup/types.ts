@@ -1,4 +1,4 @@
-import type { LineTokens } from "@core/auth/domain/entity/line_tokens.ts"
+import type { LineTokens } from "@core/auth/domain/value_objects/line_tokens.ts"
 import type { LineProfile } from "@core/auth/domain/entity/line_profile.ts"
 
 export interface InitialSignupUseCaseRequest {

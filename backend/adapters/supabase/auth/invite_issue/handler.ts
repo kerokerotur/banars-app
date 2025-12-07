@@ -1,7 +1,7 @@
 import { zValidator } from "@hono/zod-validator"
 
 import { executeInviteIssueUseCase } from "@core/auth/usecases/invite_issue/index.ts"
-import { ExpiresInDays } from "@core/auth/domain/entity/expires_in_days.ts"
+import { ExpiresInDays } from "@core/auth/domain/value_objects/expires_in_days.ts"
 import { createBaseHonoApp } from "@adapters/_shared/base/hono_app_factory.ts"
 import { authMiddleware } from "@adapters/_shared/middleware/auth.ts"
 import { inviteIssueRequestSchema } from "./schemas.ts"

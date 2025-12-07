@@ -49,6 +49,10 @@ export async function verifyLineIdToken(
     }
     return payload
   } catch (error) {
+    // InitialSignupError はそのまま再スロー
+    if (error instanceof InitialSignupError) {
+      throw error
+    }
     const message = error instanceof Error ? error.message : String(error)
     throw new InitialSignupError(
       "line_token_invalid",

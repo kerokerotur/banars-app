@@ -6,7 +6,7 @@ export interface LineTokensPayload {
 }
 
 /**
- * LINE認証トークンを表すエンティティ
+ * LINE認証トークンを表す値オブジェクト
  */
 export class LineTokens {
   private constructor(
@@ -15,9 +15,9 @@ export class LineTokens {
   ) {}
 
   /**
-   * 未検証のペイロードからLINEトークンエンティティを生成する
+   * 未検証のペイロードからLINEトークン値オブジェクトを生成する
    * @param payload - 未検証のペイロード
-   * @returns バリデーション済みのLINEトークンエンティティ
+   * @returns バリデーション済みのLINEトークン値オブジェクト
    * @throws {InitialSignupError} ペイロードが不正な場合
    */
   static fromRaw(payload: unknown): LineTokens {
@@ -39,9 +39,9 @@ export class LineTokens {
   }
 
   /**
-   * 検証済みペイロードからLINEトークンエンティティを生成する
+   * 検証済みペイロードからLINEトークン値オブジェクトを生成する
    * @param payload - 検証済みペイロード
-   * @returns LINEトークンエンティティ
+   * @returns LINEトークン値オブジェクト
    */
   static fromPayload(payload: LineTokensPayload): LineTokens {
     return new LineTokens(payload.idToken, payload.accessToken)
@@ -62,3 +62,4 @@ export class LineTokens {
     return typeof value === "object" && value !== null && !Array.isArray(value)
   }
 }
+

@@ -20,8 +20,9 @@
 | ディレクトリ | 役割 |
 | --- | --- |
 | `usecases/` | アプリケーションサービス層。入力 DTO を受け取り、domain 層を組み合わせたユースケースを実装する。Edge Function からはここを import する。 |
-| `domain/` | ドメイン層を集約するディレクトリ。entity、service、irepository、errors を含む。 |
-| `domain/entity/` | ドメインエンティティ・値オブジェクトを定義。永続化フォーマットへ依存しない。 |
+| `domain/` | ドメイン層を集約するディレクトリ。entity、value_objects、service、irepository、errors を含む。 |
+| `domain/entity/` | ドメインエンティティを定義。一意の識別子を持ち、ライフサイクルを通じて同一性を維持するオブジェクト。 |
+| `domain/value_objects/` | 値オブジェクトを定義。識別子を持たず、属性によって等価性が決まる不変オブジェクト。 |
 | `domain/service/` | ドメインサービスやポリシー計算。複数ユースケースから再利用するビジネスルールを配置。 |
 | `domain/irepository/` | リポジトリや外部サービス呼び出しの抽象インターフェース。adapters 層で具象実装を持たせる。 |
 | `domain/errors/` | コンテキスト固有のドメインエラークラスを配置。 |
@@ -55,7 +56,12 @@
 ```
 core/auth/
 ├── domain/
-│   ├── entity/                    # ドメインエンティティ
+│   ├── entity/                    # ドメインエンティティ（識別子を持つ）
+│   │   └── line_profile.ts
+│   ├── value_objects/             # 値オブジェクト（不変、識別子なし）
+│   │   ├── expires_in_days.ts
+│   │   ├── invite_token.ts
+│   │   └── line_tokens.ts
 │   ├── service/
 │   │   └── iauth_service.ts       # サービスインターフェース
 │   ├── irepository/
@@ -222,9 +228,56 @@ import { supabaseMiddleware } from "@adapters/_shared/middleware/supabase.ts"
 2. コンテキストを新設・改修する場合、先に `docs/DESIGN_DOCS/overview.md` と各コンテキスト配下のドキュメントを更新し、コードの配置規約を揃える。
 3. Edge Function を実装する際は、`usecases` フォルダ内にユースケースを追加し、adapters からユースケースを呼び出す構造を徹底する。
 4. テストは core 配下で完結させ、外部依存を追加したい場合は必ずユーザーに確認した上で方針を更新する。
-5. ドメイン層のファイルは `domain/entity/`、`domain/service/`、`domain/irepository/`、`domain/errors/` に適切に配置し、レイヤー間の依存関係を明確にする。
+5. ドメイン層のファイルは `domain/entity/`（エンティティ）、`domain/value_objects/`（値オブジェクト）、`domain/service/`、`domain/irepository/`、`domain/errors/` に適切に配置し、レイヤー間の依存関係を明確にする。
 6. アダプタ層では Hono を使用し、ルーティング、ミドルウェア、バリデーション（Zod）を活用する。リクエストバリデーションは `schemas.ts` に Zod スキーマとして定義する。
 7. 認証が必要なエンドポイントでは `authMiddleware()` を使用し、必要に応じて `requiredRole` オプションでロール検証を行う。
 8. エラーハンドリングは `app.onError(errorHandler)` で一元化し、core 層のドメインエラーを適切な HTTP レスポンスに変換する。
 
 この README にない運用ルールを追加・変更する場合は、本書と `AGENTS.md` をセットで更新し、次回以降のセッションで参照できるようにしてください。
+
+## ドメイン層のテストルール
+
+core/domain/ 配下のクラスには、テストの実装を必須とする。
+
+### テスト対象
+
+| ディレクトリ | テスト要否 | 理由 |
+| --- | --- | --- |
+| `domain/entity/` | **必須** | ビジネスロジック（バリデーション、変換、計算）を含むため |
+| `domain/value_objects/` | **必須** | ビジネスロジック（バリデーション、変換、計算）を含むため |
+| `domain/service/` | **必須** | ドメインサービスやポリシー計算を含むため |
+| `domain/irepository/` | 不要 | インターフェース定義のみで実装を持たないため |
+| `domain/errors/` | 任意 | シンプルなエラークラスで、ロジックを持たない場合は省略可 |
+
+### テストファイルの配置
+
+テストは `__tests__/domain/` 配下に、対象ファイルと同じディレクトリ構造で配置する。
+
+```
+core/auth/
+├── domain/
+│   ├── entity/
+│   │   └── line_profile.ts        # エンティティ
+│   ├── value_objects/
+│   │   ├── expires_in_days.ts     # 値オブジェクト
+│   │   ├── invite_token.ts
+│   │   └── line_tokens.ts
+│   └── service/
+│       └── line_token_verifier.ts
+└── __tests__/
+    └── domain/
+        ├── entity/
+        │   └── line_profile.test.ts
+        ├── value_objects/
+        │   ├── expires_in_days.test.ts
+        │   ├── invite_token.test.ts
+        │   └── line_tokens.test.ts
+        └── service/
+            └── line_token_verifier.test.ts
+```
+
+### テスト実装の指針
+
+1. **正常系と異常系の両方をカバー**: バリデーションエラー、境界値、エッジケースを含める
+2. **外部依存はモック化**: jose などの外部ライブラリはモックして、ドメインロジックのみをテスト
+3. **テストは core 層で完結**: Supabase SDK などの外部依存をテストに持ち込まない

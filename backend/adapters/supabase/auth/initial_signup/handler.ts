@@ -1,7 +1,7 @@
 import { zValidator } from "@hono/zod-validator"
 
 import { executeInitialSignupUseCase } from "@core/auth/usecases/initial_signup/index.ts"
-import { LineTokens } from "@core/auth/domain/entity/line_tokens.ts"
+import { LineTokens } from "@core/auth/domain/value_objects/line_tokens.ts"
 import { LineProfile } from "@core/auth/domain/entity/line_profile.ts"
 import { createBaseHonoApp } from "@adapters/_shared/base/hono_app_factory.ts"
 import { initialSignupRequestSchema } from "./schemas.ts"

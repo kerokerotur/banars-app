@@ -8,6 +8,7 @@
 
 開発環境・コマンド運用:
 - Flutter 関連の CLI コマンドを実行する際は、必ず FVM を用いて `fvm flutter <command>` の形式で実行し、直接 `flutter` を呼び出さないこと。
+- core/domain/ 配下のクラス（entity、value_objects、service）には必ずユニットテストを実装する。詳細は `backend/README.md` の「ドメイン層のテストルール」を参照。
 - Supabase Edge Functions を新規作成する際は、必ず `supabase functions new <function名>` を先に実行すること。CLI が `functions/` ディレクトリと `config.toml` への設定を自動生成するため、手動でファイルを作成しない。生成後に `index.ts` と `deno.json` を編集して実装を行う。
 - Edge Functions の依存関係は **ハイブリッド構成** で管理する:
   - `infra/supabase/functions/deno.json` に全関数共通の依存（Hono、Zod、Supabase等）を定義する。
