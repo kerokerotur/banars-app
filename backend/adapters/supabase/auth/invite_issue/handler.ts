@@ -1,14 +1,11 @@
-import { Hono } from "hono"
 import { zValidator } from "@hono/zod-validator"
 
 import { executeInviteIssueUseCase } from "@core/auth/usecases/invite_issue/index.ts"
 import { ExpiresInDays } from "@core/auth/domain/entity/expires_in_days.ts"
-import { supabaseMiddleware } from "@adapters/_shared/middleware/supabase.ts"
+import { createBaseHonoApp } from "@adapters/_shared/base/hono_app_factory.ts"
 import { authMiddleware } from "@adapters/_shared/middleware/auth.ts"
-import { errorHandler } from "@adapters/_shared/middleware/error.ts"
-import type { HonoVariables } from "@adapters/_shared/types/hono.ts"
 import { inviteIssueRequestSchema } from "./schemas.ts"
-import { SupabaseInviteTokenRepository } from "../repositories/invite_token_repository.ts"
+import { AuthRepositoryFactory } from "../_shared/repository_factory.ts"
 
 export interface InviteIssueHandlerDeps {
   supabaseUrl: string
@@ -16,22 +13,10 @@ export interface InviteIssueHandlerDeps {
 }
 
 export function createInviteIssueHandler(deps: InviteIssueHandlerDeps) {
-  const app = new Hono<{ Variables: HonoVariables }>()
-
-  // エラーハンドリング
-  app.onError(errorHandler)
-
-  // Supabaseクライアント注入
-  app.use(
-    "*",
-    supabaseMiddleware({
-      supabaseUrl: deps.supabaseUrl,
-      serviceRoleKey: deps.serviceRoleKey,
-    }),
-  )
-
-  // JWT検証 + manager権限チェック
-  app.use("*", authMiddleware({ requiredRole: "manager" }))
+  // 基本設定済みのHonoアプリを作成（認証ミドルウェアを追加）
+  const app = createBaseHonoApp(deps, {
+    additionalMiddleware: [authMiddleware({ requiredRole: "manager" })],
+  })
 
   // POSTエンドポイント
   app.post("/", zValidator("json", inviteIssueRequestSchema), async (c) => {
@@ -42,10 +27,9 @@ export function createInviteIssueHandler(deps: InviteIssueHandlerDeps) {
     // ドメインエンティティを生成（バリデーションはコンストラクタで実施）
     const expiresInDays = new ExpiresInDays(body.expiresInDays)
 
-    // リポジトリのインスタンス化
-    const inviteTokenRepository = new SupabaseInviteTokenRepository(
-      supabaseClient,
-    )
+    // リポジトリファクトリーを使用してリポジトリを生成
+    const factory = new AuthRepositoryFactory(supabaseClient)
+    const inviteTokenRepository = factory.createInviteTokenRepository()
 
     // ユースケース実行（リポジトリをDI）
     const result = await executeInviteIssueUseCase(

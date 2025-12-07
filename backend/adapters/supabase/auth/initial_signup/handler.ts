@@ -1,17 +1,11 @@
-import { Hono } from "hono"
 import { zValidator } from "@hono/zod-validator"
 
 import { executeInitialSignupUseCase } from "@core/auth/usecases/initial_signup/index.ts"
 import { LineTokens } from "@core/auth/domain/entity/line_tokens.ts"
 import { LineProfile } from "@core/auth/domain/entity/line_profile.ts"
-import { supabaseMiddleware } from "@adapters/_shared/middleware/supabase.ts"
-import { errorHandler } from "@adapters/_shared/middleware/error.ts"
-import type { HonoVariables } from "@adapters/_shared/types/hono.ts"
+import { createBaseHonoApp } from "@adapters/_shared/base/hono_app_factory.ts"
 import { initialSignupRequestSchema } from "./schemas.ts"
-import { SupabaseInviteTokenRepository } from "../repositories/invite_token_repository.ts"
-import { SupabaseUserRepository } from "../repositories/user_repository.ts"
-import { SupabaseUserDetailRepository } from "../repositories/user_detail_repository.ts"
-import { SupabaseAuthService } from "../services/auth_service.ts"
+import { AuthRepositoryFactory } from "../_shared/repository_factory.ts"
 
 export interface InitialSignupHandlerDeps {
   supabaseUrl: string
@@ -21,19 +15,8 @@ export interface InitialSignupHandlerDeps {
 }
 
 export function createInitialSignupHandler(deps: InitialSignupHandlerDeps) {
-  const app = new Hono<{ Variables: HonoVariables }>()
-
-  // エラーハンドリング
-  app.onError(errorHandler)
-
-  // Supabaseクライアント注入
-  app.use(
-    "*",
-    supabaseMiddleware({
-      supabaseUrl: deps.supabaseUrl,
-      serviceRoleKey: deps.serviceRoleKey,
-    }),
-  )
+  // 基本設定済みのHonoアプリを作成
+  const app = createBaseHonoApp(deps)
 
   // POSTエンドポイント
   app.post("/", zValidator("json", initialSignupRequestSchema), async (c) => {
@@ -44,15 +27,14 @@ export function createInitialSignupHandler(deps: InitialSignupHandlerDeps) {
     const lineTokens = LineTokens.fromRaw(body.lineTokens)
     const lineProfile = LineProfile.fromRaw(body.lineProfile)
 
-    // リポジトリとサービスのインスタンス化
-    const inviteTokenRepository = new SupabaseInviteTokenRepository(
-      supabaseClient,
-    )
-    const userRepository = new SupabaseUserRepository(supabaseClient)
-    const userDetailRepository = new SupabaseUserDetailRepository(
-      supabaseClient,
-    )
-    const authService = new SupabaseAuthService(supabaseClient)
+    // リポジトリファクトリーを使用してリポジトリとサービスを一括生成
+    const factory = new AuthRepositoryFactory(supabaseClient)
+    const {
+      inviteTokenRepository,
+      userRepository,
+      userDetailRepository,
+      authService,
+    } = factory.createAll()
 
     // ユースケース実行（リポジトリとサービスをDI）
     const result = await executeInitialSignupUseCase(
