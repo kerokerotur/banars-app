@@ -2,6 +2,7 @@ import { Hono } from "hono"
 import { zValidator } from "@hono/zod-validator"
 
 import { executeInviteIssueUseCase } from "@core/auth/usecases/invite_issue/index.ts"
+import { ExpiresInDays } from "@core/auth/domain/entity/expires_in_days.ts"
 import { supabaseMiddleware } from "@adapters/_shared/middleware/supabase.ts"
 import { authMiddleware } from "@adapters/_shared/middleware/auth.ts"
 import { errorHandler } from "@adapters/_shared/middleware/error.ts"
@@ -38,6 +39,9 @@ export function createInviteIssueHandler(deps: InviteIssueHandlerDeps) {
     const supabaseClient = c.get("supabaseClient")
     const userId = c.get("userId")!
 
+    // ドメインエンティティを生成（バリデーションはコンストラクタで実施）
+    const expiresInDays = new ExpiresInDays(body.expiresInDays)
+
     // リポジトリのインスタンス化
     const inviteTokenRepository = new SupabaseInviteTokenRepository(
       supabaseClient,
@@ -45,13 +49,8 @@ export function createInviteIssueHandler(deps: InviteIssueHandlerDeps) {
 
     // ユースケース実行（リポジトリをDI）
     const result = await executeInviteIssueUseCase(
-      {
-        expiresInDays: body.expiresInDays ?? 7,
-        issuedBy: userId,
-      },
-      {
-        inviteTokenRepository,
-      },
+      { expiresInDays, issuedBy: userId },
+      { inviteTokenRepository },
     )
 
     return c.json({

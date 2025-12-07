@@ -1,5 +1,5 @@
-import { hashInviteToken } from "@core/auth/domain/entity/invite_token.ts"
-import { buildLineProfile } from "@core/auth/domain/entity/line_profile.ts"
+import { InviteToken } from "@core/auth/domain/entity/invite_token.ts"
+import { LineProfile } from "@core/auth/domain/entity/line_profile.ts"
 import { InitialSignupError } from "@core/auth/domain/errors/initial_signup_error.ts"
 import {
   DEFAULT_LINE_ISSUER,
@@ -22,12 +22,8 @@ export async function executeInitialSignupUseCase(
     issuer: deps.expectedLineIssuer ?? DEFAULT_LINE_ISSUER,
   })
 
-  const profile = buildLineProfile(
-    request.lineProfile,
-    claims.name ?? null,
-  )
-
-  if (claims.sub !== profile.lineUserId) {
+  // LINE ProfileとID Tokenのユーザー一致チェック
+  if (claims.sub !== request.lineProfile.lineUserId) {
     throw new InitialSignupError(
       "line_profile_mismatch",
       "LINE プロフィールと ID Token のユーザーが一致しません。",
@@ -36,7 +32,8 @@ export async function executeInitialSignupUseCase(
   }
 
   // 招待トークンの検証
-  const inviteTokenHash = await hashInviteToken(request.inviteToken)
+  const inviteToken = InviteToken.fromRaw(request.inviteToken)
+  const inviteTokenHash = await inviteToken.hash()
   await deps.inviteTokenRepository.findByHashAndValidate(inviteTokenHash)
 
   // 既存ユーザーチェック
@@ -55,8 +52,8 @@ export async function executeInitialSignupUseCase(
   const authUserId = await deps.authService.createUser({
     email: supabaseEmail,
     lineUserId: claims.sub,
-    displayName: profile.displayName,
-    avatarUrl: profile.avatarUrl,
+    displayName: request.lineProfile.displayName,
+    avatarUrl: request.lineProfile.avatarUrl,
   })
 
   // ユーザーレコード作成
@@ -69,8 +66,8 @@ export async function executeInitialSignupUseCase(
   // ユーザー詳細作成
   await deps.userDetailRepository.upsert({
     userId: authUserId,
-    displayName: profile.displayName,
-    avatarUrl: profile.avatarUrl,
+    displayName: request.lineProfile.displayName,
+    avatarUrl: request.lineProfile.avatarUrl,
     syncedDatetime: new Date(),
   })
 

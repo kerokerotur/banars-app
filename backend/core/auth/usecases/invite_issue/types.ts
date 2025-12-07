@@ -1,5 +1,12 @@
+import type { ExpiresInDays } from "@core/auth/domain/entity/expires_in_days.ts"
+
 export interface InviteIssueRequest {
   expiresInDays?: number
+  issuedBy: string
+}
+
+export interface ValidatedInviteIssueRequest {
+  expiresInDays: ExpiresInDays
   issuedBy: string
 }
 

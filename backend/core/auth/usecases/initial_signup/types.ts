@@ -1,12 +1,10 @@
+import type { LineTokens } from "@core/auth/domain/entity/line_tokens.ts"
+import type { LineProfile } from "@core/auth/domain/entity/line_profile.ts"
+
 export interface InitialSignupUseCaseRequest {
   inviteToken: string
-  lineTokens: LineTokensPayload
-  lineProfile: LineProfilePayload
-}
-
-export interface LineTokensPayload {
-  idToken: string
-  accessToken: string
+  lineTokens: LineTokens
+  lineProfile: LineProfile
 }
 
 export interface InitialSignupDependencies {
@@ -23,6 +21,3 @@ export interface InitialSignupUseCaseResponse {
   userId: string
   sessionTransferToken: string | null
 }
-
-export type { LineProfilePayload }
-import type { LineProfilePayload } from "@core/auth/domain/entity/line_profile.ts"

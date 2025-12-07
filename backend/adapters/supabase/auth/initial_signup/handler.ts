@@ -2,6 +2,8 @@ import { Hono } from "hono"
 import { zValidator } from "@hono/zod-validator"
 
 import { executeInitialSignupUseCase } from "@core/auth/usecases/initial_signup/index.ts"
+import { LineTokens } from "@core/auth/domain/entity/line_tokens.ts"
+import { LineProfile } from "@core/auth/domain/entity/line_profile.ts"
 import { supabaseMiddleware } from "@adapters/_shared/middleware/supabase.ts"
 import { errorHandler } from "@adapters/_shared/middleware/error.ts"
 import type { HonoVariables } from "@adapters/_shared/types/hono.ts"
@@ -38,6 +40,10 @@ export function createInitialSignupHandler(deps: InitialSignupHandlerDeps) {
     const body = c.req.valid("json")
     const supabaseClient = c.get("supabaseClient")
 
+    // ドメインエンティティを生成（バリデーションはクラスで実施）
+    const lineTokens = LineTokens.fromRaw(body.lineTokens)
+    const lineProfile = LineProfile.fromRaw(body.lineProfile)
+
     // リポジトリとサービスのインスタンス化
     const inviteTokenRepository = new SupabaseInviteTokenRepository(
       supabaseClient,
@@ -52,12 +58,8 @@ export function createInitialSignupHandler(deps: InitialSignupHandlerDeps) {
     const result = await executeInitialSignupUseCase(
       {
         inviteToken: body.inviteToken,
-        lineTokens: body.lineTokens,
-        lineProfile: {
-          lineUserId: body.lineProfile.lineUserId,
-          displayName: body.lineProfile.displayName,
-          avatarUrl: body.lineProfile.avatarUrl ?? null,
-        },
+        lineTokens,
+        lineProfile,
       },
       {
         lineChannelId: deps.lineChannelId,
