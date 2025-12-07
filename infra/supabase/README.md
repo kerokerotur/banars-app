@@ -8,6 +8,7 @@
 - `config.toml`: Supabase CLI の設定。
 - `migrations/`: Supabase CLI が生成する SQL マイグレーション。**1 ファイルにつき 1 テーブル（または 1 つの共通オブジェクト）だけを扱い、他テーブルの操作を混在させない**ことで、ファイル名から意図を読み取れるようにします。
 - `functions/`: Edge Functions のエントリポイント。各関数ごとにサブディレクトリを作成。
+- `seed.sql`: ローカル開発用の初期データ。`supabase db reset` 時に自動適用。
 - `.vscode/`: CLI 作業用の推奨設定 (任意)。
 
 ## マイグレーション作成・命名規則
@@ -25,6 +26,33 @@
 1. `supabase migration new <name>` を実行して `infra/supabase/migrations/` にファイルを作成し、前述の 1 テーブル 1 ファイルルールを必ず守る。
 2. ローカルで `supabase db push` または `supabase db reset` を実行し、エラーがないことを確認。
 3. 関連する DESIGN_DOCS / README に差分があれば同時に更新し、PR で適用手順を共有。
+
+## シードデータ（初期データ）
+
+ローカル開発・テストに必要な初期データは `seed.sql` に集約します。
+
+### 適用タイミング
+
+- **`supabase db reset`**: マイグレーション適用後に `seed.sql` が自動実行される
+- **`supabase db push`**: シードは実行されない（マイグレーションのみ）
+
+つまり、**本番環境には影響しません**。
+
+### 用途
+
+- テスト用ユーザー（manager ロールなど権限付きユーザー）
+- 動作確認に必要なサンプルデータ
+- チーム開発で共通の初期状態を再現
+
+### 現在のシードデータ
+
+| データ | 説明 |
+| --- | --- |
+| manager ユーザー | `manager@example.com` / `password123` - 招待トークン発行など manager 権限が必要な機能のテスト用 |
+
+### 新しい初期データの追加
+
+`seed.sql` に SQL を追記してください。`ON CONFLICT DO NOTHING` を使用して冪等性を担保することを推奨します。
 
 ## Edge Functions 作成・運用ルール
 - **新規作成時は必ず CLI を使用する**: `supabase functions new <function名>` を実行すること。CLI が `functions/<function名>/` ディレクトリと `config.toml` への設定を自動生成する。手動でファイルやディレクトリを作成しない。
