@@ -1,3 +1,4 @@
+import { ValueObject } from "@core/shared/value_objects/value_object.ts"
 import { InviteIssueError } from "../errors/invite_issue_error.ts"
 
 const DEFAULT_EXPIRES_IN_DAYS = 7
@@ -7,15 +8,21 @@ const MAX_EXPIRES_IN_DAYS = 30
 /**
  * 招待トークンの有効期限日数を表す値オブジェクト
  */
-export class ExpiresInDays {
-  private readonly value: number
+export class ExpiresInDays extends ValueObject<number> {
+  /**
+   * @param value - 検証済みの日数
+   */
+  protected constructor(value: number) {
+    super(value)
+  }
 
   /**
-   * 有効期限日数を生成する
+   * 未検証の値から有効期限日数を生成する
    * @param value - 日数（1-30の範囲）。未指定の場合はデフォルト値（7日）
+   * @returns バリデーション済みの有効期限日数
    * @throws {InviteIssueError} 値が範囲外または不正な場合
    */
-  constructor(value?: number) {
+  static fromRaw(value?: number): ExpiresInDays {
     const days = value ?? DEFAULT_EXPIRES_IN_DAYS
 
     if (typeof days !== "number" || !Number.isInteger(days)) {
@@ -34,7 +41,7 @@ export class ExpiresInDays {
       )
     }
 
-    this.value = days
+    return new ExpiresInDays(days)
   }
 
   /**

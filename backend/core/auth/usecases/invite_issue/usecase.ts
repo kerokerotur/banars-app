@@ -1,4 +1,4 @@
-import { InviteToken } from "@core/auth/domain/entity/invite_token.ts"
+import { InviteToken } from "@core/auth/domain/value_objects/invite_token.ts"
 import type {
   ValidatedInviteIssueRequest,
   InviteIssueResult,

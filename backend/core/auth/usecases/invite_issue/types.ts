@@ -1,4 +1,4 @@
-import type { ExpiresInDays } from "@core/auth/domain/entity/expires_in_days.ts"
+import type { ExpiresInDays } from "@core/auth/domain/value_objects/expires_in_days.ts"
 
 export interface InviteIssueRequest {
   expiresInDays?: number

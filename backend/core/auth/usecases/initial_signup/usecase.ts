@@ -1,4 +1,4 @@
-import { InviteToken } from "@core/auth/domain/entity/invite_token.ts"
+import { InviteToken } from "@core/auth/domain/value_objects/invite_token.ts"
 import { LineProfile } from "@core/auth/domain/entity/line_profile.ts"
 import { InitialSignupError } from "@core/auth/domain/errors/initial_signup_error.ts"
 import {

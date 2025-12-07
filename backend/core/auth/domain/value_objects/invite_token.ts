@@ -1,10 +1,16 @@
+import { ValueObject } from "@core/shared/value_objects/value_object.ts"
 import { InitialSignupError } from "../errors/initial_signup_error.ts"
 
 /**
  * 招待トークンを表す値オブジェクト
  */
-export class InviteToken {
-  private constructor(private readonly value: string) {}
+export class InviteToken extends ValueObject<string> {
+  /**
+   * @param value - 正規化されたトークン文字列
+   */
+  protected constructor(value: string) {
+    super(value)
+  }
 
   /**
    * 未検証のトークン文字列から招待トークンを生成する

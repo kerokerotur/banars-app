@@ -1,3 +1,4 @@
+import { ValueObject } from "@core/shared/value_objects/value_object.ts"
 import { InitialSignupError } from "../errors/initial_signup_error.ts"
 
 export interface LineTokensPayload {
@@ -6,18 +7,34 @@ export interface LineTokensPayload {
 }
 
 /**
- * LINE認証トークンを表すエンティティ
+ * LINE認証トークンを表す値オブジェクト
  */
-export class LineTokens {
-  private constructor(
-    public readonly idToken: string,
-    public readonly accessToken: string,
-  ) {}
+export class LineTokens extends ValueObject<LineTokensPayload> {
+  /**
+   * @param value - トークンペイロード
+   */
+  protected constructor(value: LineTokensPayload) {
+    super(value)
+  }
 
   /**
-   * 未検証のペイロードからLINEトークンエンティティを生成する
+   * IDトークンを取得する
+   */
+  get idToken(): string {
+    return this.value.idToken
+  }
+
+  /**
+   * アクセストークンを取得する
+   */
+  get accessToken(): string {
+    return this.value.accessToken
+  }
+
+  /**
+   * 未検証のペイロードからLINEトークン値オブジェクトを生成する
    * @param payload - 未検証のペイロード
-   * @returns バリデーション済みのLINEトークンエンティティ
+   * @returns バリデーション済みのLINEトークン値オブジェクト
    * @throws {InitialSignupError} ペイロードが不正な場合
    */
   static fromRaw(payload: unknown): LineTokens {
@@ -35,16 +52,16 @@ export class LineTokens {
       "lineTokens.accessToken",
     )
 
-    return new LineTokens(idToken, accessToken)
+    return new LineTokens({ idToken, accessToken })
   }
 
   /**
-   * 検証済みペイロードからLINEトークンエンティティを生成する
+   * 検証済みペイロードからLINEトークン値オブジェクトを生成する
    * @param payload - 検証済みペイロード
-   * @returns LINEトークンエンティティ
+   * @returns LINEトークン値オブジェクト
    */
   static fromPayload(payload: LineTokensPayload): LineTokens {
-    return new LineTokens(payload.idToken, payload.accessToken)
+    return new LineTokens({ idToken: payload.idToken, accessToken: payload.accessToken })
   }
 
   private static validateToken(value: unknown, fieldName: string): string {
