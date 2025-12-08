@@ -15,12 +15,14 @@ CREATE INDEX IF NOT EXISTS invite_token_expires_idx
 
 ALTER TABLE public.invite_token ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS invite_token_manager_select
+DROP POLICY IF EXISTS invite_token_manager_select ON public.invite_token;
+CREATE POLICY invite_token_manager_select
   ON public.invite_token
   FOR SELECT
   USING (coalesce(auth.jwt()->> 'role', '') = 'manager');
 
-CREATE POLICY IF NOT EXISTS invite_token_manager_insert
+DROP POLICY IF EXISTS invite_token_manager_insert ON public.invite_token;
+CREATE POLICY invite_token_manager_insert
   ON public.invite_token
   FOR INSERT
   WITH CHECK (coalesce(auth.jwt()->> 'role', '') = 'manager');
