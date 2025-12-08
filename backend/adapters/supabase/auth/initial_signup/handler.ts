@@ -18,8 +18,8 @@ export function createInitialSignupHandler(deps: InitialSignupHandlerDeps) {
   // 基本設定済みのHonoアプリを作成
   const app = createBaseHonoApp(deps)
 
-  // POSTエンドポイント
-  app.post("/", zValidator("json", initialSignupRequestSchema), async (c) => {
+  // POSTエンドポイント（Supabase Edge Functionsではパスに関数名が含まれる）
+  app.post("/initial_signup", zValidator("json", initialSignupRequestSchema), async (c) => {
     const body = c.req.valid("json")
     const supabaseClient = c.get("supabaseClient")
 

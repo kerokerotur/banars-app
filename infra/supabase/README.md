@@ -16,6 +16,7 @@
 - コマンド例: `supabase migration new create_users`。CLI が `YYYYMMDDHHMMSS_create_users.sql` 形式のファイルを `migrations/` に生成します（タイムスタンプ + スネークケース名）。
 - 1 ファイルにつき 1 テーブル（もしくは 1 つの共通コンポーネント）を扱う。複数テーブルの DDL/RLS を同じファイルに入れない。
 - 共通トリガー／関数など、テーブルに紐付かないものを追加する場合は `supabase migration new setup_updated_at_trigger` など CLI で別ファイル化する。
+- **既存のマイグレーションファイルは絶対に修正しない**。Supabase はリモート環境で適用済みのマイグレーションをファイル名で管理しているため、適用済みファイルを修正しても変更は反映されない。スキーマを変更したい場合は、必ず新しいマイグレーションファイルを作成して `ALTER TABLE` 等で修正すること。
 
 ## SQL コーディング規約
 - 予約語 (CREATE, ALTER, GRANT など) はすべて大文字。

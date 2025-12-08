@@ -18,8 +18,8 @@ export function createInviteIssueHandler(deps: InviteIssueHandlerDeps) {
     additionalMiddleware: [authMiddleware({ requiredRole: "manager" })],
   })
 
-  // POSTエンドポイント
-  app.post("/", zValidator("json", inviteIssueRequestSchema), async (c) => {
+  // POSTエンドポイント（Supabase Edge Functionsではパスに関数名が含まれる）
+  app.post("/invite_issue", zValidator("json", inviteIssueRequestSchema), async (c) => {
     const body = c.req.valid("json")
     const supabaseClient = c.get("supabaseClient")
     const userId = c.get("userId")!

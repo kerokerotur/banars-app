@@ -28,6 +28,13 @@ export function createBaseHonoApp(
   // エラーハンドリング
   app.onError(errorHandler)
 
+  // リクエストパスのデバッグログ
+  app.use("*", async (c, next) => {
+    console.log(`[debug] Request: ${c.req.method} ${c.req.path}`)
+    console.log(`[debug] URL: ${c.req.url}`)
+    await next()
+  })
+
   // Supabaseクライアント注入
   app.use(
     "*",
