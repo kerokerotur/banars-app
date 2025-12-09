@@ -8,6 +8,9 @@
 .metadata
 *.iml
 
+# 環境変数定義（機密情報を含む）
+dart_defines.json
+
 # ビルド成果物
 build/
 **/build/

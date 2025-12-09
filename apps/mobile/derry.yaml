@@ -5,10 +5,10 @@ analyze:
 test:
   - fvm flutter test
 run-dev:
-  - fvm flutter run
+  - fvm flutter run --dart-define-from-file=dart_defines.json
 build-apk:
-  - fvm flutter build apk --release
+  - fvm flutter build apk --release --dart-define-from-file=dart_defines.json
 build-ios:
-  - fvm flutter build ios --release
+  - fvm flutter build ios --release --dart-define-from-file=dart_defines.json
 clean:
   - fvm flutter clean
