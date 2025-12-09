@@ -4,32 +4,58 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:mobile/home/home_controller.dart';
 import 'package:mobile/home/home_state.dart';
+import 'package:mobile/settings/settings_page.dart';
+import 'package:mobile/shared/theme/app_colors.dart';
+import 'package:mobile/shared/widgets/app_scaffold.dart';
+import 'package:mobile/shared/widgets/app_footer.dart';
+import 'package:mobile/shared/widgets/app_header.dart';
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  NavigationTab _currentTab = NavigationTab.home;
+
+  @override
+  Widget build(BuildContext context) {
     final homeState = ref.watch(homeControllerProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('banars'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _signOut(context),
-            tooltip: 'ログアウト',
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: _buildBody(context, ref, homeState),
-      ),
+    return AppScaffold(
+      currentTab: _currentTab,
+      onTabChanged: (tab) {
+        setState(() {
+          _currentTab = tab;
+        });
+      },
+      avatarUrl: homeState.userProfile?.avatarUrl,
+      onMenuItemSelected: (item) => _handleMenuItemSelected(context, item),
+      onAddPressed: () {
+        // TODO: イベント作成画面への遷移を実装
+      },
+      body: _buildBody(context, homeState),
     );
   }
 
-  Widget _buildBody(BuildContext context, WidgetRef ref, HomeState homeState) {
+  void _handleMenuItemSelected(BuildContext context, HeaderMenuItem item) {
+    switch (item) {
+      case HeaderMenuItem.settings:
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const SettingsPage(),
+          ),
+        );
+        break;
+      case HeaderMenuItem.logout:
+        _signOut(context);
+        break;
+    }
+  }
+
+  Widget _buildBody(BuildContext context, HomeState homeState) {
     if (homeState.isLoading) {
       return const Center(
         child: Column(
@@ -44,16 +70,21 @@ class HomePage extends ConsumerWidget {
     }
 
     if (homeState.hasError) {
+      final colorScheme = Theme.of(context).colorScheme;
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final textSecondaryColor =
+          isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.error_outline,
                 size: 64,
-                color: Colors.red,
+                color: colorScheme.error,
               ),
               const SizedBox(height: 16),
               Text(
@@ -64,7 +95,7 @@ class HomePage extends ConsumerWidget {
               Text(
                 homeState.errorMessage ?? '不明なエラー',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.grey),
+                style: TextStyle(color: textSecondaryColor),
               ),
               const SizedBox(height: 24),
               FilledButton.icon(
@@ -136,10 +167,18 @@ class HomePage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 32),
-            const Text(
-              'このページはプレースホルダーです。\n今後、イベント一覧などの機能が追加されます。',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+            Builder(
+              builder: (context) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                final textSecondaryColor = isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary;
+                return Text(
+                  'このページはプレースホルダーです。\n今後、イベント一覧などの機能が追加されます。',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: textSecondaryColor),
+                );
+              },
             ),
           ],
         ),
