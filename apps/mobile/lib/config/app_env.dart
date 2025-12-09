@@ -20,4 +20,5 @@ class AppEnv {
 
   static const initialSignupFunctionName = 'initial_signup';
   static const lineLoginFunctionName = 'line_login';
+  static const getMeFunctionName = 'get_me';
 }
