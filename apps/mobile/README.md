@@ -9,6 +9,24 @@ banars 草野球チーム向け Flutter モバイルアプリです。Flutter CL
 3. `fvm use` を実行してバージョンを切り替えます（初回のみダウンロードが走ります）。
 4. 依存関係は `fvm dart run derry setup` で取得します。derry が `fvm flutter pub get` を実行します。
 
+## 環境変数の設定
+
+アプリの実行・ビルドには環境変数の設定が必要です。
+
+1. `dart_defines.json.example` をコピーして `dart_defines.json` を作成します。
+   ```bash
+   cp dart_defines.json.example dart_defines.json
+   ```
+2. `dart_defines.json` を編集し、各値を設定します。
+
+| 環境変数名 | 説明 |
+|-----------|------|
+| `SUPABASE_URL` | Supabase プロジェクトの URL |
+| `SUPABASE_ANON_KEY` | Supabase の Anonymous Key |
+| `LINE_CHANNEL_ID` | LINE Developers Console で発行した LINE Login のチャンネル ID |
+
+> **注意**: `dart_defines.json` には機密情報が含まれるため `.gitignore` に登録されています。Git にコミットしないでください。
+
 ## derry スクリプト一覧
 
 すべて `fvm dart run derry <script>` の形で実行してください。
