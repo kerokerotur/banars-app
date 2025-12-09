@@ -1,6 +1,7 @@
 import type { SupabaseClient, PostgrestError } from "@supabase/supabase-js"
 import type {
   IUserDetailRepository,
+  UserDetail,
   UpsertUserDetailParams,
 } from "@core/auth/domain/irepository/user_detail_repository.ts"
 import {
@@ -13,6 +14,32 @@ import {
  */
 export class SupabaseUserDetailRepository implements IUserDetailRepository {
   constructor(private readonly client: SupabaseClient) {}
+
+  async findByUserId(userId: string): Promise<UserDetail | null> {
+    const { data, error } = await this.client
+      .from("user_detail")
+      .select("user_id, display_name, avatar_url")
+      .eq("user_id", userId)
+      .maybeSingle()
+
+    if (error) {
+      throw this.wrapPostgrestError(
+        error,
+        "internal_error",
+        "ユーザー詳細の検索に失敗しました。",
+      )
+    }
+
+    if (!data) {
+      return null
+    }
+
+    return {
+      userId: data.user_id,
+      displayName: data.display_name,
+      avatarUrl: data.avatar_url,
+    }
+  }
 
   async upsert(params: UpsertUserDetailParams): Promise<void> {
     const { error } = await this.client

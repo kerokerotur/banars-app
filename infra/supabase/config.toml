@@ -167,3 +167,15 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/invite_issue/deno.json"
 entrypoint = "./functions/invite_issue/dist/index.ts"
+
+[functions.line_login]
+enabled = true
+verify_jwt = false
+import_map = "./functions/line_login/deno.json"
+entrypoint = "./functions/line_login/dist/index.ts"
+
+[functions.get_me]
+enabled = true
+verify_jwt = true
+import_map = "./functions/get_me/deno.json"
+entrypoint = "./functions/get_me/dist/index.ts"

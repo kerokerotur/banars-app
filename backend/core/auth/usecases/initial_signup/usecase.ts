@@ -5,6 +5,7 @@ import {
   DEFAULT_LINE_ISSUER,
   verifyLineIdToken,
 } from "@core/auth/domain/service/line_token_verifier.ts"
+import { deriveSupabaseEmail } from "@core/auth/domain/service/email_derivation.ts"
 import type {
   InitialSignupDependencies,
   InitialSignupUseCaseRequest,
@@ -80,16 +81,4 @@ export async function executeInitialSignupUseCase(
     userId: authUserId,
     sessionTransferToken,
   }
-}
-
-function deriveSupabaseEmail(lineUserId: string, claimedEmail: string | null) {
-  if (claimedEmail && isValidEmail(claimedEmail)) {
-    return claimedEmail.toLowerCase()
-  }
-  const normalizedId = lineUserId.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()
-  return `line_${normalizedId}@line.local`
-}
-
-function isValidEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }

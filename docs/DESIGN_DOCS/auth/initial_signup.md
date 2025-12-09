@@ -48,6 +48,11 @@ sequenceDiagram
 - 本機能が利用するテーブル仕様は `auth/tables.md` に集約（`user`, `user_detail`, `invite_token`）。初回登録はこれら 3 テーブルを Edge Function 経由で更新する。
 - `user` には `auth.uid()` と LINE ユーザ ID をマッピングし、`user_detail` に LINE 由来のプロフィール情報を同期する。`invite_token` は有効期限のみを持ち、枠数制限は設けない。
 
+### Supabase Auth 用メールアドレスの生成
+Supabase Auth はユーザー登録時にメールアドレスが必須のため、LINE から取得できない場合は疑似メールアドレスを生成する。
+- LINE ID Token にメールアドレスが含まれる場合: そのまま使用
+- 含まれない場合: `line_{lineUserId}@line.local` 形式で生成（実在しないドメイン）
+
 ### Edge Function / API: `POST /functions/v1/initial_signup`
 - **Input**
   ```json

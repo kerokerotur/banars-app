@@ -19,4 +19,5 @@ class AppEnv {
   static const inviteTokenQueryParam = 'token';
 
   static const initialSignupFunctionName = 'initial_signup';
+  static const lineLoginFunctionName = 'line_login';
 }

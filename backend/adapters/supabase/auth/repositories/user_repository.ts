@@ -2,6 +2,7 @@ import type { SupabaseClient, PostgrestError } from "@supabase/supabase-js"
 import type {
   IUserRepository,
   User,
+  UserWithLastLogin,
   UpsertUserParams,
 } from "@core/auth/domain/irepository/user_repository.ts"
 import {
@@ -38,6 +39,35 @@ export class SupabaseUserRepository implements IUserRepository {
       id: data.id,
       lineUserId: data.line_user_id,
       status: data.status,
+    }
+  }
+
+  async findById(userId: string): Promise<UserWithLastLogin | null> {
+    const { data, error } = await this.client
+      .from("user")
+      .select("id, line_user_id, status, last_login_datetime")
+      .eq("id", userId)
+      .maybeSingle()
+
+    if (error) {
+      throw this.wrapPostgrestError(
+        error,
+        "internal_error",
+        "ユーザー検索に失敗しました。",
+      )
+    }
+
+    if (!data) {
+      return null
+    }
+
+    return {
+      id: data.id,
+      lineUserId: data.line_user_id,
+      status: data.status,
+      lastLoginDatetime: data.last_login_datetime
+        ? new Date(data.last_login_datetime)
+        : null,
     }
   }
 

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config/app_env.dart';
+import 'home/home_page.dart';
 import 'signup/signup_page.dart';
 
 Future<void> main() async {
@@ -30,12 +31,47 @@ class BanarsApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'banars signup',
+      title: 'banars',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
-      home: const SignupPage(),
+      home: const AuthGate(),
+    );
+  }
+}
+
+/// 認証状態に基づいて画面を切り替えるウィジェット
+class AuthGate extends StatefulWidget {
+  const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<AuthState>(
+      stream: Supabase.instance.client.auth.onAuthStateChange,
+      builder: (context, snapshot) {
+        // 初期状態またはセッション情報待ち
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        // セッションがあるかどうかで画面を切り替え
+        final session = Supabase.instance.client.auth.currentSession;
+        if (session != null) {
+          return const HomePage();
+        }
+
+        return const SignupPage();
+      },
     );
   }
 }
