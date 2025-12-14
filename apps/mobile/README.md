@@ -40,3 +40,37 @@ banars 草野球チーム向け Flutter モバイルアプリです。Flutter CL
 - `clean`: `fvm flutter clean`
 
 必要なコマンドは `apps/mobile/derry.yaml` に追加してください。Flutter コマンドを直接呼び出さず、常に derry 経由（=FVM 経由）で統一します。
+
+## アーキテクチャ
+
+MVVM パターン + Riverpod による状態管理を採用しています。
+
+### ディレクトリ構成
+
+```
+lib/
+├── main.dart           # エントリーポイント
+├── config/             # 環境設定
+├── shared/             # 共通コンポーネント
+│   ├── providers/      # アプリ全体で使用する Provider
+│   ├── theme/          # テーマ・カラー定義
+│   └── widgets/        # 共通ウィジェット
+└── <feature>/          # 機能単位のディレクトリ
+    ├── *_state.dart    # 状態クラス（イミュータブル）
+    ├── *_controller.dart # Notifier（ビジネスロジック）
+    └── *_page.dart     # UI
+```
+
+### レイヤー構成
+
+| レイヤー | ファイル | 役割 |
+|---------|---------|------|
+| **State** | `*_state.dart` | イミュータブルな状態クラス。`copyWith` で更新 |
+| **Controller** | `*_controller.dart` | `Notifier<State>` を継承。ビジネスロジック・API 通信を担当 |
+| **Page** | `*_page.dart` | `ConsumerWidget` / `ConsumerStatefulWidget` で UI を構築 |
+
+### Riverpod の使用パターン
+
+- Provider 定義: `NotifierProvider<Controller, State>`
+- 状態監視: `ref.watch(provider)`
+- メソッド呼び出し: `ref.read(provider.notifier).method()`

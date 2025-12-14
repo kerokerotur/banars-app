@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:mobile/event_create/event_create_page.dart';
 import 'package:mobile/home/home_controller.dart';
 import 'package:mobile/home/home_state.dart';
 import 'package:mobile/settings/settings_page.dart';
+import 'package:mobile/shared/providers/event_types_provider.dart';
 import 'package:mobile/shared/theme/app_colors.dart';
 import 'package:mobile/shared/widgets/app_scaffold.dart';
 import 'package:mobile/shared/widgets/app_footer.dart';
@@ -23,6 +25,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final homeState = ref.watch(homeControllerProvider);
+    // アプリ起動時にイベント種別をキャッシュ
+    ref.watch(eventTypesProvider);
 
     return AppScaffold(
       currentTab: _currentTab,
@@ -34,7 +38,11 @@ class _HomePageState extends ConsumerState<HomePage> {
       avatarUrl: homeState.userProfile?.avatarUrl,
       onMenuItemSelected: (item) => _handleMenuItemSelected(context, item),
       onAddPressed: () {
-        // TODO: イベント作成画面への遷移を実装
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const EventCreatePage(),
+          ),
+        );
       },
       body: _buildBody(context, homeState),
     );

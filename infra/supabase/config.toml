@@ -179,3 +179,9 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/get_me/deno.json"
 entrypoint = "./functions/get_me/dist/index.ts"
+
+[functions.search_places]
+enabled = true
+verify_jwt = true
+import_map = "./functions/search_places/deno.json"
+entrypoint = "./functions/search_places/dist/index.ts"

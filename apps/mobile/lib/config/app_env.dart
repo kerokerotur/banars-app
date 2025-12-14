@@ -21,4 +21,7 @@ class AppEnv {
   static const initialSignupFunctionName = 'initial_signup';
   static const lineLoginFunctionName = 'line_login';
   static const getMeFunctionName = 'get_me';
+  static const getEventTypesFunctionName = 'get_event_types';
+  static const eventCreateFunctionName = 'event_create';
+  static const searchPlacesFunctionName = 'search_places';
 }
