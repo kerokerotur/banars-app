@@ -54,26 +54,21 @@
 | --- | --- | --- | --- | --- |
 | `id` | `uuid` | ○ | 会場レコード ID | PK。`gen_random_uuid()` |
 | `name` | `text` | ○ | 会場名 | - |
-| `address` | `text` | ○ | 会場住所 | - |
-| `latitude` | `double precision` |  | 座標（緯度） | Nominatim 検索時に取得 |
-| `longitude` | `double precision` |  | 座標（経度） | Nominatim 検索時に取得 |
-| `osm_id` | `bigint` |  | OSM ID | Nominatim 検索時に取得 |
-| `osm_type` | `text` |  | OSM type | node/way/relation |
-| `place_fingerprint` | `text` |  | 手入力重複排除キー | 会場名+住所のハッシュ |
+| `google_maps_url` | `text` | ○ | Google Maps 共有 URL | - |
 | `created_at` | `timestamptz` | ○ | メタデータ | `DEFAULT now()` |
 | `created_user` | `uuid` |  | メタデータ | `users.id` 参照（記録者） |
-| `updated_at` | `timestamptz` | ○ | メタデータ | `DEFAULT now()` / upsert で更新 |
+| `updated_at` | `timestamptz` | ○ | メタデータ | `DEFAULT now()` / トリガ更新 |
 | `updated_user` | `uuid` |  | メタデータ | `users.id` 参照 |
 
 **設計意図**
 
-- `osm_id` / `osm_type` が取得できるケース（Nominatim 検索）ではこれをキーに upsert、手入力時は `place_fingerprint` をキーとして扱い、履歴候補を 1 レコードに集約する。
-- OpenStreetMap の Nominatim API を使用することで、無料で位置情報を取得可能（レート制限: 1秒1リクエスト）。
+- 場所は事前に管理者・運営が登録し、イベント作成時は登録済みの場所から選択する方式を採用。
+- Google Maps の共有 URL を保存し、地図表示時は WebView で URL を表示することでネイティブの地図埋め込みを実現。
+- 場所名による重複を防ぐため、UI レベルで同名チェックを行う（または UNIQUE 制約を設定）。
 
 **インデックス / 制約**
 
-- `UNIQUE(osm_type, osm_id) WHERE osm_id IS NOT NULL` — Nominatim 検索結果の重複排除。
-- `UNIQUE(place_fingerprint) WHERE place_fingerprint IS NOT NULL` — 手入力の重複排除。
+- `CREATE UNIQUE INDEX event_places_name_idx ON event_places (name);` — 場所名の重複を防ぐ。
 
 ## RLS / 権限メモ
 
@@ -81,4 +76,5 @@ event コンテキストのテーブル（`event_types`, `events`, `event_places
 
 ## 未決定事項 / Follow-up
 
-- OpenStreetMap (flutter_map) 上でピンを描画する UI を正式に採用するか否か。採用する場合は `latitude` / `longitude` の取得を必須化する。採用しない場合はカラム削減を検討。
+- Google Maps 共有 URL のバリデーション方法（URL フォーマットチェック等）。
+- 場所の編集・削除権限の制御方針（既存イベントで使用中の場所の削除可否等）。
