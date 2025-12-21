@@ -54,7 +54,7 @@
 | --- | --- | --- | --- | --- |
 | `id` | `uuid` | ○ | 会場レコード ID | PK。`gen_random_uuid()` |
 | `name` | `text` | ○ | 会場名 | - |
-| `google_maps_url` | `text` | ○ | Google Maps 共有 URL | - |
+| `google_maps_url_normalized` | `text` | ○ | 正規化済み Google Maps 共有 URL | 重複防止用に正規化した値を保存 |
 | `created_at` | `timestamptz` | ○ | メタデータ | `DEFAULT now()` |
 | `created_user` | `uuid` |  | メタデータ | `users.id` 参照（記録者） |
 | `updated_at` | `timestamptz` | ○ | メタデータ | `DEFAULT now()` / トリガ更新 |
@@ -63,12 +63,13 @@
 **設計意図**
 
 - 場所は事前に管理者・運営が登録し、イベント作成時は登録済みの場所から選択する方式を採用。
-- Google Maps の共有 URL を保存し、地図表示時は WebView で URL を表示することでネイティブの地図埋め込みを実現。
+- Google Maps の共有 URL はサーバー側で正規化し、正規化済みの値のみを保存・比較する。表示用途では正規化済み URL を返す。
 - 場所名による重複を防ぐため、UI レベルで同名チェックを行う（または UNIQUE 制約を設定）。
 
 **インデックス / 制約**
 
 - `CREATE UNIQUE INDEX event_places_name_idx ON event_places (name);` — 場所名の重複を防ぐ。
+- `CREATE UNIQUE INDEX event_places_google_maps_url_norm_idx ON event_places (google_maps_url_normalized);` — Google Maps URL の重複を防ぐ。
 
 ## RLS / 権限メモ
 
