@@ -56,8 +56,9 @@ export function createPlaceCreateHandler(deps: PlaceCreateHandlerDeps) {
                 code: error.code,
                 message: error.message,
               },
+              existing_place: error.details?.existing_place,
             },
-            error.status as 400 | 404 | 500,
+            error.status as 400 | 404 | 409 | 500,
           )
         }
         throw error

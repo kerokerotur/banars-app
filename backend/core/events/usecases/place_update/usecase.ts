@@ -1,4 +1,5 @@
 import { PlaceManagementError } from "@core/events/domain/errors/place_management_error.ts"
+import { GoogleMapsUrlNormalized } from "@core/events/domain/value_objects/google_maps_url_normalized.ts"
 import type {
   PlaceUpdateDependencies,
   PlaceUpdateUseCaseRequest,
@@ -9,6 +10,8 @@ export async function executePlaceUpdateUseCase(
   request: PlaceUpdateUseCaseRequest,
   deps: PlaceUpdateDependencies,
 ): Promise<PlaceUpdateUseCaseResponse> {
+  const normalizedUrl = GoogleMapsUrlNormalized.create(request.googleMapsUrl)
+
   // 1. 更新対象の場所が存在するか確認
   const targetPlace = await deps.placeManagementRepository.findById(
     request.placeId,
@@ -33,11 +36,27 @@ export async function executePlaceUpdateUseCase(
     )
   }
 
+  // 3. URL 重複チェック（自分以外）
+  const duplicatedByUrl =
+    await deps.placeManagementRepository.findByGoogleMapsUrlNormalized(
+      normalizedUrl.rawValue,
+    )
+  if (duplicatedByUrl && duplicatedByUrl.id !== request.placeId) {
+    throw new PlaceManagementError(
+      "duplicate_google_maps_url",
+      "この Google Maps URL は既に登録されています",
+      409,
+      {
+        existing_place: duplicatedByUrl.toResponse(),
+      },
+    )
+  }
+
   // 3. 場所を更新
   const place = await deps.placeManagementRepository.update({
     id: request.placeId,
     name: request.name,
-    googleMapsUrl: request.googleMapsUrl,
+    googleMapsUrlNormalized: normalizedUrl.rawValue,
     updatedUser: request.userId,
   })
 

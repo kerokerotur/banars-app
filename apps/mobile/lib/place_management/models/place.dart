@@ -1,13 +1,13 @@
 class Place {
   final String id;
   final String name;
-  final String googleMapsUrl;
+  final String googleMapsUrlNormalized;
   final DateTime createdAt;
 
   const Place({
     required this.id,
     required this.name,
-    required this.googleMapsUrl,
+    required this.googleMapsUrlNormalized,
     required this.createdAt,
   });
 
@@ -15,7 +15,7 @@ class Place {
     return Place(
       id: json['id'] as String,
       name: json['name'] as String,
-      googleMapsUrl: json['google_maps_url'] as String,
+      googleMapsUrlNormalized: json['google_maps_url_normalized'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
@@ -24,7 +24,7 @@ class Place {
     return {
       'id': id,
       'name': name,
-      'google_maps_url': googleMapsUrl,
+      'google_maps_url_normalized': googleMapsUrlNormalized,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -38,7 +38,8 @@ class Place {
     return Place(
       id: id ?? this.id,
       name: name ?? this.name,
-      googleMapsUrl: googleMapsUrl ?? this.googleMapsUrl,
+      googleMapsUrlNormalized:
+          googleMapsUrlNormalized ?? this.googleMapsUrlNormalized,
       createdAt: createdAt ?? this.createdAt,
     );
   }

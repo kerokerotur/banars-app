@@ -5,7 +5,7 @@
 export interface PlacePayload {
   id: string
   name: string
-  googleMapsUrl: string
+  googleMapsUrlNormalized: string
   createdAt: Date
   createdUser: string | null
   updatedAt: Date
@@ -16,7 +16,7 @@ export class Place {
   private constructor(
     public readonly id: string,
     public readonly name: string,
-    public readonly googleMapsUrl: string,
+    public readonly googleMapsUrlNormalized: string,
     public readonly createdAt: Date,
     public readonly createdUser: string | null,
     public readonly updatedAt: Date,
@@ -27,7 +27,7 @@ export class Place {
     return new Place(
       payload.id,
       payload.name,
-      payload.googleMapsUrl,
+      payload.googleMapsUrlNormalized,
       payload.createdAt,
       payload.createdUser,
       payload.updatedAt,
@@ -38,13 +38,13 @@ export class Place {
   toResponse(): {
     id: string
     name: string
-    google_maps_url: string
+    google_maps_url_normalized: string
     created_at: string
   } {
     return {
       id: this.id,
       name: this.name,
-      google_maps_url: this.googleMapsUrl,
+      google_maps_url_normalized: this.googleMapsUrlNormalized,
       created_at: this.createdAt.toISOString(),
     }
   }

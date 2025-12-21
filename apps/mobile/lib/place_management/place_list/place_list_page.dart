@@ -118,7 +118,7 @@ class _PlaceListPageState extends ConsumerState<PlaceListPage> {
             ),
             title: Text(place.name),
             subtitle: Text(
-              place.googleMapsUrl,
+              place.googleMapsUrlNormalized,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(

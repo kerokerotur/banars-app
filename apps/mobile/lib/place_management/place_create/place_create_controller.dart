@@ -16,6 +16,7 @@ final placeCreateControllerProvider =
 
 class PlaceCreateController extends Notifier<PlaceCreateState> {
   late final SupabaseClient _supabaseClient;
+  int _lookupRequestId = 0;
 
   @override
   PlaceCreateState build() {
@@ -52,13 +53,24 @@ class PlaceCreateController extends Notifier<PlaceCreateState> {
       validationErrors: newValidationErrors,
       showPreview: error == null,
       previewUrl: error == null ? trimmed : null,
+      lookupStatus:
+          error == null ? PlaceLookupStatus.checking : PlaceLookupStatus.idle,
+      clearExistingPlace: true,
+      clearError: true,
     );
+
+    if (error == null) {
+      _lookupGoogleMapsUrl(trimmed);
+    }
   }
 
   // ========== Form Submission ==========
 
   Future<void> submitPlace() async {
     if (!_validateForm()) return;
+    if (state.lookupStatus != PlaceLookupStatus.available) {
+      return;
+    }
 
     state = state.copyWith(
       status: PlaceCreateStatus.submitting,
@@ -97,6 +109,21 @@ class PlaceCreateController extends Notifier<PlaceCreateState> {
       );
     } on FunctionException catch (error) {
       debugPrint('place_create error: $error');
+      final errorCode = _extractErrorCode(error.details);
+
+      // サーバー側で重複検知された場合も既存会場を提示
+      if (errorCode == 'duplicate_google_maps_url') {
+        final existingPlace = _extractExistingPlace(error.details);
+        state = state.copyWith(
+          status: PlaceCreateStatus.editing,
+          lookupStatus: PlaceLookupStatus.duplicate,
+          existingPlace: existingPlace,
+          errorMessage: _extractErrorMessage(error.details) ??
+              'この Google Maps URL は既に登録されています',
+        );
+        return;
+      }
+
       final errorMessage = _extractErrorMessage(error.details) ??
           error.reasonPhrase ??
           '場所の登録に失敗しました';
@@ -132,6 +159,13 @@ class PlaceCreateController extends Notifier<PlaceCreateState> {
       errors['google_maps_url'] = urlError;
     }
 
+    if (state.lookupStatus != PlaceLookupStatus.available) {
+      errors.putIfAbsent(
+        'google_maps_url',
+        () => 'Google Maps URLの重複チェックを完了してください',
+      );
+    }
+
     if (errors.isNotEmpty) {
       state = state.copyWith(validationErrors: errors);
       return false;
@@ -142,12 +176,97 @@ class PlaceCreateController extends Notifier<PlaceCreateState> {
 
   // ========== Helper Methods ==========
 
+  Future<void> _lookupGoogleMapsUrl(String url) async {
+    final currentId = ++_lookupRequestId;
+
+    try {
+      final response = await _supabaseClient.functions.invoke(
+        '${AppEnv.placeLookupFunctionName}?google_maps_url=${Uri.encodeComponent(url)}',
+        method: HttpMethod.get,
+      );
+
+      if (currentId != _lookupRequestId) return; // 最新でなければ破棄
+
+      final data = response.data;
+      if (data is Map && data['exists'] == true && data['place'] is Map) {
+        state = state.copyWith(
+          lookupStatus: PlaceLookupStatus.duplicate,
+          existingPlace: data['place'] as Map<String, dynamic>,
+          clearValidation: true,
+          status: PlaceCreateStatus.editing,
+        );
+        return;
+      }
+
+      if (data is Map && data['exists'] == false) {
+        state = state.copyWith(
+          lookupStatus: PlaceLookupStatus.available,
+          clearExistingPlace: true,
+          status: PlaceCreateStatus.editing,
+        );
+        return;
+      }
+
+      throw Exception('Unexpected response');
+    } on FunctionException catch (error) {
+      if (currentId != _lookupRequestId) return;
+
+      final message = _extractErrorMessage(error.details) ??
+          error.reasonPhrase ??
+          '重複チェックに失敗しました';
+
+      final newValidationErrors = Map<String, String>.from(state.validationErrors);
+      newValidationErrors['google_maps_url'] = message;
+
+      state = state.copyWith(
+        lookupStatus: PlaceLookupStatus.error,
+        validationErrors: newValidationErrors,
+        errorMessage: message,
+        clearExistingPlace: true,
+      );
+    } catch (error) {
+      if (currentId != _lookupRequestId) return;
+      state = state.copyWith(
+        lookupStatus: PlaceLookupStatus.error,
+        errorMessage: '重複チェックに失敗しました: $error',
+        clearExistingPlace: true,
+      );
+    }
+  }
+
+  void selectExistingPlace() {
+    if (!state.canSelectExisting) return;
+    state = state.copyWith(status: PlaceCreateStatus.existingSelected);
+  }
+
   String? _extractErrorMessage(dynamic details) {
     if (details is Map) {
       if (details['error'] is Map) {
         return details['error']['message'] as String?;
       }
       return details['message'] as String?;
+    }
+    return null;
+  }
+
+  String? _extractErrorCode(dynamic details) {
+    if (details is Map) {
+      if (details['error'] is Map) {
+        return details['error']['code'] as String?;
+      }
+      return details['code'] as String?;
+    }
+    return null;
+  }
+
+  Map<String, dynamic>? _extractExistingPlace(dynamic details) {
+    if (details is Map) {
+      if (details['existing_place'] is Map) {
+        return details['existing_place'] as Map<String, dynamic>;
+      }
+      if (details['error'] is Map && details['error']['existing_place'] is Map) {
+        return details['error']['existing_place'] as Map<String, dynamic>;
+      }
     }
     return null;
   }

@@ -3,6 +3,7 @@ export type PlaceManagementErrorCode =
   | "unauthorized"
   | "place_not_found"
   | "duplicate_place_name"
+  | "duplicate_google_maps_url"
   | "place_in_use"
   | "internal_error"
 

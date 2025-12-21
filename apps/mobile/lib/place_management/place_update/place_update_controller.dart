@@ -95,6 +95,17 @@ class PlaceUpdateController extends StateNotifier<PlaceUpdateState> {
       );
     } on FunctionException catch (error) {
       debugPrint('place_update error: $error');
+      final errorCode = _extractErrorCode(error.details);
+
+      if (errorCode == 'duplicate_google_maps_url') {
+        state = state.copyWith(
+          status: PlaceUpdateStatus.error,
+          errorMessage: _extractErrorMessage(error.details) ??
+              'この Google Maps URL は既に登録されています',
+        );
+        return;
+      }
+
       final errorMessage = _extractErrorMessage(error.details) ??
           error.reasonPhrase ??
           '場所の更新に失敗しました';
@@ -146,6 +157,16 @@ class PlaceUpdateController extends StateNotifier<PlaceUpdateState> {
         return details['error']['message'] as String?;
       }
       return details['message'] as String?;
+    }
+    return null;
+  }
+
+  String? _extractErrorCode(dynamic details) {
+    if (details is Map) {
+      if (details['error'] is Map) {
+        return details['error']['code'] as String?;
+      }
+      return details['code'] as String?;
     }
     return null;
   }

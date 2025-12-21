@@ -22,7 +22,7 @@ export class SupabasePlaceManagementRepository
     const { data, error } = await this.client
       .from("event_places")
       .select(
-        "id, name, google_maps_url, created_at, created_user, updated_at, updated_user",
+        "id, name, google_maps_url_normalized, created_at, created_user, updated_at, updated_user",
       )
       .order("created_at", { ascending: false })
 
@@ -38,7 +38,7 @@ export class SupabasePlaceManagementRepository
       Place.fromPayload({
         id: row.id,
         name: row.name,
-        googleMapsUrl: row.google_maps_url,
+        googleMapsUrlNormalized: row.google_maps_url_normalized,
         createdAt: new Date(row.created_at),
         createdUser: row.created_user,
         updatedAt: new Date(row.updated_at),
@@ -51,7 +51,7 @@ export class SupabasePlaceManagementRepository
     const { data, error } = await this.client
       .from("event_places")
       .select(
-        "id, name, google_maps_url, created_at, created_user, updated_at, updated_user",
+        "id, name, google_maps_url_normalized, created_at, created_user, updated_at, updated_user",
       )
       .eq("id", id)
       .single()
@@ -75,7 +75,7 @@ export class SupabasePlaceManagementRepository
     return Place.fromPayload({
       id: data.id,
       name: data.name,
-      googleMapsUrl: data.google_maps_url,
+      googleMapsUrlNormalized: data.google_maps_url_normalized,
       createdAt: new Date(data.created_at),
       createdUser: data.created_user,
       updatedAt: new Date(data.updated_at),
@@ -87,7 +87,7 @@ export class SupabasePlaceManagementRepository
     const { data, error } = await this.client
       .from("event_places")
       .select(
-        "id, name, google_maps_url, created_at, created_user, updated_at, updated_user",
+        "id, name, google_maps_url_normalized, created_at, created_user, updated_at, updated_user",
       )
       .eq("name", name)
       .single()
@@ -111,7 +111,42 @@ export class SupabasePlaceManagementRepository
     return Place.fromPayload({
       id: data.id,
       name: data.name,
-      googleMapsUrl: data.google_maps_url,
+      googleMapsUrlNormalized: data.google_maps_url_normalized,
+      createdAt: new Date(data.created_at),
+      createdUser: data.created_user,
+      updatedAt: new Date(data.updated_at),
+      updatedUser: data.updated_user,
+    })
+  }
+
+  async findByGoogleMapsUrlNormalized(url: string): Promise<Place | null> {
+    const { data, error } = await this.client
+      .from("event_places")
+      .select(
+        "id, name, google_maps_url_normalized, created_at, created_user, updated_at, updated_user",
+      )
+      .eq("google_maps_url_normalized", url)
+      .single()
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        return null
+      }
+      throw this.wrapPostgrestError(
+        error,
+        "internal_error",
+        "場所の取得に失敗しました",
+      )
+    }
+
+    if (!data) {
+      return null
+    }
+
+    return Place.fromPayload({
+      id: data.id,
+      name: data.name,
+      googleMapsUrlNormalized: data.google_maps_url_normalized,
       createdAt: new Date(data.created_at),
       createdUser: data.created_user,
       updatedAt: new Date(data.updated_at),
@@ -124,17 +159,27 @@ export class SupabasePlaceManagementRepository
       .from("event_places")
       .insert({
         name: input.name,
-        google_maps_url: input.googleMapsUrl,
+        google_maps_url_normalized: input.googleMapsUrlNormalized,
         created_user: input.createdUser,
       })
       .select(
-        "id, name, google_maps_url, created_at, created_user, updated_at, updated_user",
+        "id, name, google_maps_url_normalized, created_at, created_user, updated_at, updated_user",
       )
       .single()
 
     if (error) {
       // 23505: unique_violation (UNIQUE制約違反)
       if (error.code === "23505") {
+        const isUrlConstraint =
+          error.message?.includes("event_places_google_maps_url_norm_idx") ??
+          false
+        if (isUrlConstraint) {
+          throw new PlaceManagementError(
+            "duplicate_google_maps_url",
+            "この Google Maps URL は既に登録されています",
+            409,
+          )
+        }
         throw new PlaceManagementError(
           "duplicate_place_name",
           "この場所名は既に登録されています",
@@ -159,7 +204,7 @@ export class SupabasePlaceManagementRepository
     return Place.fromPayload({
       id: data.id,
       name: data.name,
-      googleMapsUrl: data.google_maps_url,
+      googleMapsUrlNormalized: data.google_maps_url_normalized,
       createdAt: new Date(data.created_at),
       createdUser: data.created_user,
       updatedAt: new Date(data.updated_at),
@@ -172,18 +217,28 @@ export class SupabasePlaceManagementRepository
       .from("event_places")
       .update({
         name: input.name,
-        google_maps_url: input.googleMapsUrl,
+        google_maps_url_normalized: input.googleMapsUrlNormalized,
         updated_user: input.updatedUser,
       })
       .eq("id", input.id)
       .select(
-        "id, name, google_maps_url, created_at, created_user, updated_at, updated_user",
+        "id, name, google_maps_url_normalized, created_at, created_user, updated_at, updated_user",
       )
       .single()
 
     if (error) {
       // 23505: unique_violation (UNIQUE制約違反)
       if (error.code === "23505") {
+        const isUrlConstraint =
+          error.message?.includes("event_places_google_maps_url_norm_idx") ??
+          false
+        if (isUrlConstraint) {
+          throw new PlaceManagementError(
+            "duplicate_google_maps_url",
+            "この Google Maps URL は既に登録されています",
+            409,
+          )
+        }
         throw new PlaceManagementError(
           "duplicate_place_name",
           "この場所名は既に登録されています",
@@ -216,7 +271,7 @@ export class SupabasePlaceManagementRepository
     return Place.fromPayload({
       id: data.id,
       name: data.name,
-      googleMapsUrl: data.google_maps_url,
+      googleMapsUrlNormalized: data.google_maps_url_normalized,
       createdAt: new Date(data.created_at),
       createdUser: data.created_user,
       updatedAt: new Date(data.updated_at),

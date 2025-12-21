@@ -5,7 +5,7 @@ import type { Place } from "../entity/place.ts"
  */
 export interface CreatePlaceInput {
   name: string
-  googleMapsUrl: string
+  googleMapsUrlNormalized: string
   createdUser: string
 }
 
@@ -15,7 +15,7 @@ export interface CreatePlaceInput {
 export interface UpdatePlaceInput {
   id: string
   name: string
-  googleMapsUrl: string
+  googleMapsUrlNormalized: string
   updatedUser: string
 }
 
@@ -37,6 +37,11 @@ export interface IPlaceManagementRepository {
    * 場所名で検索（重複チェック用）
    */
   findByName(name: string): Promise<Place | null>
+
+  /**
+   * 正規化済み Google Maps URL で検索（重複チェック用）
+   */
+  findByGoogleMapsUrlNormalized(url: string): Promise<Place | null>
 
   /**
    * 場所を作成

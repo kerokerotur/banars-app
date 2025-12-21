@@ -3,12 +3,101 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mobile/place_management/place_create/place_create_controller.dart';
 import 'package:mobile/place_management/place_create/place_create_state.dart';
+import 'package:mobile/place_management/models/place.dart';
 
 class PlaceCreateModal extends ConsumerStatefulWidget {
   const PlaceCreateModal({super.key});
 
   @override
   ConsumerState<PlaceCreateModal> createState() => _PlaceCreateModalState();
+}
+
+class _LookupStatusText extends StatelessWidget {
+  const _LookupStatusText({required this.state, required this.theme});
+
+  final PlaceCreateState state;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = theme.textTheme.bodySmall;
+
+    switch (state.lookupStatus) {
+      case PlaceLookupStatus.checking:
+        return Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 8),
+            Text('URLの重複を確認しています…', style: style),
+          ],
+        );
+      case PlaceLookupStatus.duplicate:
+        return Text(
+          'この Google Maps URL は既に登録されています。既存の会場を選択してください。',
+          style: style?.copyWith(color: theme.colorScheme.error),
+        );
+      case PlaceLookupStatus.available:
+        return Text(
+          '未登録のURLです。会場名を入力して登録できます。',
+          style: style?.copyWith(color: theme.colorScheme.secondary),
+        );
+      case PlaceLookupStatus.error:
+        return Text(
+          state.errorMessage ?? '重複チェックに失敗しました',
+          style: style?.copyWith(color: theme.colorScheme.error),
+        );
+      case PlaceLookupStatus.idle:
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+}
+
+class _ExistingPlaceCard extends StatelessWidget {
+  const _ExistingPlaceCard({required this.place, required this.onSelect});
+
+  final Place place;
+  final VoidCallback? onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceVariant,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '既存の会場が見つかりました',
+              style: theme.textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(place.name, style: theme.textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text(
+              place.googleMapsUrlNormalized,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: onSelect,
+              icon: const Icon(Icons.check_circle_outline),
+              label: const Text('この会場を使う'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _PlaceCreateModalState extends ConsumerState<PlaceCreateModal> {
@@ -44,6 +133,12 @@ class _PlaceCreateModalState extends ConsumerState<PlaceCreateModal> {
       }
     }
 
+    if (current.status == PlaceCreateStatus.existingSelected) {
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    }
+
     // エラーメッセージを表示
     if (current.status == PlaceCreateStatus.error &&
         current.errorMessage != null) {
@@ -62,6 +157,9 @@ class _PlaceCreateModalState extends ConsumerState<PlaceCreateModal> {
   Widget build(BuildContext context) {
     final state = ref.watch(placeCreateControllerProvider);
     final theme = Theme.of(context);
+    final existingPlace = state.existingPlace != null
+        ? Place.fromJson(state.existingPlace!)
+        : null;
 
     return Dialog(
       shape: RoundedRectangleBorder(
@@ -100,53 +198,6 @@ class _PlaceCreateModalState extends ConsumerState<PlaceCreateModal> {
               ],
             ),
             const SizedBox(height: 24),
-
-            // イベント会場名入力
-            Text(
-              'イベント会場名',
-              style: theme.textTheme.titleSmall,
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                hintText: '例）東京ドーム',
-                errorText: state.validationErrors['name'],
-                filled: true,
-                fillColor: theme.colorScheme.surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: theme.colorScheme.error,
-                    width: 2,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: theme.colorScheme.outline,
-                    width: 1,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: theme.colorScheme.error,
-                    width: 2,
-                  ),
-                ),
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: theme.colorScheme.error,
-                    width: 2,
-                  ),
-                ),
-              ),
-              onChanged: (value) =>
-                  ref.read(placeCreateControllerProvider.notifier).updateName(value),
-            ),
-            const SizedBox(height: 16),
 
             // 地図URL入力
             Text(
@@ -197,7 +248,72 @@ class _PlaceCreateModalState extends ConsumerState<PlaceCreateModal> {
                   .read(placeCreateControllerProvider.notifier)
                   .updateGoogleMapsUrl(value),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
+            _LookupStatusText(state: state, theme: theme),
+            const SizedBox(height: 16),
+
+            if (state.lookupStatus == PlaceLookupStatus.duplicate &&
+                existingPlace != null) ...[
+              _ExistingPlaceCard(
+                place: existingPlace,
+                onSelect: state.canSelectExisting
+                    ? () => ref
+                        .read(placeCreateControllerProvider.notifier)
+                        .selectExistingPlace()
+                    : null,
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            if (state.lookupStatus == PlaceLookupStatus.available) ...[
+              // イベント会場名入力（未登録時のみ）
+              Text(
+                'イベント会場名',
+                style: theme.textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  hintText: '例）東京ドーム',
+                  errorText: state.validationErrors['name'],
+                  filled: true,
+                  fillColor: theme.colorScheme.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.error,
+                      width: 2,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.outline,
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.error,
+                      width: 2,
+                    ),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.error,
+                      width: 2,
+                    ),
+                  ),
+                ),
+                onChanged: (value) => ref
+                    .read(placeCreateControllerProvider.notifier)
+                    .updateName(value),
+              ),
+              const SizedBox(height: 16),
+            ],
 
             // ボタン
             Row(

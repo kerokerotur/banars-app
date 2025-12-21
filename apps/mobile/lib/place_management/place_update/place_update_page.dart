@@ -27,13 +27,14 @@ class _PlaceUpdatePageState extends ConsumerState<PlaceUpdatePage> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.place.name);
-    _googleMapsUrlController = TextEditingController(text: widget.place.googleMapsUrl);
+    _googleMapsUrlController =
+        TextEditingController(text: widget.place.googleMapsUrlNormalized);
 
     _subscription = ref.listenManual(
       placeUpdateControllerProvider((
         widget.place.id,
         widget.place.name,
-        widget.place.googleMapsUrl,
+        widget.place.googleMapsUrlNormalized,
       )),
       _onStateChanged,
     );
@@ -81,7 +82,7 @@ class _PlaceUpdatePageState extends ConsumerState<PlaceUpdatePage> {
       placeUpdateControllerProvider((
         widget.place.id,
         widget.place.name,
-        widget.place.googleMapsUrl,
+        widget.place.googleMapsUrlNormalized,
       )),
     );
 
@@ -107,12 +108,12 @@ class _PlaceUpdatePageState extends ConsumerState<PlaceUpdatePage> {
                 ),
               ),
               onChanged: (value) => ref
-                  .read(placeUpdateControllerProvider((
-                    widget.place.id,
-                    widget.place.name,
-                    widget.place.googleMapsUrl,
-                  )).notifier)
-                  .updateName(value),
+          .read(placeUpdateControllerProvider((
+            widget.place.id,
+            widget.place.name,
+            widget.place.googleMapsUrlNormalized,
+          )).notifier)
+          .updateName(value),
             ),
             const SizedBox(height: 16),
 
@@ -132,12 +133,12 @@ class _PlaceUpdatePageState extends ConsumerState<PlaceUpdatePage> {
               ),
               keyboardType: TextInputType.url,
               onChanged: (value) => ref
-                  .read(placeUpdateControllerProvider((
-                    widget.place.id,
-                    widget.place.name,
-                    widget.place.googleMapsUrl,
-                  )).notifier)
-                  .updateGoogleMapsUrl(value),
+          .read(placeUpdateControllerProvider((
+            widget.place.id,
+            widget.place.name,
+            widget.place.googleMapsUrlNormalized,
+          )).notifier)
+          .updateGoogleMapsUrl(value),
             ),
             const SizedBox(height: 24),
 
@@ -159,7 +160,7 @@ class _PlaceUpdatePageState extends ConsumerState<PlaceUpdatePage> {
                       .read(placeUpdateControllerProvider((
                         widget.place.id,
                         widget.place.name,
-                        widget.place.googleMapsUrl,
+                        widget.place.googleMapsUrlNormalized,
                       )).notifier)
                       .submitPlace()
                   : null,
