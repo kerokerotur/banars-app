@@ -33,6 +33,7 @@ banars アプリの技術設計ドキュメントを集約しています。変�
 | イベント削除 | イベント (`events/`) | [`event_delete.md`](events/event_delete.md) |
 | イベント編集 | イベント (`events/`) | [`event_edit.md`](events/event_edit.md) |
 | イベントデータモデル | イベント (`events/`) | [`tables.md`](events/tables.md) |
+| 出欠データモデル | 出欠 (`attendance/`) | [`tables.md`](attendance/tables.md) |
 | 出欠一覧 | 出欠 (`attendance/`) | [`attendance_list.md`](attendance/attendance_list.md) |
 | 出欠登録 | 出欠 (`attendance/`) | [`attendance_register.md`](attendance/attendance_register.md) |
 | 出欠編集 | 出欠 (`attendance/`) | [`attendance_edit.md`](attendance/attendance_edit.md) |
