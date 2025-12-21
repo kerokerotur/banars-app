@@ -1,14 +1,16 @@
-import { createHash } from "node:crypto"
-
 /**
  * 会場のフィンガープリントを生成する
  * 会場名と住所を小文字に変換してハッシュ化
  * 手入力の会場の重複検出に使用
  */
-export function generatePlaceFingerprint(
+export async function generatePlaceFingerprint(
   name: string,
   address: string,
-): string {
+): Promise<string> {
   const input = `${name.toLowerCase()}:${address.toLowerCase()}`
-  return createHash("sha256").update(input).digest("hex")
+  const encoder = new TextEncoder()
+  const data = encoder.encode(input)
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("")
 }

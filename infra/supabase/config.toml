@@ -190,9 +190,40 @@ entrypoint = "./functions/search_places/dist/index.ts"
 enabled = true
 verify_jwt = true
 import_map = "./functions/place_lookup/deno.json"
-# Uncomment to specify a custom file path to the entrypoint.
-# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/place_lookup/src/index.ts"
-# Specifies static files to be bundled with the function. Supports glob patterns.
-# For example, if you want to serve static HTML pages in your function:
-# static_files = [ "./functions/place_lookup/*.html" ]
+entrypoint = "./functions/place_lookup/dist/index.ts"
+
+[functions.get_event_types]
+enabled = true
+verify_jwt = true
+import_map = "./functions/get_event_types/deno.json"
+entrypoint = "./functions/get_event_types/dist/index.ts"
+
+[functions.event_create]
+enabled = true
+verify_jwt = true
+import_map = "./functions/event_create/deno.json"
+entrypoint = "./functions/event_create/dist/index.ts"
+
+[functions.place_create]
+enabled = true
+verify_jwt = true
+import_map = "./functions/place_create/deno.json"
+entrypoint = "./functions/place_create/dist/index.ts"
+
+[functions.place_update]
+enabled = true
+verify_jwt = true
+import_map = "./functions/place_update/deno.json"
+entrypoint = "./functions/place_update/dist/index.ts"
+
+[functions.place_delete]
+enabled = true
+verify_jwt = true
+import_map = "./functions/place_delete/deno.json"
+entrypoint = "./functions/place_delete/dist/index.ts"
+
+[functions.place_list]
+enabled = true
+verify_jwt = true
+import_map = "./functions/place_list/deno.json"
+entrypoint = "./functions/place_list/dist/index.ts"
