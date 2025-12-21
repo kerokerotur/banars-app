@@ -1,0 +1,146 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:mobile/config/app_env.dart';
+import 'package:mobile/place_management/models/place.dart';
+import 'package:mobile/place_management/place_list/place_list_state.dart';
+
+final placeListControllerProvider =
+    NotifierProvider<PlaceListController, PlaceListState>(
+  PlaceListController.new,
+);
+
+class PlaceListController extends Notifier<PlaceListState> {
+  late final SupabaseClient _supabaseClient;
+
+  @override
+  PlaceListState build() {
+    _supabaseClient = Supabase.instance.client;
+    // 初回ロード
+    Future.microtask(() => loadPlaces());
+    return PlaceListState.initial();
+  }
+
+  // ========== Load Places ==========
+
+  Future<void> loadPlaces() async {
+    state = state.copyWith(
+      status: PlaceListStatus.loading,
+      clearError: true,
+    );
+
+    try {
+      final response = await _supabaseClient.functions.invoke(
+        AppEnv.placeListFunctionName,
+      );
+
+      final data = response.data;
+      if (data is Map && data['places'] is List) {
+        final places = (data['places'] as List)
+            .map((json) => Place.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        state = state.copyWith(
+          status: PlaceListStatus.loaded,
+          places: places,
+        );
+      } else {
+        throw Exception('Unexpected response format');
+      }
+    } on FunctionException catch (error) {
+      debugPrint('place_list error: $error');
+      final errorMessage = _extractErrorMessage(error.details) ??
+          error.reasonPhrase ??
+          '場所一覧の取得に失敗しました';
+
+      state = state.copyWith(
+        status: PlaceListStatus.error,
+        errorMessage: errorMessage,
+      );
+    } catch (error) {
+      debugPrint('place_list error: $error');
+      state = state.copyWith(
+        status: PlaceListStatus.error,
+        errorMessage: '予期しないエラーが発生しました: $error',
+      );
+    }
+  }
+
+  // ========== Delete Place ==========
+
+  Future<void> deletePlace(String placeId) async {
+    state = state.copyWith(
+      status: PlaceListStatus.deleting,
+      deletingPlaceId: placeId,
+      clearError: true,
+    );
+
+    try {
+      final response = await _supabaseClient.functions.invoke(
+        AppEnv.placeDeleteFunctionName,
+        body: {'place_id': placeId},
+      );
+
+      final data = response.data;
+      if (data is Map && data['success'] == true) {
+        // 成功: リストから削除
+        final updatedPlaces =
+            state.places.where((p) => p.id != placeId).toList();
+
+        state = state.copyWith(
+          status: PlaceListStatus.loaded,
+          places: updatedPlaces,
+          clearDeletingPlaceId: true,
+        );
+      } else {
+        throw Exception('削除に失敗しました');
+      }
+    } on FunctionException catch (error) {
+      debugPrint('place_delete error: $error');
+      final errorCode = _extractErrorCode(error.details);
+
+      String message;
+      if (errorCode == 'place_in_use') {
+        message = 'この場所は既存のイベントで使用されているため削除できません';
+      } else {
+        message = _extractErrorMessage(error.details) ?? '削除に失敗しました';
+      }
+
+      state = state.copyWith(
+        status: PlaceListStatus.error,
+        errorMessage: message,
+        clearDeletingPlaceId: true,
+      );
+    } catch (error) {
+      debugPrint('place_delete error: $error');
+      state = state.copyWith(
+        status: PlaceListStatus.error,
+        errorMessage: '予期しないエラーが発生しました: $error',
+        clearDeletingPlaceId: true,
+      );
+    }
+  }
+
+  // ========== Helper Methods ==========
+
+  String? _extractErrorCode(dynamic details) {
+    if (details is Map) {
+      if (details['error'] is Map) {
+        return details['error']['code'] as String?;
+      }
+      return details['code'] as String?;
+    }
+    return null;
+  }
+
+  String? _extractErrorMessage(dynamic details) {
+    if (details is Map) {
+      if (details['error'] is Map) {
+        return details['error']['message'] as String?;
+      }
+      return details['message'] as String?;
+    }
+    return null;
+  }
+}

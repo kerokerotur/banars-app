@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mobile/event_create/event_create_controller.dart';
 import 'package:mobile/event_create/event_create_state.dart';
-import 'package:mobile/event_create/models/nominatim_result.dart';
+import 'package:mobile/event_create/widgets/place_create_modal.dart';
 
 class EventCreatePage extends ConsumerStatefulWidget {
   const EventCreatePage({super.key});
@@ -14,20 +14,15 @@ class EventCreatePage extends ConsumerStatefulWidget {
 
 class _EventCreatePageState extends ConsumerState<EventCreatePage> {
   late final TextEditingController _titleController;
-  late final TextEditingController _venueNameController;
-  late final TextEditingController _venueAddressController;
   late final TextEditingController _notesController;
-  late final TextEditingController _nominatimSearchController;
   ProviderSubscription<EventCreateState>? _subscription;
+  bool _isVenueDropdownOpen = false;
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController();
-    _venueNameController = TextEditingController();
-    _venueAddressController = TextEditingController();
     _notesController = TextEditingController();
-    _nominatimSearchController = TextEditingController();
     _subscription = ref.listenManual(
       eventCreateControllerProvider,
       _onStateChanged,
@@ -38,10 +33,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
   void dispose() {
     _subscription?.close();
     _titleController.dispose();
-    _venueNameController.dispose();
-    _venueAddressController.dispose();
     _notesController.dispose();
-    _nominatimSearchController.dispose();
     super.dispose();
   }
 
@@ -57,16 +49,6 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
     if (next.errorMessage != null &&
         next.errorMessage != previous?.errorMessage) {
       _showSnackBar(next.errorMessage!, isError: true);
-    }
-
-    // Update venue fields when selected from Nominatim or previous venues
-    if (next.venueName != previous?.venueName &&
-        next.venueName != _venueNameController.text) {
-      _venueNameController.text = next.venueName;
-    }
-    if (next.venueAddress != previous?.venueAddress &&
-        next.venueAddress != _venueAddressController.text) {
-      _venueAddressController.text = next.venueAddress;
     }
   }
 
@@ -195,252 +177,33 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '会場',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 8),
-        _buildVenueModeTabs(state),
-        const SizedBox(height: 16),
-        if (state.venueInputMode == VenueInputMode.nominatim)
-          _buildNominatimSearch(state)
-        else if (state.venueInputMode == VenueInputMode.previousVenues)
-          _buildPreviousVenuesList(state)
-        else
-          _buildManualVenueInput(state),
-      ],
-    );
-  }
-
-  Widget _buildVenueModeTabs(EventCreateState state) {
-    return SegmentedButton<VenueInputMode>(
-      segments: const [
-        ButtonSegment(
-          value: VenueInputMode.nominatim,
-          label: Text('検索'),
-          icon: Icon(Icons.search),
-        ),
-        ButtonSegment(
-          value: VenueInputMode.previousVenues,
-          label: Text('履歴'),
-          icon: Icon(Icons.history),
-        ),
-        ButtonSegment(
-          value: VenueInputMode.manual,
-          label: Text('手入力'),
-          icon: Icon(Icons.edit),
-        ),
-      ],
-      selected: {state.venueInputMode},
-      onSelectionChanged: (Set<VenueInputMode> selection) {
-        ref
-            .read(eventCreateControllerProvider.notifier)
-            .switchVenueInputMode(selection.first);
-      },
-    );
-  }
-
-  Widget _buildNominatimSearch(EventCreateState state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextField(
-          controller: _nominatimSearchController,
-          decoration: InputDecoration(
-            hintText: '会場名で検索 (例: 東京ドーム)',
-            prefixIcon: const Icon(Icons.search),
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.search),
-              tooltip: '検索',
-              onPressed: state.nominatimSearchQuery.isNotEmpty
-                  ? () => ref
-                      .read(eventCreateControllerProvider.notifier)
-                      .performNominatimSearch()
-                  : null,
-            ),
-            filled: true,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          onChanged: (value) => ref
-              .read(eventCreateControllerProvider.notifier)
-              .updateNominatimSearchQuery(value),
-          onSubmitted: (value) {
-            if (value.isNotEmpty) {
-              ref
-                  .read(eventCreateControllerProvider.notifier)
-                  .performNominatimSearch();
-            }
-          },
-        ),
-        const SizedBox(height: 12),
-        if (state.isSearching)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: CircularProgressIndicator(),
-            ),
-          )
-        else if (state.nominatimResults.isNotEmpty)
-          _buildNominatimResults(state.nominatimResults)
-        else if (state.nominatimSearchQuery.isNotEmpty)
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text('検索結果がありません'),
-          ),
-        if (state.venueName.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _buildSelectedVenueDisplay(state),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildNominatimResults(List<NominatimResult> results) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      constraints: const BoxConstraints(maxHeight: 300),
-      child: ListView.separated(
-        shrinkWrap: true,
-        itemCount: results.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
-        itemBuilder: (context, index) {
-          final result = results[index];
-          return ListTile(
-            title: Text(result.formattedName),
-            subtitle: Text(
-              result.displayName,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            onTap: () {
-              ref
-                  .read(eventCreateControllerProvider.notifier)
-                  .selectNominatimResult(result);
-              _nominatimSearchController.clear();
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildPreviousVenuesList(EventCreateState state) {
-    if (state.previousVenues.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Text('まだ会場の履歴がありません'),
-      );
-    }
-
-    return Column(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          constraints: const BoxConstraints(maxHeight: 300),
-          child: ListView.separated(
-            shrinkWrap: true,
-            itemCount: state.previousVenues.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final place = state.previousVenues[index];
-              return ListTile(
-                title: Text(place.name),
-                subtitle: Text(place.address),
-                onTap: () {
-                  ref
-                      .read(eventCreateControllerProvider.notifier)
-                      .selectPreviousVenue(place);
-                },
-              );
-            },
-          ),
-        ),
-        if (state.venueName.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _buildSelectedVenueDisplay(state),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildManualVenueInput(EventCreateState state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextField(
-          controller: _venueNameController,
-          decoration: InputDecoration(
-            labelText: '会場名',
-            hintText: '例: 東京ドーム',
-            errorText: state.validationErrors['venueName'],
-            filled: true,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          onChanged: (value) => ref
-              .read(eventCreateControllerProvider.notifier)
-              .updateVenueName(value),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _venueAddressController,
-          decoration: InputDecoration(
-            labelText: '住所',
-            hintText: '例: 東京都文京区後楽1-3-61',
-            errorText: state.validationErrors['venueAddress'],
-            filled: true,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          onChanged: (value) => ref
-              .read(eventCreateControllerProvider.notifier)
-              .updateVenueAddress(value),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSelectedVenueDisplay(EventCreateState state) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        Row(
           children: [
-            Row(
-              children: [
-                const Icon(Icons.location_on, size: 16),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    '選択中の会場',
-                    style: Theme.of(context).textTheme.labelSmall,
+            Text(
+              'イベント会場',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '*',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              state.venueName,
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            Text(
-              state.venueAddress,
-              style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
         ),
-      ),
+        const SizedBox(height: 8),
+        _buildVenueDropdown(state),
+        if (state.validationErrors['venueName'] != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            state.validationErrors['venueName']!,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -602,6 +365,178 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
     );
   }
 
+  Widget _buildVenueDropdown(EventCreateState state) {
+    final hasSelectedVenue = state.venueName.isNotEmpty;
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          onTap: () => setState(() {
+            _isVenueDropdownOpen = !_isVenueDropdownOpen;
+          }),
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: state.validationErrors['venueName'] != null
+                    ? theme.colorScheme.error
+                    : theme.colorScheme.outline,
+              ),
+              borderRadius: BorderRadius.circular(8),
+              color: theme.colorScheme.surface,
+            ),
+            child: Row(
+              children: [
+                if (hasSelectedVenue) ...[
+                  Icon(
+                    Icons.location_on,
+                    color: theme.colorScheme.error,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  child: Text(
+                    hasSelectedVenue ? state.venueName : 'イベント会場を選択',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: hasSelectedVenue
+                          ? theme.colorScheme.onSurface
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                Icon(
+                  _isVenueDropdownOpen
+                      ? Icons.arrow_drop_up
+                      : Icons.arrow_drop_down,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_isVenueDropdownOpen) ...[
+          const SizedBox(height: 4),
+          _buildVenueDropdownMenu(state, theme),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildVenueDropdownMenu(EventCreateState state, ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: theme.colorScheme.outline,
+        ),
+        borderRadius: BorderRadius.circular(8),
+        color: theme.colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      constraints: const BoxConstraints(maxHeight: 300),
+      child: ListView(
+        shrinkWrap: true,
+        padding: EdgeInsets.zero,
+        children: [
+          // 登録済み会場のリスト
+          ...state.previousVenues.map((place) {
+            final isSelected = state.venueName == place.name;
+            return InkWell(
+              onTap: () {
+                ref
+                    .read(eventCreateControllerProvider.notifier)
+                    .selectPreviousVenue(place);
+                setState(() {
+                  _isVenueDropdownOpen = false;
+                });
+              },
+              child: Container(
+                color: isSelected
+                    ? theme.colorScheme.errorContainer.withValues(alpha: 0.3)
+                    : null,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.location_on,
+                      color: theme.colorScheme.error,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        place.name,
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+          // 区切り線
+          if (state.previousVenues.isNotEmpty)
+            Divider(
+              height: 1,
+              color: theme.colorScheme.outline,
+            ),
+          // 新しい場所を追加
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isVenueDropdownOpen = false;
+              });
+              _showPlaceCreateModal();
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.add,
+                    color: theme.colorScheme.error,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '新しい場所を追加',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showPlaceCreateModal() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => const PlaceCreateModal(),
+    );
+
+    // If place was successfully created, refresh the list and select the latest
+    if (result == true && mounted) {
+      await ref
+          .read(eventCreateControllerProvider.notifier)
+          .refreshPlacesAndSelectLatest();
+    }
+  }
+
   void _showSnackBar(String message, {bool isError = false}) {
     final colorScheme = Theme.of(context).colorScheme;
     final snackBar = SnackBar(
@@ -613,4 +548,5 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
       ..hideCurrentSnackBar()
       ..showSnackBar(snackBar);
   }
+
 }

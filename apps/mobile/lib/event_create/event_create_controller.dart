@@ -390,6 +390,41 @@ class EventCreateController extends Notifier<EventCreateState> {
     }
   }
 
+  // ========== Place Creation Flow ==========
+
+  /// Refresh previous venues list and select the latest one
+  /// Call this after navigating back from PlaceCreatePage
+  Future<void> refreshPlacesAndSelectLatest() async {
+    try {
+      final placesResponse = await _supabaseClient
+          .from('event_places')
+          .select()
+          .order('created_at', ascending: false)
+          .limit(50) as List<dynamic>;
+
+      final previousVenues = placesResponse
+          .map((json) => EventPlace.fromJson(json as Map<String, dynamic>))
+          .toList();
+
+      // Switch to previous venues mode
+      state = state.copyWith(
+        previousVenues: previousVenues,
+        venueInputMode: VenueInputMode.previousVenues,
+      );
+
+      // Auto-select the latest place (first in the list)
+      if (previousVenues.isNotEmpty) {
+        final latestPlace = previousVenues.first;
+        selectPreviousVenue(latestPlace);
+      }
+    } catch (error) {
+      debugPrint('Failed to refresh places and select latest: $error');
+      state = state.copyWith(
+        errorMessage: 'イベント会場情報の更新に失敗しました',
+      );
+    }
+  }
+
   String? _extractErrorMessage(dynamic details) {
     if (details == null) return null;
     if (details is String) return details;
