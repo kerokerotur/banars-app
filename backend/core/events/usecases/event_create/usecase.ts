@@ -17,7 +17,7 @@ export async function executeEventCreateUseCase(
   // OSM IDがある場合とない場合で処理を分ける
   const placeFingerprint =
     request.place.osmId === null
-      ? generatePlaceFingerprint(request.place.name, request.place.address)
+      ? await generatePlaceFingerprint(request.place.name, request.place.address)
       : null
 
   const eventPlace = await deps.eventPlaceRepository.upsert({
