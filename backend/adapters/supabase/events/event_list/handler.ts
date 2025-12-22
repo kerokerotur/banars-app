@@ -16,7 +16,7 @@ export function createEventListHandler(deps: EventListHandlerDeps) {
     additionalMiddleware: [authMiddleware()],
   })
 
-  app.get("/events/list", async (c: Context<{ Variables: AuthenticatedHonoVariables }>) => {
+  app.get("/event_list", async (c: Context<{ Variables: AuthenticatedHonoVariables }>) => {
     const supabaseClient = c.get("supabaseClient")
     const userId = c.get("userId")
 

@@ -16,31 +16,22 @@ export class SupabaseEventPlaceRepository implements IEventPlaceRepository {
   constructor(private readonly client: SupabaseClient) {}
 
   async upsert(input: UpsertEventPlaceInput): Promise<EventPlace> {
-    // OSM IDがある場合: (osm_type, osm_id) でUPSERT
-    // 手入力の場合: place_fingerprint でUPSERT
-    const onConflict =
-      input.osmId !== null ? "osm_type,osm_id" : "place_fingerprint"
-
+    // 会場名 (name) でUPSERT
     const { data, error } = await this.client
       .from("event_places")
       .upsert(
         {
           name: input.name,
-          address: input.address,
-          latitude: input.latitude,
-          longitude: input.longitude,
-          osm_id: input.osmId,
-          osm_type: input.osmType,
-          place_fingerprint: input.placeFingerprint,
+          google_maps_url_normalized: input.googleMapsUrl,
           created_user: input.createdUser,
         },
         {
-          onConflict,
+          onConflict: "name",
           ignoreDuplicates: false, // 既存レコードも更新する
         },
       )
       .select(
-        "id, name, address, latitude, longitude, osm_id, osm_type, place_fingerprint, created_at, created_user, updated_at, updated_user",
+        "id, name, google_maps_url_normalized, created_at, created_user, updated_at, updated_user",
       )
       .single()
 
@@ -63,12 +54,7 @@ export class SupabaseEventPlaceRepository implements IEventPlaceRepository {
     return EventPlace.fromPayload({
       id: data.id,
       name: data.name,
-      address: data.address,
-      latitude: data.latitude,
-      longitude: data.longitude,
-      osmId: data.osm_id,
-      osmType: data.osm_type,
-      placeFingerprint: data.place_fingerprint,
+      googleMapsUrl: data.google_maps_url_normalized,
       createdAt: new Date(data.created_at),
       createdUser: data.created_user,
       updatedAt: new Date(data.updated_at),

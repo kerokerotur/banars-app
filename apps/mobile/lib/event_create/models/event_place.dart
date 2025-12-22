@@ -2,30 +2,30 @@ class EventPlace {
   const EventPlace({
     required this.id,
     required this.name,
-    required this.address,
-    this.latitude,
-    this.longitude,
-    this.osmId,
-    this.osmType,
+    required this.googleMapsUrl,
+    required this.createdAt,
+    this.createdUser,
+    required this.updatedAt,
+    this.updatedUser,
   });
 
   factory EventPlace.fromJson(Map<String, dynamic> json) {
     return EventPlace(
       id: json['id'] as String,
       name: json['name'] as String,
-      address: json['address'] as String,
-      latitude: json['latitude'] as double?,
-      longitude: json['longitude'] as double?,
-      osmId: json['osm_id'] as int?,
-      osmType: json['osm_type'] as String?,
+      googleMapsUrl: json['google_maps_url_normalized'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      createdUser: json['created_user'] as String?,
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+      updatedUser: json['updated_user'] as String?,
     );
   }
 
   final String id;
   final String name;
-  final String address;
-  final double? latitude;
-  final double? longitude;
-  final int? osmId;
-  final String? osmType;
+  final String googleMapsUrl; // DBカラム名: google_maps_url_normalized
+  final DateTime createdAt;
+  final String? createdUser;
+  final DateTime updatedAt;
+  final String? updatedUser;
 }

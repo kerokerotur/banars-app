@@ -5,12 +5,7 @@ import type { EventPlace } from "../entity/event_place.ts"
  */
 export interface UpsertEventPlaceInput {
   name: string
-  address: string
-  latitude: number | null
-  longitude: number | null
-  osmId: number | null
-  osmType: string | null
-  placeFingerprint: string | null
+  googleMapsUrl: string
   createdUser: string | null
 }
 
@@ -20,8 +15,7 @@ export interface UpsertEventPlaceInput {
 export interface IEventPlaceRepository {
   /**
    * 会場をUPSERTする
-   * - OSM ID がある場合は (osm_type, osm_id) をキーに UPSERT
-   * - 手入力の場合は place_fingerprint をキーに UPSERT
+   * - 会場名 (name) をキーに UPSERT
    */
   upsert(input: UpsertEventPlaceInput): Promise<EventPlace>
 }

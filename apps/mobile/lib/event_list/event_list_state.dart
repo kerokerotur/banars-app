@@ -1,3 +1,5 @@
+import 'package:mobile/event_list/models/event_list_item.dart';
+
 enum EventListStatus {
   loading,
   loaded,
@@ -16,7 +18,7 @@ class EventListState {
       );
 
   final EventListStatus status;
-  final List<dynamic> events;
+  final List<EventListItem> events;
   final String? errorMessage;
 
   bool get isLoading => status == EventListStatus.loading;
@@ -25,7 +27,7 @@ class EventListState {
 
   EventListState copyWith({
     EventListStatus? status,
-    List<dynamic>? events,
+    List<EventListItem>? events,
     String? errorMessage,
     bool clearError = false,
   }) {

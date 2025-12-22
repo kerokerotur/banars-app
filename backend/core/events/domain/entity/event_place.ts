@@ -5,12 +5,7 @@
 export interface EventPlacePayload {
   id: string
   name: string
-  address: string
-  latitude: number | null
-  longitude: number | null
-  osmId: number | null
-  osmType: string | null
-  placeFingerprint: string | null
+  googleMapsUrl: string
   createdAt: Date
   createdUser: string | null
   updatedAt: Date
@@ -21,12 +16,7 @@ export class EventPlace {
   private constructor(
     public readonly id: string,
     public readonly name: string,
-    public readonly address: string,
-    public readonly latitude: number | null,
-    public readonly longitude: number | null,
-    public readonly osmId: number | null,
-    public readonly osmType: string | null,
-    public readonly placeFingerprint: string | null,
+    public readonly googleMapsUrl: string,
     public readonly createdAt: Date,
     public readonly createdUser: string | null,
     public readonly updatedAt: Date,
@@ -37,12 +27,7 @@ export class EventPlace {
     return new EventPlace(
       payload.id,
       payload.name,
-      payload.address,
-      payload.latitude,
-      payload.longitude,
-      payload.osmId,
-      payload.osmType,
-      payload.placeFingerprint,
+      payload.googleMapsUrl,
       payload.createdAt,
       payload.createdUser,
       payload.updatedAt,
@@ -53,20 +38,12 @@ export class EventPlace {
   toResponse(): {
     id: string
     name: string
-    address: string
-    latitude: number | null
-    longitude: number | null
-    osmId: number | null
-    osmType: string | null
+    googleMapsUrl: string
   } {
     return {
       id: this.id,
       name: this.name,
-      address: this.address,
-      latitude: this.latitude,
-      longitude: this.longitude,
-      osmId: this.osmId,
-      osmType: this.osmType,
+      googleMapsUrl: this.googleMapsUrl,
     }
   }
 }

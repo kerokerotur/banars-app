@@ -1,6 +1,5 @@
 import 'package:mobile/event_create/models/event_place.dart';
 import 'package:mobile/event_create/models/event_type.dart';
-import 'package:mobile/event_create/models/nominatim_result.dart';
 
 enum EventCreateStatus {
   initial,
@@ -12,24 +11,14 @@ enum EventCreateStatus {
 }
 
 enum VenueInputMode {
-  nominatim,
   previousVenues,
   manual,
-}
-
-enum NominatimSearchStatus {
-  idle,
-  searching,
-  success,
-  error,
-  rateLimited,
 }
 
 class EventCreateState {
   const EventCreateState({
     required this.status,
     required this.venueInputMode,
-    required this.nominatimSearchStatus,
     this.eventTypes = const [],
     this.previousVenues = const [],
     this.title = '',
@@ -38,28 +27,20 @@ class EventCreateState {
     this.meetingDatetime,
     this.responseDeadlineDatetime,
     this.venueName = '',
-    this.venueAddress = '',
-    this.venueLatitude,
-    this.venueLongitude,
-    this.venueOsmId,
-    this.venueOsmType,
+    this.venueGoogleMapsUrl = '',
     this.notesMarkdown = '',
-    this.nominatimSearchQuery = '',
-    this.nominatimResults = const [],
     this.validationErrors = const {},
     this.errorMessage,
   });
 
   factory EventCreateState.initial() => const EventCreateState(
         status: EventCreateStatus.initial,
-        venueInputMode: VenueInputMode.nominatim,
-        nominatimSearchStatus: NominatimSearchStatus.idle,
+        venueInputMode: VenueInputMode.previousVenues,
       );
 
   // Status fields
   final EventCreateStatus status;
   final VenueInputMode venueInputMode;
-  final NominatimSearchStatus nominatimSearchStatus;
 
   // Cache data
   final List<EventType> eventTypes;
@@ -72,16 +53,8 @@ class EventCreateState {
   final DateTime? meetingDatetime;
   final DateTime? responseDeadlineDatetime;
   final String venueName;
-  final String venueAddress;
-  final double? venueLatitude;
-  final double? venueLongitude;
-  final int? venueOsmId;
-  final String? venueOsmType;
+  final String venueGoogleMapsUrl;
   final String notesMarkdown;
-
-  // Nominatim search
-  final String nominatimSearchQuery;
-  final List<NominatimResult> nominatimResults;
 
   // Validation
   final Map<String, String> validationErrors;
@@ -96,14 +69,12 @@ class EventCreateState {
       title.isNotEmpty &&
       selectedEventTypeId != null &&
       venueName.isNotEmpty &&
-      venueAddress.isNotEmpty;
+      venueGoogleMapsUrl.isNotEmpty;
   bool get hasValidationErrors => validationErrors.isNotEmpty;
-  bool get isSearching => nominatimSearchStatus == NominatimSearchStatus.searching;
 
   EventCreateState copyWith({
     EventCreateStatus? status,
     VenueInputMode? venueInputMode,
-    NominatimSearchStatus? nominatimSearchStatus,
     List<EventType>? eventTypes,
     List<EventPlace>? previousVenues,
     String? title,
@@ -112,21 +83,12 @@ class EventCreateState {
     DateTime? meetingDatetime,
     DateTime? responseDeadlineDatetime,
     String? venueName,
-    String? venueAddress,
-    double? venueLatitude,
-    double? venueLongitude,
-    int? venueOsmId,
-    String? venueOsmType,
+    String? venueGoogleMapsUrl,
     String? notesMarkdown,
-    String? nominatimSearchQuery,
-    List<NominatimResult>? nominatimResults,
     Map<String, String>? validationErrors,
     String? errorMessage,
     bool clearError = false,
     bool clearValidation = false,
-    bool clearDateTimes = false,
-    bool clearVenueCoordinates = false,
-    bool clearVenueOsm = false,
     bool clearStartDatetime = false,
     bool clearMeetingDatetime = false,
     bool clearResponseDeadline = false,
@@ -134,33 +96,22 @@ class EventCreateState {
     return EventCreateState(
       status: status ?? this.status,
       venueInputMode: venueInputMode ?? this.venueInputMode,
-      nominatimSearchStatus: nominatimSearchStatus ?? this.nominatimSearchStatus,
       eventTypes: eventTypes ?? this.eventTypes,
       previousVenues: previousVenues ?? this.previousVenues,
       title: title ?? this.title,
       selectedEventTypeId: selectedEventTypeId ?? this.selectedEventTypeId,
-      startDatetime: clearStartDatetime || clearDateTimes
+      startDatetime: clearStartDatetime
           ? null
           : (startDatetime ?? this.startDatetime),
-      meetingDatetime: clearMeetingDatetime || clearDateTimes
+      meetingDatetime: clearMeetingDatetime
           ? null
           : (meetingDatetime ?? this.meetingDatetime),
-      responseDeadlineDatetime: clearResponseDeadline || clearDateTimes
+      responseDeadlineDatetime: clearResponseDeadline
           ? null
           : (responseDeadlineDatetime ?? this.responseDeadlineDatetime),
       venueName: venueName ?? this.venueName,
-      venueAddress: venueAddress ?? this.venueAddress,
-      venueLatitude: clearVenueCoordinates
-          ? null
-          : (venueLatitude ?? this.venueLatitude),
-      venueLongitude: clearVenueCoordinates
-          ? null
-          : (venueLongitude ?? this.venueLongitude),
-      venueOsmId: clearVenueOsm ? null : (venueOsmId ?? this.venueOsmId),
-      venueOsmType: clearVenueOsm ? null : (venueOsmType ?? this.venueOsmType),
+      venueGoogleMapsUrl: venueGoogleMapsUrl ?? this.venueGoogleMapsUrl,
       notesMarkdown: notesMarkdown ?? this.notesMarkdown,
-      nominatimSearchQuery: nominatimSearchQuery ?? this.nominatimSearchQuery,
-      nominatimResults: nominatimResults ?? this.nominatimResults,
       validationErrors:
           clearValidation ? {} : (validationErrors ?? this.validationErrors),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -13,6 +14,9 @@ import 'signup/signup_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 日付ロケールを初期化（例：DateFormat で ja_JP を利用するため）
+  await initializeDateFormatting('ja_JP');
 
   // SharedPreferences を初期化
   final sharedPreferences = await SharedPreferences.getInstance();

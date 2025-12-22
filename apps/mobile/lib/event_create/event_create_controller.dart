@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile/config/app_env.dart';
 import 'package:mobile/event_create/event_create_state.dart';
 import 'package:mobile/event_create/models/event_place.dart';
-import 'package:mobile/event_create/models/nominatim_result.dart';
 import 'package:mobile/shared/providers/event_types_provider.dart';
 
 final eventCreateControllerProvider =
@@ -16,8 +15,6 @@ final eventCreateControllerProvider =
 
 class EventCreateController extends Notifier<EventCreateState> {
   late final SupabaseClient _supabaseClient;
-  DateTime? _lastNominatimRequest;
-  static const _nominatimRateLimit = Duration(seconds: 1);
 
   @override
   EventCreateState build() {
@@ -132,109 +129,6 @@ class EventCreateController extends Notifier<EventCreateState> {
   void switchVenueInputMode(VenueInputMode mode) {
     state = state.copyWith(
       venueInputMode: mode,
-      nominatimSearchStatus: NominatimSearchStatus.idle,
-      nominatimResults: [],
-      clearValidation: true,
-    );
-  }
-
-  // ========== Nominatim Search ==========
-
-  void updateNominatimSearchQuery(String query) {
-    state = state.copyWith(
-      nominatimSearchQuery: query,
-    );
-
-    // Clear results when query is empty
-    if (query.isEmpty) {
-      state = state.copyWith(
-        nominatimResults: [],
-        nominatimSearchStatus: NominatimSearchStatus.idle,
-      );
-    }
-  }
-
-  Future<void> performNominatimSearch() async {
-    final query = state.nominatimSearchQuery;
-    if (query.isEmpty) {
-      return;
-    }
-    // Rate limiting check
-    if (_lastNominatimRequest != null) {
-      final elapsed = DateTime.now().difference(_lastNominatimRequest!);
-      if (elapsed < _nominatimRateLimit) {
-        final waitTime = _nominatimRateLimit - elapsed;
-        await Future.delayed(waitTime);
-      }
-    }
-
-    state = state.copyWith(
-      nominatimSearchStatus: NominatimSearchStatus.searching,
-    );
-
-    try {
-      _lastNominatimRequest = DateTime.now();
-
-      final response = await _supabaseClient.functions.invoke(
-        AppEnv.searchPlacesFunctionName,
-        body: {
-          'query': query,
-          'limit': 5,
-          'countryCodes': ['jp'],
-        },
-      );
-
-      final data = response.data;
-      if (data is Map && data['success'] == true && data['results'] is List) {
-        final results = (data['results'] as List)
-            .map(
-              (json) =>
-                  NominatimResult.fromJson(json as Map<String, dynamic>),
-            )
-            .toList();
-
-        state = state.copyWith(
-          nominatimResults: results,
-          nominatimSearchStatus: NominatimSearchStatus.success,
-        );
-      } else {
-        throw Exception('unexpected response');
-      }
-    } on FunctionException catch (error) {
-      debugPrint('search_places FunctionException: ${error.details}');
-      if (error.status == 429) {
-        state = state.copyWith(
-          nominatimSearchStatus: NominatimSearchStatus.rateLimited,
-          errorMessage: _extractErrorMessage(error.details) ??
-              'レート制限に達しました。しばらくお待ちください。',
-        );
-      } else {
-        state = state.copyWith(
-          nominatimSearchStatus: NominatimSearchStatus.error,
-          errorMessage: _extractErrorMessage(error.details) ??
-              error.reasonPhrase ??
-              '会場検索に失敗しました。手入力をお試しください。',
-        );
-      }
-    } catch (error) {
-      debugPrint('Nominatim search error: $error');
-      state = state.copyWith(
-        nominatimSearchStatus: NominatimSearchStatus.error,
-        errorMessage: '会場検索に失敗しました。手入力をお試しください。',
-      );
-    }
-  }
-
-  void selectNominatimResult(NominatimResult result) {
-    state = state.copyWith(
-      venueName: result.formattedName,
-      venueAddress: result.displayName,
-      venueLatitude: result.lat,
-      venueLongitude: result.lon,
-      venueOsmId: result.osmId,
-      venueOsmType: result.osmType,
-      nominatimSearchStatus: NominatimSearchStatus.idle,
-      nominatimResults: [],
       clearValidation: true,
     );
   }
@@ -244,11 +138,7 @@ class EventCreateController extends Notifier<EventCreateState> {
   void selectPreviousVenue(EventPlace place) {
     state = state.copyWith(
       venueName: place.name,
-      venueAddress: place.address,
-      venueLatitude: place.latitude,
-      venueLongitude: place.longitude,
-      venueOsmId: place.osmId,
-      venueOsmType: place.osmType,
+      venueGoogleMapsUrl: place.googleMapsUrl,
       clearValidation: true,
     );
   }
@@ -260,16 +150,14 @@ class EventCreateController extends Notifier<EventCreateState> {
       venueName: value,
       status: EventCreateStatus.editing,
       clearValidation: true,
-      clearVenueOsm: true, // Clear OSM data when manually editing
     );
   }
 
-  void updateVenueAddress(String value) {
+  void updateVenueGoogleMapsUrl(String value) {
     state = state.copyWith(
-      venueAddress: value,
+      venueGoogleMapsUrl: value,
       status: EventCreateStatus.editing,
       clearValidation: true,
-      clearVenueOsm: true,
     );
   }
 
@@ -287,8 +175,8 @@ class EventCreateController extends Notifier<EventCreateState> {
     if (state.venueName.trim().isEmpty) {
       errors['venueName'] = '会場名を入力してください';
     }
-    if (state.venueAddress.trim().isEmpty) {
-      errors['venueAddress'] = '住所を入力してください';
+    if (state.venueGoogleMapsUrl.trim().isEmpty) {
+      errors['venueGoogleMapsUrl'] = 'Google Maps URLを入力してください';
     }
 
     if (errors.isNotEmpty) {
@@ -322,20 +210,15 @@ class EventCreateController extends Notifier<EventCreateState> {
           'title': state.title.trim(),
           'eventTypeId': state.selectedEventTypeId,
           if (state.startDatetime != null)
-            'startDatetime': state.startDatetime!.toIso8601String(),
+            'startDatetime': state.startDatetime!.toUtc().toIso8601String(),
           if (state.meetingDatetime != null)
-            'meetingDatetime': state.meetingDatetime!.toIso8601String(),
+            'meetingDatetime': state.meetingDatetime!.toUtc().toIso8601String(),
           if (state.responseDeadlineDatetime != null)
             'responseDeadlineDatetime':
-                state.responseDeadlineDatetime!.toIso8601String(),
+                state.responseDeadlineDatetime!.toUtc().toIso8601String(),
           'place': {
             'name': state.venueName.trim(),
-            'address': state.venueAddress.trim(),
-            if (state.venueLatitude != null) 'latitude': state.venueLatitude,
-            if (state.venueLongitude != null)
-              'longitude': state.venueLongitude,
-            if (state.venueOsmId != null) 'osmId': state.venueOsmId,
-            if (state.venueOsmType != null) 'osmType': state.venueOsmType,
+            'googleMapsUrl': state.venueGoogleMapsUrl.trim(),
           },
           if (state.notesMarkdown.trim().isNotEmpty)
             'notesMarkdown': state.notesMarkdown.trim(),

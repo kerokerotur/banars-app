@@ -14,11 +14,7 @@ export interface EventCreateUseCaseRequest {
   responseDeadlineDatetime: Date | null
   place: {
     name: string
-    address: string
-    latitude: number | null
-    longitude: number | null
-    osmId: number | null
-    osmType: string | null
+    googleMapsUrl: string
   }
   notesMarkdown: string | null
 }

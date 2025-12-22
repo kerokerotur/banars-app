@@ -45,11 +45,7 @@ export function createEventCreateHandler(deps: EventCreateHandlerDeps) {
             responseDeadlineDatetime: body.responseDeadlineDatetime ?? null,
             place: {
               name: body.place.name,
-              address: body.place.address,
-              latitude: body.place.latitude ?? null,
-              longitude: body.place.longitude ?? null,
-              osmId: body.place.osmId ?? null,
-              osmType: body.place.osmType ?? null,
+              googleMapsUrl: body.place.googleMapsUrl,
             },
             notesMarkdown: body.notesMarkdown ?? null,
           },
