@@ -3,6 +3,8 @@ import { SupabaseEventRepository } from "../repositories/event_repository.ts"
 import { SupabaseEventPlaceRepository } from "../repositories/event_place_repository.ts"
 import { SupabaseEventTypeRepository } from "../repositories/event_type_repository.ts"
 import { SupabasePlaceManagementRepository } from "../repositories/place_management_repository.ts"
+import { SupabaseEventListRepository } from "../repositories/event_list_repository.ts"
+import { SupabaseEventAttendanceRepository } from "../repositories/event_attendance_repository.ts"
 
 /**
  * Supabaseイベント関連のリポジトリファクトリー
@@ -26,6 +28,14 @@ export class EventRepositoryFactory {
     return new SupabasePlaceManagementRepository(this.client)
   }
 
+  createEventListRepository() {
+    return new SupabaseEventListRepository(this.client)
+  }
+
+  createEventAttendanceRepository() {
+    return new SupabaseEventAttendanceRepository(this.client)
+  }
+
   /**
    * すべてのリポジトリを一括生成
    */
@@ -35,6 +45,8 @@ export class EventRepositoryFactory {
       eventPlaceRepository: this.createEventPlaceRepository(),
       eventTypeRepository: this.createEventTypeRepository(),
       placeManagementRepository: this.createPlaceManagementRepository(),
+      eventListRepository: this.createEventListRepository(),
+      eventAttendanceRepository: this.createEventAttendanceRepository(),
     }
   }
 }
