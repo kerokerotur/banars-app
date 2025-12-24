@@ -30,11 +30,10 @@ sequenceDiagram
 ### ビュー: events_detail_view（新規追加予定）
 - 目的: 詳細画面で必要な情報を 1 クエリで返し、クライアント処理を単純化する。
 - 列案:
-  - イベント: `id`, `title`, `event_type_id`, `event_type_name`, `start_datetime`, `meeting_datetime`, `response_deadline_datetime`, `notes_markdown`, `created_at`, `updated_at`
-  - 会場: `event_place_id`, `place_name`, `place_address`, `latitude`, `longitude`, `osm_id`, `osm_type`
+  - イベント: `id`, `title`, `event_type_id`, `event_type_name`, `start_datetime`, `meeting_datetime`, `response_deadline_datetime`, `event_place_id`, `notes_markdown`, `created_at`, `updated_at`
   - 出欠集計: `attending_count`, `absent_count`, `pending_count`, `unanswered_count`
-- 作り方: `events` を主、`event_types`/`event_places` を LEFT JOIN、`attendance_summary_view` と結合。
-- 想定利用: `supabase_flutter` の `select().single()` で取得。クライアント側で Google Maps ディープリンク/マーカーを生成。
+- 作り方: `events` を主、`event_types` を LEFT JOIN、`attendance_summary_view` と結合。
+- 想定利用: `supabase_flutter` の `select().single()` で取得。会場情報が必要な場合はクライアント側で `event_place_id` を使って `event_places` テーブルから取得。
 
 ### ビュー: attendance_summary_view（新規追加予定）
 - 目的: ステータス別人数カウントを全メンバーが閲覧できるようにする。

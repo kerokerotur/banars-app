@@ -29,10 +29,11 @@ sequenceDiagram
 
 ## データモデル / API
 - 参照テーブル: `events`, `event_places`, `event_types`。公開ビュー: `events_recent_view`（下記列を持つ）。
-- ビュー列: `id`, `title`, `event_type_id`, `event_type_name`, `start_datetime`, `meeting_datetime`, `response_deadline_datetime`, `event_place_id`, `place_name`, `created_at`, `updated_at`。
+- ビュー列: `id`, `title`, `event_type_id`, `event_type_name`, `start_datetime`, `meeting_datetime`, `response_deadline_datetime`, `event_place_id`, `created_at`, `updated_at`。
 - 抽出条件: `start_datetime >= now() - interval '1 day'`（DB タイムゾーン = UTC 基準）。表示期間は開始から 1 日間延長。
 - 並び替え: `start_datetime` 降順。取得件数: `limit 50`（Edge Function 側で `ORDER BY ... DESC LIMIT 50` を適用）。
 - 出欠バッジ用: Edge Function 内で `attendance` を `event_id` IN (...) かつ `user_id = auth.uid()` で取得し、`user_attendance_status` を `participating|absent|pending|unanswered` のいずれかで付与する（ビューには含めない）。
+- 会場表示: クライアント側で必要に応じて `event_place_id` を使って `event_places` テーブルから会場名を取得。
 - Realtime: `supabase_flutter` の `stream()` で `events` テーブルを購読。push 受信時に `GET /events/list` を再リクエストして最新状態を反映。
 - 詳細画面への遷移時は `id` を引き渡し、`event_detail` の設計に委譲。
 

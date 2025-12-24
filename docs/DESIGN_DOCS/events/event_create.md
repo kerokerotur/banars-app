@@ -125,16 +125,7 @@ sequenceDiagram
     "response_deadline_datetime": "2025-12-14T18:00:00+09:00",
     "event_place_id": "uuid-of-event-place",
     "notes_markdown": "持ち物: ユニフォーム、グローブ、スパイク",
-    "created_at": "2025-12-09T12:00:00Z",
-    "place": {
-      "id": "uuid-of-event-place",
-      "name": "東京ドーム",
-      "address": "東京都文京区後楽1-3-61",
-      "osm_id": 12345678,
-      "osm_type": "way",
-      "latitude": 35.7056,
-      "longitude": 139.7519
-    }
+    "created_at": "2025-12-09T12:00:00Z"
   }
 }
 ```
