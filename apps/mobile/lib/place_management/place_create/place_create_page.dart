@@ -72,7 +72,7 @@ class _ExistingPlaceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      color: Theme.of(context).colorScheme.surfaceVariant,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -222,6 +222,20 @@ class _PlaceCreatePageState extends ConsumerState<PlaceCreatePage> {
               const SizedBox(height: 16),
             ],
 
+            // 地図プレビュー（未登録時は会場名入力の前に表示）
+            if (state.showPreview && state.previewUrl != null) ...[
+              Text(
+                '地図プレビュー',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              GoogleMapsPreview(
+                googleMapsUrl: state.previewUrl!,
+                height: 400,
+              ),
+              const SizedBox(height: 16),
+            ],
+
             if (state.lookupStatus == PlaceLookupStatus.available) ...[
               // イベント会場名入力（未登録時のみ表示）
               TextField(
@@ -229,6 +243,7 @@ class _PlaceCreatePageState extends ConsumerState<PlaceCreatePage> {
                 decoration: InputDecoration(
                   labelText: 'イベント会場名',
                   hintText: '例）○○体育館',
+                  helperText: '地図を確認しながら会場名を入力してください',
                   errorText: state.validationErrors['name'],
                   filled: true,
                   border: OutlineInputBorder(
@@ -239,17 +254,6 @@ class _PlaceCreatePageState extends ConsumerState<PlaceCreatePage> {
                     .read(placeCreateControllerProvider.notifier)
                     .updateName(value),
               ),
-              const SizedBox(height: 16),
-            ],
-
-            // 地図プレビュー
-            if (state.showPreview && state.previewUrl != null) ...[
-              Text(
-                '地図プレビュー',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 8),
-              GoogleMapsPreview(googleMapsUrl: state.previewUrl!),
               const SizedBox(height: 24),
             ],
 

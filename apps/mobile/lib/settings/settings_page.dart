@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:mobile/place_management/place_list/place_list_page.dart';
 import 'package:mobile/shared/providers/theme_provider.dart';
 import 'package:mobile/shared/theme/app_colors.dart';
 
@@ -52,6 +53,26 @@ class SettingsPage extends ConsumerWidget {
                     }
                   },
                 ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // 管理セクション
+          _SectionHeader(title: '管理'),
+          _SettingsCard(
+            children: [
+              _SettingsTile(
+                icon: Icons.place_outlined,
+                title: 'イベント会場管理',
+                subtitle: '会場の登録・編集・削除',
+                trailing: Icon(Icons.chevron_right, color: textSecondaryColor),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const PlaceListPage(),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -175,12 +196,14 @@ class _SettingsTile extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.trailing,
+    this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String? subtitle;
   final Widget? trailing;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -192,6 +215,7 @@ class _SettingsTile extends StatelessWidget {
         isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
 
     return InkWell(
+      onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

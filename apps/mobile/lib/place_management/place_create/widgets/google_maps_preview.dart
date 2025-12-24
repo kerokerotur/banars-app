@@ -8,7 +8,7 @@ class GoogleMapsPreview extends StatefulWidget {
   const GoogleMapsPreview({
     super.key,
     required this.googleMapsUrl,
-    this.height = 300,
+    this.height = 400,
   });
 
   @override
@@ -29,9 +29,10 @@ class _GoogleMapsPreviewState extends State<GoogleMapsPreview> {
   void _initializeWebView() {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0x00000000))
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageStarted: (_) {
+          onPageStarted: (url) {
             if (mounted) {
               setState(() {
                 _isLoading = true;
@@ -39,7 +40,7 @@ class _GoogleMapsPreviewState extends State<GoogleMapsPreview> {
               });
             }
           },
-          onPageFinished: (_) {
+          onPageFinished: (url) {
             if (mounted) {
               setState(() {
                 _isLoading = false;
@@ -54,7 +55,14 @@ class _GoogleMapsPreviewState extends State<GoogleMapsPreview> {
               });
             }
           },
+          onNavigationRequest: (request) {
+            // すべてのナビゲーションを許可（リダイレクトを追跡）
+            return NavigationDecision.navigate;
+          },
         ),
+      )
+      ..setUserAgent(
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1',
       )
       ..loadRequest(Uri.parse(widget.googleMapsUrl));
   }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mobile/place_management/place_create/place_create_controller.dart';
 import 'package:mobile/place_management/place_create/place_create_state.dart';
+import 'package:mobile/place_management/place_create/widgets/google_maps_preview.dart';
 import 'package:mobile/place_management/models/place.dart';
 
 class PlaceCreateModal extends ConsumerStatefulWidget {
@@ -68,7 +69,7 @@ class _ExistingPlaceCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       elevation: 0,
-      color: theme.colorScheme.surfaceVariant,
+      color: theme.colorScheme.surfaceContainerHighest,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -165,13 +166,18 @@ class _PlaceCreateModalState extends ConsumerState<PlaceCreateModal> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 600),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width - 32,
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             // ヘッダー
             Row(
               children: [
@@ -265,6 +271,20 @@ class _PlaceCreateModalState extends ConsumerState<PlaceCreateModal> {
               const SizedBox(height: 16),
             ],
 
+            // 地図プレビュー（未登録時は会場名入力の前に表示）
+            if (state.showPreview && state.previewUrl != null) ...[
+              Text(
+                '地図プレビュー',
+                style: theme.textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              GoogleMapsPreview(
+                googleMapsUrl: state.previewUrl!,
+                height: 400,
+              ),
+              const SizedBox(height: 16),
+            ],
+
             if (state.lookupStatus == PlaceLookupStatus.available) ...[
               // イベント会場名入力（未登録時のみ）
               Text(
@@ -276,6 +296,7 @@ class _PlaceCreateModalState extends ConsumerState<PlaceCreateModal> {
                 controller: _nameController,
                 decoration: InputDecoration(
                   hintText: '例）東京ドーム',
+                  helperText: '地図を確認しながら会場名を入力してください',
                   errorText: state.validationErrors['name'],
                   filled: true,
                   fillColor: theme.colorScheme.surface,
@@ -362,7 +383,8 @@ class _PlaceCreateModalState extends ConsumerState<PlaceCreateModal> {
                 ),
               ],
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
