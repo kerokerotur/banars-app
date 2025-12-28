@@ -15,6 +15,7 @@ class EventDetailState {
     required this.attendance,
     this.errorMessage,
     this.myStatus,
+    this.myComment,
     this.isSubmitting = false,
   });
 
@@ -29,6 +30,7 @@ class EventDetailState {
   final List<EventAttendance> attendance;
   final String? errorMessage;
   final EventAttendanceStatus? myStatus;
+  final String? myComment;
   final bool isSubmitting;
 
   EventDetailState copyWith({
@@ -37,6 +39,7 @@ class EventDetailState {
     String? errorMessage,
     bool clearError = false,
     EventAttendanceStatus? myStatus,
+    String? myComment,
     bool? isSubmitting,
   }) {
     return EventDetailState(
@@ -45,6 +48,7 @@ class EventDetailState {
       attendance: attendance ?? this.attendance,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
       myStatus: myStatus ?? this.myStatus,
+      myComment: myComment ?? this.myComment,
       isSubmitting: isSubmitting ?? this.isSubmitting,
     );
   }

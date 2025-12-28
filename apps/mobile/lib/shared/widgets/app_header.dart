@@ -4,7 +4,6 @@ import 'package:mobile/shared/theme/app_colors.dart';
 
 /// ヘッダーメニューの項目
 enum HeaderMenuItem {
-  userProfile,
   settings,
   logout,
 }
@@ -109,12 +108,6 @@ class _HeaderMenu extends StatelessWidget {
       ),
       onSelected: onItemSelected,
       itemBuilder: (context) => [
-        _buildMenuItem(
-          context: context,
-          value: HeaderMenuItem.userProfile,
-          icon: Icons.person_outline,
-          label: 'ユーザー情報',
-        ),
         _buildMenuItem(
           context: context,
           value: HeaderMenuItem.settings,

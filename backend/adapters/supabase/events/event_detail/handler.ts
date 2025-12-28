@@ -17,7 +17,7 @@ export function createEventDetailHandler(deps: EventDetailHandlerDeps) {
     additionalMiddleware: [authMiddleware()],
   })
 
-  app.get("/events/detail", async (c: Context<{ Variables: AuthenticatedHonoVariables }>) => {
+  const handleGet = async (c: Context<{ Variables: AuthenticatedHonoVariables }>) => {
     const eventId = c.req.query("event_id")
     if (!eventId) {
       throw new EventDetailError("validation_error", "event_id は必須です", 400)
@@ -33,7 +33,10 @@ export function createEventDetailHandler(deps: EventDetailHandlerDeps) {
 
     const response: EventDetailApiResponse = { attendance }
     return c.json(response)
-  })
+  }
+
+  // ルーティング: /event_detail
+  app.get("/event_detail", handleGet)
 
   return app
 }

@@ -6,11 +6,11 @@ sequenceDiagram
     autonumber
     participant Member as Member / Manager
     participant App as Flutter App
-    participant Edge as Edge Function (events/detail)
+    participant Edge as Edge Function (event_detail)
     participant DB as Supabase DB
 
     Member->>App: イベント一覧から詳細を開く
-    App->>Edge: GET /events/detail?event_id=:id（出欠のみ取得）
+    App->>Edge: GET /event_detail?event_id=:id（出欠のみ取得）
     Edge->>DB: SELECT * FROM attendance WHERE event_id = :event_id
     Edge-->>App: 出欠個票
     App->>Member: 画面表示（イベント情報は一覧レスポンスを流用）
@@ -24,14 +24,14 @@ sequenceDiagram
 
 ## データモデル / API
 - 参照テーブル: [`events`](tables.md#events), [`event_places`](tables.md#event_places), [`event_types`](tables.md#event_types), `attendance`（別途 attendance/tables.md で定義予定）。
-- 取得構成: イベント基本情報はイベント一覧 (`events/list`) のレスポンスを流用し、詳細画面では追加のイベント取得を行わない。出欠のみ Edge Function `events/detail` で取得。
+- 取得構成: イベント基本情報はイベント一覧 (`events/list`) のレスポンスを流用し、詳細画面では追加のイベント取得を行わない。出欠のみ Edge Function `event_detail` で取得。
 
 ### 一覧レスポンスで保持するイベント情報
 - 列: `id`, `title`, `event_type_id`, `event_type_name`, `start_datetime`, `meeting_datetime`, `response_deadline_datetime`, `event_place_id`, `event_place_name`, `event_place_google_maps_url_normalized`, `notes_markdown`, `created_at`, `updated_at`
 - 生成元: `events_recent_view`（詳細で必要な列をすべて含めるよう拡張する）。
 - 想定利用: Edge Function `GET /events/list` のレスポンスとして返却。詳細画面はこのデータを引数で受け取り表示する。
 
-### Edge Function: events/detail (GET)
+### Edge Function: event_detail (GET)
 - 認証必須（Bearer トークン）。サービスロールキーで Supabase へ接続しつつ、リクエストヘッダの JWT から `user_id` を検証する。
 - 入力: `event_id`（必須, UUID, query parameter）。
 - 処理: `attendance` を `event_id` で全件取得し、`user_detail`（`display_name`, `avatar_url`）を JOIN してレスポンスに含める。イベント情報はレスポンスに含めない（一覧から受け取る）。
@@ -53,9 +53,9 @@ sequenceDiagram
   ```
 
 ### 出欠データ取得方針
-- 個票表示を優先するため、Edge Function `events/detail` 内で `attendance` を `event_id = :event_id` で取得し、全件を返す。ステータス別の並び替え・フィルタリング・人数集計はアプリ側の責務とする。
+- 個票表示を優先するため、Edge Function `event_detail` 内で `attendance` を `event_id = :event_id` で取得し、全件を返す。ステータス別の並び替え・フィルタリング・人数集計はアプリ側の責務とする。
 - 初回ロード: Edge Function のレスポンスに含める（`user_id`, `status`, `comment`, `updated_at` など必要列のみ）。
-- 更新: 出欠更新後は `GET /events/detail` を再取得して最新表示とする（Realtime は利用しない）。
+- 更新: 出欠更新後は `GET /event_detail` を再取得して最新表示とする（Realtime は利用しない）。
 
 ### 地図連携 / WebView プレビュー方針
 - 場所データ: `event_places.google_maps_url_normalized` のみ保持し、座標は保持しない。
@@ -81,5 +81,5 @@ sequenceDiagram
 - 未回答カウント算出に利用する「メンバー総数」の定義を `user` テーブルで良しとするか、別途ロスターを設けるか要確認。
 - `attendance` テーブルの列定義（RLS ポリシー含む）を attendance/tables.md に追記する。
 - `events_detail_view` 追加用の Supabase マイグレーションファイルを作成する。
-- Edge Function `events/detail` を実装・デプロイし、Flutter 側の取得ロジックを置き換える。
+- Edge Function `event_detail` を実装・デプロイし、Flutter 側の取得ロジックを置き換える。
 - 編集・削除時の通知（Edge Functions）を送るか否か。送る場合はイベント更新設計（event_edit.md）の通知フローを再利用する。

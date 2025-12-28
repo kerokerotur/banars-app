@@ -52,11 +52,13 @@ class EventDetailController extends StateNotifier<EventDetailState> {
           : attendance.firstWhereOrNull((item) => item.memberId == myUserId);
 
       final myStatus = myAttendance?.status;
+      final myComment = myAttendance?.comment;
 
       state = state.copyWith(
         status: EventDetailStatus.loaded,
         attendance: attendance,
         myStatus: myStatus,
+        myComment: myComment,
       );
     } on FunctionException catch (error) {
       debugPrint('events_detail FunctionException: ${error.details}');
@@ -73,22 +75,82 @@ class EventDetailController extends StateNotifier<EventDetailState> {
     }
   }
 
-  Future<void> updateMyAttendance(EventAttendanceStatus status) async {
+  void selectMyStatus(EventAttendanceStatus status) {
+    if (isAfterDeadline) return;
+    state = state.copyWith(myStatus: status, clearError: true);
+  }
+
+  void updateMyComment(String value) {
+    state = state.copyWith(myComment: value, clearError: true);
+  }
+
+  bool get isAfterDeadline {
+    final deadline = state.event.responseDeadlineDatetime;
+    if (deadline == null) return false;
+    return DateTime.now().isAfter(deadline);
+  }
+
+  Future<void> submitAttendance() async {
     final userId = _supabaseClient.auth.currentUser?.id;
     if (userId == null) return;
 
+    if (isAfterDeadline) {
+      state = state.copyWith(
+        errorMessage: '締切後のため変更できません',
+      );
+      return;
+    }
+
+    if (state.myStatus == null) {
+      state = state.copyWith(
+        errorMessage: '回答ステータスを選択してください',
+      );
+      return;
+    }
+
     state = state.copyWith(isSubmitting: true, clearError: true);
     try {
-      final supabaseStatus = _mapStatusToDb(status);
-      await _supabaseClient.from('attendance').upsert({
-        'event_id': state.event.id,
-        'member_id': userId,
-        'status': supabaseStatus,
-      });
+      final supabaseStatus = _mapStatusToDb(state.myStatus!);
+      final comment = (state.myComment ?? '').trim();
 
-      await fetchAttendance();
+      final response = await _supabaseClient.functions.invoke(
+        AppEnv.attendanceRegisterFunctionName,
+        method: HttpMethod.post,
+        body: {
+          'eventId': state.event.id,
+          'status': supabaseStatus,
+          'comment': comment.isEmpty ? null : comment,
+        },
+      );
+
+      final data = response.data;
+      if (data is! Map<String, dynamic>) {
+        throw const EventDetailException('出欠登録のレスポンス形式が不正です');
+      }
+
+      final updated = _mapAttendanceFromResponse(data);
+
+      // 既存リストに自分のレコードがあれば差し替え、なければ追加
+      final attendance = [...state.attendance];
+      final index = attendance.indexWhere((a) => a.memberId == userId);
+      if (index >= 0) {
+        attendance[index] = updated;
+      } else {
+        attendance.insert(0, updated);
+      }
+
+      state = state.copyWith(
+        attendance: attendance,
+        myStatus: updated.status,
+        myComment: updated.comment,
+      );
+    } on FunctionException catch (error) {
+      debugPrint('attendance_register FunctionException: ${error.details}');
+      state = state.copyWith(
+        errorMessage: _extractErrorMessage(error.details) ?? '出欠登録に失敗しました',
+      );
     } catch (error) {
-      debugPrint('updateMyAttendance error: $error');
+      debugPrint('submitAttendance error: $error');
       state = state.copyWith(
         errorMessage: '出欠の更新に失敗しました: $error',
       );
@@ -105,6 +167,35 @@ class EventDetailController extends StateNotifier<EventDetailState> {
         return 'not_attending';
       case EventAttendanceStatus.pending:
         return 'pending';
+    }
+  }
+
+  EventAttendance _mapAttendanceFromResponse(Map<String, dynamic> data) {
+    final memberId = data['memberId'] as String? ?? '';
+    final existing = state.attendance.firstWhereOrNull(
+      (a) => a.memberId == memberId,
+    );
+
+    return EventAttendance(
+      id: data['id'] as String,
+      memberId: memberId,
+      displayName: existing?.displayName,
+      avatarUrl: existing?.avatarUrl,
+      status: _statusFromString(data['status'] as String?),
+      comment: data['comment'] as String?,
+      updatedAt: DateTime.parse(data['updatedAt'] as String),
+    );
+  }
+
+  EventAttendanceStatus _statusFromString(String? value) {
+    switch (value) {
+      case 'attending':
+        return EventAttendanceStatus.attending;
+      case 'not_attending':
+        return EventAttendanceStatus.notAttending;
+      case 'pending':
+      default:
+        return EventAttendanceStatus.pending;
     }
   }
 

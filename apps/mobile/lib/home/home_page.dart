@@ -37,6 +37,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         });
       },
       avatarUrl: homeState.userProfile?.avatarUrl,
+      onAvatarTap: () => _openUserProfile(context),
       onMenuItemSelected: (item) => _handleMenuItemSelected(context, item),
       onAddPressed: () {
         Navigator.of(context).push(
@@ -51,13 +52,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   void _handleMenuItemSelected(BuildContext context, HeaderMenuItem item) {
     switch (item) {
-      case HeaderMenuItem.userProfile:
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => const UserProfilePage(),
-          ),
-        );
-        break;
       case HeaderMenuItem.settings:
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -69,6 +63,14 @@ class _HomePageState extends ConsumerState<HomePage> {
         _signOut(context);
         break;
     }
+  }
+
+  void _openUserProfile(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const UserProfilePage(),
+      ),
+    );
   }
 
   Widget _buildBody(BuildContext context, HomeState homeState) {

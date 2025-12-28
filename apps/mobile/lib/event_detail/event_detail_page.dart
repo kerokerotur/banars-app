@@ -21,12 +21,51 @@ class EventDetailPage extends ConsumerStatefulWidget {
 class _EventDetailPageState extends ConsumerState<EventDetailPage> {
   late final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
   late final DateFormat _timeFormat = DateFormat('HH:mm');
+  late final TextEditingController _commentController;
+  late final void Function() _commentListener;
+  ProviderSubscription<EventDetailState>? _stateSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _commentController = TextEditingController();
+    _commentListener = () {
+      final notifier =
+          ref.read(eventDetailControllerProvider(widget.event).notifier);
+      notifier.updateMyComment(_commentController.text);
+    };
+    _commentController.addListener(_commentListener);
+
+    _stateSubscription = ref.listenManual<EventDetailState>(
+      eventDetailControllerProvider(widget.event),
+      (previous, next) {
+        final nextText = next.myComment ?? '';
+        if (nextText != _commentController.text) {
+          final selection = _commentController.selection;
+          _commentController.text = nextText;
+          _commentController.selection = selection.copyWith(
+            baseOffset: nextText.length,
+            extentOffset: nextText.length,
+          );
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _stateSubscription?.close();
+    _commentController.removeListener(_commentListener);
+    _commentController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(eventDetailControllerProvider(widget.event));
     final controller =
         ref.read(eventDetailControllerProvider(widget.event).notifier);
+    final isAfterDeadline = controller.isAfterDeadline;
 
     return Scaffold(
       appBar: AppBar(
@@ -44,16 +83,28 @@ class _EventDetailPageState extends ConsumerState<EventDetailPage> {
                 event: widget.event,
                 dateFormat: _dateFormat,
                 timeFormat: _timeFormat,
-                onOpenMap: widget.event.eventPlaceGoogleMapsUrlNormalized == null
-                    ? null
-                    : () => _openMap(widget.event.eventPlaceGoogleMapsUrlNormalized!),
+                onOpenMap:
+                    widget.event.eventPlaceGoogleMapsUrlNormalized == null
+                        ? null
+                        : () => _openMap(
+                            widget.event.eventPlaceGoogleMapsUrlNormalized!),
               ),
               const SizedBox(height: 16),
               _AttendanceSelector(
                 current: state.myStatus,
                 isSubmitting: state.isSubmitting,
-                onSelect: controller.updateMyAttendance,
+                isAfterDeadline: isAfterDeadline,
+                commentController: _commentController,
+                onSelect: controller.selectMyStatus,
+                onSubmit: controller.submitAttendance,
               ),
+              if (state.errorMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  state.errorMessage!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
               const SizedBox(height: 16),
               _NotesSection(notesMarkdown: widget.event.notesMarkdown),
               const SizedBox(height: 16),
@@ -62,12 +113,14 @@ class _EventDetailPageState extends ConsumerState<EventDetailPage> {
                 const SizedBox(height: 16),
                 const Center(child: CircularProgressIndicator()),
               ],
-              if (state.status == EventDetailStatus.error && state.errorMessage != null)
+              if (state.status == EventDetailStatus.error &&
+                  state.errorMessage != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
                     state.errorMessage!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error),
                   ),
                 ),
             ],
@@ -113,7 +166,8 @@ class _EventSummaryCard extends StatelessWidget {
           children: [
             Text(
               event.title,
-              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style:
+                  textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             _InfoRow(
@@ -188,7 +242,8 @@ class _InfoRow extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 2),
               Text(
@@ -207,12 +262,18 @@ class _AttendanceSelector extends StatelessWidget {
   const _AttendanceSelector({
     required this.current,
     required this.isSubmitting,
+    required this.isAfterDeadline,
+    required this.commentController,
     required this.onSelect,
+    required this.onSubmit,
   });
 
   final EventAttendanceStatus? current;
   final bool isSubmitting;
+  final bool isAfterDeadline;
+  final TextEditingController commentController;
   final void Function(EventAttendanceStatus) onSelect;
+  final VoidCallback onSubmit;
 
   @override
   Widget build(BuildContext context) {
@@ -239,7 +300,7 @@ class _AttendanceSelector extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: OutlinedButton.icon(
-                      onPressed: isSubmitting
+                      onPressed: (isSubmitting || isAfterDeadline)
                           ? null
                           : () => onSelect(opt.$1),
                       icon: Icon(opt.$3,
@@ -266,6 +327,40 @@ class _AttendanceSelector extends StatelessWidget {
                 );
               }).toList(),
             ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: commentController,
+              maxLines: 3,
+              minLines: 1,
+              enabled: !isAfterDeadline && !isSubmitting,
+              decoration: const InputDecoration(
+                labelText: 'コメント (任意)',
+                hintText: '出席/欠席/保留の理由や補足を記入できます',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: (isSubmitting || isAfterDeadline) ? null : onSubmit,
+                icon: const Icon(Icons.send),
+                label: isSubmitting
+                    ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('回答する'),
+              ),
+            ),
+            if (isAfterDeadline) ...[
+              const SizedBox(height: 8),
+              Text(
+                '締切後のため変更できません',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ],
           ],
         ),
       ),
@@ -334,7 +429,9 @@ class _AttendanceList extends StatelessWidget {
                       ?.copyWith(color: AppColors.lightTextSecondary))
             else
               Column(
-                children: attendance.map((a) => _AttendanceTile(attendance: a)).toList(),
+                children: attendance
+                    .map((a) => _AttendanceTile(attendance: a))
+                    .toList(),
               ),
           ],
         ),
@@ -377,20 +474,20 @@ class _AttendanceTile extends StatelessWidget {
   _StatusLabel _mapStatus(EventAttendanceStatus status, BuildContext context) {
     switch (status) {
       case EventAttendanceStatus.attending:
-        return _StatusLabel(
+        return const _StatusLabel(
           label: '出席',
           icon: Icons.check_circle_outline,
           color: AppColors.success,
         );
       case EventAttendanceStatus.notAttending:
-        return _StatusLabel(
+        return const _StatusLabel(
           label: '欠席',
           icon: Icons.cancel_outlined,
           color: AppColors.error,
         );
       case EventAttendanceStatus.pending:
       default:
-        return _StatusLabel(
+        return const _StatusLabel(
           label: '保留',
           icon: Icons.help_outline,
           color: AppColors.warning,

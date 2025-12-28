@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// アプリ全体のテーマ設定
 ///
@@ -54,6 +55,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+      fontFamily: GoogleFonts.mPlusRounded1c().fontFamily,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
         brightness: Brightness.light,
@@ -63,6 +65,10 @@ class AppTheme {
         surface: AppColors.lightSurface,
         onSurface: AppColors.lightTextPrimary,
         error: AppColors.error,
+      ),
+      textTheme: GoogleFonts.mPlusRounded1cTextTheme().apply(
+        bodyColor: AppColors.lightTextPrimary,
+        displayColor: AppColors.lightTextPrimary,
       ),
       scaffoldBackgroundColor: AppColors.lightBackground,
       appBarTheme: const AppBarTheme(
@@ -148,6 +154,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      fontFamily: GoogleFonts.mPlusRounded1c().fontFamily,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
         brightness: Brightness.dark,
@@ -157,6 +164,10 @@ class AppTheme {
         surface: AppColors.darkSurface,
         onSurface: AppColors.darkTextPrimary,
         error: AppColors.errorLight,
+      ),
+      textTheme: GoogleFonts.mPlusRounded1cTextTheme().apply(
+        bodyColor: AppColors.darkTextPrimary,
+        displayColor: AppColors.darkTextPrimary,
       ),
       scaffoldBackgroundColor: AppColors.darkBackground,
       appBarTheme: const AppBarTheme(
