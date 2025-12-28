@@ -26,3 +26,6 @@ else
 	$(MAKE) bundle-functions
 	cd infra/supabase && supabase functions deploy
 endif
+
+migrate-dev:
+	cd infra/supabase && supabase db push

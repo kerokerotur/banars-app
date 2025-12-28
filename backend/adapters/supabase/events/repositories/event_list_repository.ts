@@ -12,7 +12,7 @@ export class SupabaseEventListRepository implements IEventListRepository {
     const { data, error } = await this.client
       .from("events_recent_view")
       .select(
-        "id, title, event_type_id, event_type_name, start_datetime, meeting_datetime, response_deadline_datetime, event_place_id, place_name, created_at, updated_at",
+        "id, title, event_type_id, event_type_name, start_datetime, meeting_datetime, response_deadline_datetime, event_place_id, event_place_name, event_place_google_maps_url_normalized, notes_markdown, created_at, updated_at",
       )
       .order("start_datetime", { ascending: false })
       .limit(limit)
@@ -34,7 +34,9 @@ export class SupabaseEventListRepository implements IEventListRepository {
         ? new Date(row.response_deadline_datetime)
         : null,
       eventPlaceId: row.event_place_id,
-      placeName: row.place_name,
+      eventPlaceName: row.event_place_name,
+      eventPlaceGoogleMapsUrlNormalized: row.event_place_google_maps_url_normalized,
+      notesMarkdown: row.notes_markdown,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     }))

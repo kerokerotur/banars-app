@@ -2,6 +2,7 @@ import type { SupabaseClient, PostgrestError } from "@supabase/supabase-js"
 import type { IEventAttendanceRepository } from "@core/events/domain/irepository/event_attendance_repository.ts"
 import type { UserAttendanceStatus } from "@core/events/usecases/event_list/types.ts"
 import { EventListError } from "@core/events/domain/errors/event_list_error.ts"
+import { EventDetailError } from "@core/events/domain/errors/event_detail_error.ts"
 
 export class SupabaseEventAttendanceRepository
   implements IEventAttendanceRepository
@@ -31,8 +32,57 @@ export class SupabaseEventAttendanceRepository
     return map
   }
 
+  async findByEventId(eventId: string) {
+    const { data, error } = await this.client
+      .from("attendance")
+      .select("id, member_id, status, comment, updated_at")
+      .eq("event_id", eventId)
+      .order("updated_at", { ascending: false })
+
+    if (error) {
+      throw this.wrapDetailError(error, "出欠一覧の取得に失敗しました")
+    }
+
+    const attendanceRows = data ?? []
+    const memberIds = attendanceRows.map((row) => row.member_id)
+
+    let userMap = new Map<string, any>()
+    if (memberIds.length > 0) {
+      const { data: userDetails, error: userError } = await this.client
+        .from("user_detail")
+        .select("user_id, display_name, avatar_url")
+        .in("user_id", memberIds)
+
+      if (userError) {
+        throw this.wrapDetailError(userError, "ユーザー情報の取得に失敗しました")
+      }
+
+      userMap = new Map((userDetails ?? []).map((u) => [u.user_id as string, u]))
+    }
+
+    return attendanceRows.map((row) => {
+      const user = userMap.get(row.member_id)
+      return {
+        id: row.id,
+        memberId: row.member_id,
+        displayName: user?.display_name ?? null,
+        avatarUrl: user?.avatar_url ?? null,
+        status: row.status,
+        comment: row.comment,
+        updatedAt: new Date(row.updated_at),
+      }
+    })
+  }
+
   private wrapError(error: PostgrestError, message: string) {
     return new EventListError("internal_error", message, 500, {
+      reason: error.message,
+      details: error.details,
+    })
+  }
+
+  private wrapDetailError(error: PostgrestError, message: string) {
+    return new EventDetailError("internal_error", message, 500, {
       reason: error.message,
       details: error.details,
     })

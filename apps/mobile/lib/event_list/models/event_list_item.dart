@@ -22,7 +22,9 @@ class EventListItem {
     this.meetingDatetime,
     this.responseDeadlineDatetime,
     this.eventPlaceId,
-    this.placeName,
+    this.eventPlaceName,
+    this.eventPlaceGoogleMapsUrlNormalized,
+    this.notesMarkdown,
     required this.createdAt,
     required this.updatedAt,
     required this.userAttendanceStatus,
@@ -44,7 +46,10 @@ class EventListItem {
           ? DateTime.parse(json['responseDeadlineDatetime'] as String)
           : null,
       eventPlaceId: json['eventPlaceId'] as String?,
-      placeName: json['placeName'] as String?,
+      eventPlaceName: json['eventPlaceName'] as String?,
+      eventPlaceGoogleMapsUrlNormalized:
+          json['eventPlaceGoogleMapsUrlNormalized'] as String?,
+      notesMarkdown: json['notesMarkdown'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       userAttendanceStatus: UserAttendanceStatus.fromString(
@@ -61,7 +66,9 @@ class EventListItem {
   final DateTime? meetingDatetime;
   final DateTime? responseDeadlineDatetime;
   final String? eventPlaceId;
-  final String? placeName;
+  final String? eventPlaceName;
+  final String? eventPlaceGoogleMapsUrlNormalized;
+  final String? notesMarkdown;
   final DateTime createdAt;
   final DateTime updatedAt;
   final UserAttendanceStatus userAttendanceStatus;

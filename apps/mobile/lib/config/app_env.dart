@@ -24,6 +24,7 @@ class AppEnv {
   static const getEventTypesFunctionName = 'get_event_types';
   static const eventCreateFunctionName = 'event_create';
   static const eventListFunctionName = 'event_list';
+  static const eventDetailFunctionName = 'events_detail';
   static const searchPlacesFunctionName = 'search_places';
   static const placeListFunctionName = 'place_list';
   static const placeLookupFunctionName = 'place_lookup';

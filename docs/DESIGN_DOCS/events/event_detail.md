@@ -34,11 +34,21 @@ sequenceDiagram
 ### Edge Function: events/detail (GET)
 - 認証必須（Bearer トークン）。サービスロールキーで Supabase へ接続しつつ、リクエストヘッダの JWT から `user_id` を検証する。
 - 入力: `event_id`（必須, UUID, query parameter）。
-- 処理: `attendance` を `event_id` で全件取得して返す（イベント情報はレスポンスに含めない）。
+- 処理: `attendance` を `event_id` で全件取得し、`user_detail`（`display_name`, `avatar_url`）を JOIN してレスポンスに含める。イベント情報はレスポンスに含めない（一覧から受け取る）。
 - 出力例:
   ```json
   {
-    "attendance": [ { "user_id": "...", "status": "attending", "comment": null, "updated_at": "..." }, ... ]
+    "attendance": [
+      {
+        "id": "attendance-uuid",
+        "memberId": "user-uuid",
+        "displayName": "田中太郎",
+        "avatarUrl": "https://example.com/avatar.png",
+        "status": "attending",
+        "comment": "OK",
+        "updatedAt": "2025-12-28T04:50:00Z"
+      }
+    ]
   }
   ```
 

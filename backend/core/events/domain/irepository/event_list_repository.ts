@@ -7,7 +7,9 @@ export interface RecentEventRow {
   meetingDatetime: Date | null
   responseDeadlineDatetime: Date | null
   eventPlaceId: string | null
-  placeName: string | null
+  eventPlaceName: string | null
+  eventPlaceGoogleMapsUrlNormalized: string | null
+  notesMarkdown: string | null
   createdAt: Date
   updatedAt: Date
 }

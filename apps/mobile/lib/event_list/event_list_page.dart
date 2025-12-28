@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/event_list/event_list_controller.dart';
 import 'package:mobile/event_list/models/event_list_item.dart';
+import 'package:mobile/event_detail/event_detail_page.dart';
 import 'package:mobile/shared/theme/app_colors.dart';
 
 /// イベント一覧ページ
@@ -140,7 +141,11 @@ class EventListPage extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: () {
-          // TODO: イベント詳細画面への遷移を実装
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => EventDetailPage(event: event),
+            ),
+          );
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -202,14 +207,14 @@ class EventListPage extends ConsumerWidget {
               ],
 
               // 会場
-              if (event.placeName != null) ...[
+              if (event.eventPlaceName != null) ...[
                 Row(
                   children: [
                     Icon(Icons.place, size: 16, color: textSecondaryColor),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        event.placeName!,
+                        event.eventPlaceName!,
                         style: TextStyle(
                           fontSize: 14,
                           color: textSecondaryColor,

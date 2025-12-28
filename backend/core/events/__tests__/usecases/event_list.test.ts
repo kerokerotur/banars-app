@@ -30,7 +30,9 @@ describe("executeEventListUseCase", () => {
           meetingDatetime: new Date("2025-12-25T09:00:00Z"),
           responseDeadlineDatetime: new Date("2025-12-24T15:00:00Z"),
           eventPlaceId: "p1",
-          placeName: "東京ドーム",
+          eventPlaceName: "東京ドーム",
+          eventPlaceGoogleMapsUrlNormalized: "https://maps.google.com/?q=tokyo-dome",
+          notesMarkdown: "持ち物: ユニフォーム",
           createdAt: new Date("2025-12-01T00:00:00Z"),
           updatedAt: new Date("2025-12-10T00:00:00Z"),
         },
@@ -45,6 +47,10 @@ describe("executeEventListUseCase", () => {
 
     expect(result).toHaveLength(1)
     expect(result[0].userAttendanceStatus).toBe("participating")
+    expect(result[0].eventPlaceGoogleMapsUrlNormalized).toBe(
+      "https://maps.google.com/?q=tokyo-dome",
+    )
+    expect(result[0].notesMarkdown).toBe("持ち物: ユニフォーム")
   })
 
   it("出欠が存在しない場合は unanswered を返す", async () => {
@@ -59,7 +65,9 @@ describe("executeEventListUseCase", () => {
           meetingDatetime: null,
           responseDeadlineDatetime: null,
           eventPlaceId: null,
-          placeName: null,
+          eventPlaceName: null,
+          eventPlaceGoogleMapsUrlNormalized: null,
+          notesMarkdown: null,
           createdAt: new Date("2025-12-01T00:00:00Z"),
           updatedAt: new Date("2025-12-10T00:00:00Z"),
         },
