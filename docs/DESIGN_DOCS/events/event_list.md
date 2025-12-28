@@ -29,7 +29,7 @@ sequenceDiagram
 
 ## データモデル / API
 - 参照テーブル: `events`, `event_places`, `event_types`。公開ビュー: `events_recent_view`（下記列を持つ）。
-- ビュー列: `id`, `title`, `event_type_id`, `event_type_name`, `start_datetime`, `meeting_datetime`, `response_deadline_datetime`, `event_place_id`, `created_at`, `updated_at`。
+- ビュー列: `id`, `title`, `event_type_id`, `event_type_name`, `start_datetime`, `meeting_datetime`, `response_deadline_datetime`, `event_place_id`, `event_place_name`, `event_place_google_maps_url_normalized`, `notes_markdown`, `created_at`, `updated_at`。
 - 抽出条件: `start_datetime >= now() - interval '1 day'`（DB タイムゾーン = UTC 基準）。表示期間は開始から 1 日間延長。
 - 並び替え: `start_datetime` 降順。取得件数: `limit 50`（Edge Function 側で `ORDER BY ... DESC LIMIT 50` を適用）。
 - 出欠バッジ用: Edge Function 内で `attendance` を `event_id` IN (...) かつ `user_id = auth.uid()` で取得し、`user_attendance_status` を `participating|absent|pending|unanswered` のいずれかで付与する（ビューには含めない）。
