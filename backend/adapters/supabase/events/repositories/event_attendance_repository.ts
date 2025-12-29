@@ -1,5 +1,8 @@
 import type { SupabaseClient, PostgrestError } from "@supabase/supabase-js"
-import type { IEventAttendanceRepository } from "@core/events/domain/irepository/event_attendance_repository.ts"
+import type {
+  IEventAttendanceRepository,
+  AttendanceSummaryItem,
+} from "@core/events/domain/irepository/event_attendance_repository.ts"
 import type { UserAttendanceStatus } from "@core/events/usecases/event_list/types.ts"
 import { EventListError } from "@core/events/domain/errors/event_list_error.ts"
 import { EventDetailError } from "@core/events/domain/errors/event_detail_error.ts"
@@ -79,6 +82,51 @@ export class SupabaseEventAttendanceRepository
       reason: error.message,
       details: error.details,
     })
+  }
+
+  async findAttendancesSummaryByEventIds(
+    eventIds: string[],
+  ): Promise<Map<string, AttendanceSummaryItem[]>> {
+    if (eventIds.length === 0) return new Map()
+
+    // IN句で一括取得
+    const { data, error } = await this.client
+      .from("attendance")
+      .select("event_id, member_id, status, updated_at")
+      .in("event_id", eventIds)
+
+    if (error) {
+      throw this.wrapError(error, "出欠情報の取得に失敗しました")
+    }
+
+    // イベントごとにグループ化
+    const grouped = new Map<string, any[]>()
+    for (const row of data ?? []) {
+      if (!grouped.has(row.event_id)) {
+        grouped.set(row.event_id, [])
+      }
+      grouped.get(row.event_id)!.push(row)
+    }
+
+    // 各イベントの出欠者をソート（attending優先 → 更新日時降順）
+    const result = new Map<string, AttendanceSummaryItem[]>()
+    for (const [eventId, rows] of grouped) {
+      const sorted = rows
+        .sort((a, b) => {
+          if (a.status !== b.status) {
+            return a.status.localeCompare(b.status) // attending優先
+          }
+          return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        })
+        .map((row) => ({
+          userId: row.member_id,
+          status: row.status,
+        }))
+
+      result.set(eventId, sorted)
+    }
+
+    return result
   }
 
   private wrapDetailError(error: PostgrestError, message: string) {

@@ -10,6 +10,7 @@ import 'package:mobile/settings/settings_page.dart';
 import 'package:mobile/user_list/user_list_page.dart';
 import 'package:mobile/user_profile/user_profile_page.dart';
 import 'package:mobile/shared/providers/event_types_provider.dart';
+import 'package:mobile/shared/providers/users_provider.dart';
 import 'package:mobile/shared/widgets/app_scaffold.dart';
 import 'package:mobile/shared/widgets/app_footer.dart';
 import 'package:mobile/shared/widgets/app_header.dart';
@@ -27,8 +28,9 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final homeState = ref.watch(homeControllerProvider);
-    // アプリ起動時にイベント種別をキャッシュ
+    // アプリ起動時にグローバルキャッシュを初期化
     ref.watch(eventTypesProvider);
+    ref.watch(usersProvider);
 
     return AppScaffold(
       currentTab: _currentTab,

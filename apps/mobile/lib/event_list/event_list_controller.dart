@@ -5,6 +5,7 @@ import 'package:mobile/shared/services/supabase_function_service.dart';
 import 'package:mobile/shared/services/supabase_function_error_handler.dart';
 import 'package:mobile/event_list/event_list_state.dart';
 import 'package:mobile/event_list/models/event_list_item.dart';
+import 'package:mobile/event_list/models/attendance_summary.dart';
 
 /// イベント一覧コントローラのプロバイダー
 final eventListControllerProvider =
@@ -51,6 +52,11 @@ class EventListController extends StateNotifier<EventListState> {
         status: EventListStatus.loaded,
         events: events,
       );
+
+      // イベント取得成功後、出欠情報を取得
+      if (state.events.isNotEmpty) {
+        _fetchAttendanceAvatars();
+      }
     } on FunctionException catch (error) {
       state = state.copyWith(
         status: EventListStatus.error,
@@ -70,6 +76,58 @@ class EventListController extends StateNotifier<EventListState> {
   /// リフレッシュ
   Future<void> refresh() async {
     await fetchEvents();
+  }
+
+  /// 出欠者アバター情報を取得
+  Future<void> _fetchAttendanceAvatars() async {
+    state = state.copyWith(isLoadingAttendances: true);
+
+    try {
+      final eventIds = state.events.map((e) => e.id).toList();
+
+      final response = await SupabaseFunctionService.invoke(
+        client: _supabaseClient,
+        functionName: AppEnv.eventAttendancesSummaryFunctionName,
+        method: HttpMethod.get,
+        queryParameters: {
+          'event_ids': eventIds.join(','),
+        },
+      );
+
+      final data = response.data;
+      if (data is! Map<String, dynamic>) {
+        throw const EventListException('出欠情報のレスポンスが不正です');
+      }
+
+      final attendancesData = data['attendances'];
+      if (attendancesData is! Map<String, dynamic>) {
+        throw const EventListException('出欠情報のデータが不正です');
+      }
+
+      // レスポンスをパース（userId と status のみ）
+      final summariesMap = <String, List<AttendanceSummary>>{};
+
+      for (final entry in attendancesData.entries) {
+        final eventId = entry.key;
+        final summariesJson = entry.value as List;
+        final summaries = summariesJson
+            .map((json) =>
+                AttendanceSummary.fromJson(json as Map<String, dynamic>))
+            .toList();
+        summariesMap[eventId] = summaries;
+      }
+
+      state = state.copyWith(
+        attendanceSummaries: summariesMap,
+        isLoadingAttendances: false,
+        clearAttendanceError: true,
+      );
+    } catch (error) {
+      state = state.copyWith(
+        isLoadingAttendances: false,
+        attendanceErrorMessage: '出欠情報の取得に失敗しました: $error',
+      );
+    }
   }
 }
 

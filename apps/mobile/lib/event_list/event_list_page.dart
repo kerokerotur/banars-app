@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/event_list/event_list_controller.dart';
 import 'package:mobile/event_list/models/event_list_item.dart';
+import 'package:mobile/event_list/models/attendance_summary.dart';
 import 'package:mobile/event_detail/event_detail_page.dart';
+import 'package:mobile/event_list/widgets/attendance_modal.dart';
 import 'package:mobile/shared/theme/app_colors.dart';
+import 'package:mobile/shared/providers/users_provider.dart';
 
 /// イベント一覧ページ
 class EventListPage extends ConsumerWidget {
@@ -35,7 +38,7 @@ class EventListPage extends ConsumerWidget {
       return _buildEmptyView(context);
     }
 
-    return _buildEventList(context, state.events);
+    return _buildEventList(context, state.events, ref);
   }
 
   /// エラー表示
@@ -119,19 +122,27 @@ class EventListPage extends ConsumerWidget {
   }
 
   /// イベントリスト表示
-  Widget _buildEventList(BuildContext context, List<EventListItem> events) {
+  Widget _buildEventList(
+    BuildContext context,
+    List<EventListItem> events,
+    WidgetRef ref,
+  ) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: events.length,
       itemBuilder: (context, index) {
         final event = events[index];
-        return _buildEventCard(context, event);
+        return _buildEventCard(context, event, ref);
       },
     );
   }
 
   /// イベントカード
-  Widget _buildEventCard(BuildContext context, EventListItem event) {
+  Widget _buildEventCard(
+    BuildContext context,
+    EventListItem event,
+    WidgetRef ref,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textSecondaryColor =
         isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
@@ -245,10 +256,171 @@ class EventListPage extends ConsumerWidget {
                   ],
                 ),
               ],
+
+              // 出欠者アバター一覧（新規追加）
+              const SizedBox(height: 8),
+              _buildAttendanceAvatars(context, event, ref),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  /// 出欠者アバター一覧
+  Widget _buildAttendanceAvatars(
+    BuildContext context,
+    EventListItem event,
+    WidgetRef ref,
+  ) {
+    final eventListState = ref.watch(eventListControllerProvider);
+    final summaries = eventListState.attendanceSummaries[event.id];
+
+    if (eventListState.isLoadingAttendances) {
+      return _buildAvatarsLoading(context);
+    }
+
+    if (summaries == null || summaries.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textSecondaryColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+
+    return InkWell(
+      onTap: () => _showAttendanceModal(context, event),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Icon(Icons.people, size: 16, color: textSecondaryColor),
+            const SizedBox(width: 4),
+            Expanded(
+              child: _buildAvatarStack(context, summaries, ref),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 出欠者一覧モーダルを表示
+  void _showAttendanceModal(BuildContext context, EventListItem event) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AttendanceModal(event: event),
+    );
+  }
+
+  /// アバタースタック
+  Widget _buildAvatarStack(
+    BuildContext context,
+    List<AttendanceSummary> summaries,
+    WidgetRef ref,
+  ) {
+    final displaySummaries = summaries.take(10).toList();
+    final remainingCount = summaries.length > 10 ? summaries.length - 10 : 0;
+
+    return SizedBox(
+      height: 24,
+      child: Stack(
+        children: [
+          ...displaySummaries.asMap().entries.map((entry) {
+            final index = entry.key;
+            final summary = entry.value;
+            return Positioned(
+              left: index * 16.0,
+              child: _buildAvatar(summary, ref),
+            );
+          }),
+          if (remainingCount > 0)
+            Positioned(
+              left: 10 * 16.0,
+              child: _buildRemainingBadge(remainingCount),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// アバター
+  Widget _buildAvatar(AttendanceSummary summary, WidgetRef ref) {
+    // UsersProviderからユーザー情報を取得
+    final usersState = ref.watch(usersProvider);
+    final userInfo = usersState.getUserById(summary.userId);
+
+    // ステータスごとの枠色
+    Color borderColor;
+    switch (summary.status) {
+      case AttendanceSummaryStatus.attending:
+        borderColor = Colors.green;
+        break;
+      case AttendanceSummaryStatus.notAttending:
+        borderColor = Colors.red;
+        break;
+      case AttendanceSummaryStatus.pending:
+        borderColor = Colors.orange;
+        break;
+    }
+
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: borderColor, width: 2),
+        color: Colors.grey[300],
+      ),
+      child: ClipOval(
+        child: userInfo?.avatarUrl != null
+            ? Image.network(userInfo!.avatarUrl!, fit: BoxFit.cover)
+            : const Icon(Icons.person, size: 16),
+      ),
+    );
+  }
+
+  /// 残数バッジ
+  Widget _buildRemainingBadge(int count) {
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.grey[600],
+      ),
+      child: Center(
+        child: Text(
+          '+$count',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// アバター読み込み中
+  Widget _buildAvatarsLoading(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textSecondaryColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+
+    return Row(
+      children: [
+        Icon(Icons.people, size: 16, color: textSecondaryColor),
+        const SizedBox(width: 4),
+        const SizedBox(
+          width: 100,
+          height: 2,
+          child: LinearProgressIndicator(),
+        ),
+      ],
     );
   }
 

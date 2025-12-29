@@ -30,6 +30,7 @@ banars アプリの技術設計ドキュメントを集約しています。変�
 | --- | --- | --- |
 | 全体アーキテクチャ / 横断テーマ | 全体 (`overview.md`) | [`overview.md`](overview.md) |
 | イベント一覧 | イベント (`events/`) | [`event_list.md`](events/event_list.md) |
+| イベント一覧（出欠者表示） | イベント (`events/`) | [`event_list_attendances.md`](events/event_list_attendances.md) |
 | イベント詳細 | イベント (`events/`) | [`event_detail.md`](events/event_detail.md) |
 | イベント作成 | イベント (`events/`) | [`event_create.md`](events/event_create.md) |
 | イベント削除 | イベント (`events/`) | [`event_delete.md`](events/event_delete.md) |
