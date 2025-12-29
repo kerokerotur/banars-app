@@ -28,33 +28,6 @@
 2. ローカルで `supabase db push` または `supabase db reset` を実行し、エラーがないことを確認。
 3. 関連する DESIGN_DOCS / README に差分があれば同時に更新し、PR で適用手順を共有。
 
-## シードデータ（初期データ）
-
-ローカル開発・テストに必要な初期データは `seed.sql` に集約します。
-
-### 適用タイミング
-
-- **`supabase db reset`**: マイグレーション適用後に `seed.sql` が自動実行される
-- **`supabase db push`**: シードは実行されない（マイグレーションのみ）
-
-つまり、**本番環境には影響しません**。
-
-### 用途
-
-- テスト用ユーザー（manager ロールなど権限付きユーザー）
-- 動作確認に必要なサンプルデータ
-- チーム開発で共通の初期状態を再現
-
-### 現在のシードデータ
-
-| データ | 説明 |
-| --- | --- |
-| manager ユーザー | `manager@example.com` / `password123` - 招待トークン発行など manager 権限が必要な機能のテスト用 |
-
-### 新しい初期データの追加
-
-`seed.sql` に SQL を追記してください。`ON CONFLICT DO NOTHING` を使用して冪等性を担保することを推奨します。
-
 ## Edge Functions 作成・運用ルール
 - **新規作成時は必ず CLI を使用する**: `supabase functions new <function名>` を実行すること。CLI が `functions/<function名>/` ディレクトリと `config.toml` への設定を自動生成する。手動でファイルやディレクトリを作成しない。
 - **生成後の編集**: CLI が生成した `index.ts` と `deno.json` を編集して実装を行う。

@@ -3,6 +3,7 @@ import type {
   IUserRepository,
   User,
   UserWithLastLogin,
+  UserWithDetail,
   UpsertUserParams,
 } from "@core/auth/domain/irepository/user_repository.ts"
 import {
@@ -69,6 +70,79 @@ export class SupabaseUserRepository implements IUserRepository {
         ? new Date(data.last_login_datetime)
         : null,
     }
+  }
+
+  async findAllActive(): Promise<UserWithDetail[]> {
+    // 1. user_list_view から取得（user と user_detail が JOIN 済み）
+    const { data, error } = await this.client
+      .from("user_list_view")
+      .select("*")
+      .eq("status", "active")
+      .order("created_at", { ascending: true })
+
+    if (error) {
+      // エラーの詳細をログに出力
+      console.error("[user_repository] Error fetching users from database:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      })
+      throw this.wrapPostgrestError(
+        error,
+        "internal_error",
+        "ユーザー一覧の取得に失敗しました。",
+      )
+    }
+
+    if (!data || data.length === 0) {
+      return []
+    }
+
+    // 2. 全ユーザーのauth情報を一度に取得（エラーが発生しても処理を続行）
+    const roleMap = new Map<string, string | null>()
+    try {
+      const { data: authData, error: authError } = await this.client.auth.admin.listUsers()
+
+      if (authError) {
+        // エラーログを出力するが、処理は続行（role情報なしでユーザー一覧を返す）
+        console.warn(
+          "[user_repository] Failed to fetch auth users for role mapping:",
+          {
+            message: authError.message,
+            status: authError.status,
+            name: authError.name,
+          },
+        )
+      } else if (authData?.users) {
+        for (const authUser of authData.users) {
+          roleMap.set(
+            authUser.id,
+            authUser.app_metadata?.role ?? null,
+          )
+        }
+      }
+    } catch (error) {
+      // 予期しないエラーが発生した場合も処理を続行
+      console.error(
+        "[user_repository] Unexpected error while fetching auth users:",
+        error,
+      )
+    }
+
+    // 3. マージして返却
+    return data.map((row) => ({
+      id: row.id,
+      lineUserId: row.line_user_id,
+      status: row.status,
+      lastLoginDatetime: row.last_login_datetime
+        ? new Date(row.last_login_datetime)
+        : null,
+      displayName: row.display_name,
+      avatarUrl: row.avatar_url,
+      role: roleMap.get(row.id) ?? null,
+      createdAt: new Date(row.created_at),
+    }))
   }
 
   async upsert(params: UpsertUserParams): Promise<void> {

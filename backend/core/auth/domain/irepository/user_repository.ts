@@ -18,6 +18,13 @@ export interface UserWithLastLogin extends User {
   lastLoginDatetime: Date | null
 }
 
+export interface UserWithDetail extends UserWithLastLogin {
+  displayName: string
+  avatarUrl: string | null
+  role: string | null
+  createdAt: Date
+}
+
 export interface IUserRepository {
   /**
    * LINEユーザーIDでユーザーを検索する
@@ -30,6 +37,12 @@ export interface IUserRepository {
    * @returns ユーザーが見つかった場合はユーザーオブジェクト、見つからない場合はnull
    */
   findById(userId: string): Promise<UserWithLastLogin | null>
+
+  /**
+   * ステータスがactiveのユーザー一覧を取得する（登録日時昇順、user_detailをJOIN）
+   * @returns アクティブなユーザーの配列（プロフィール情報を含む）
+   */
+  findAllActive(): Promise<UserWithDetail[]>
 
   /**
    * ユーザーを登録または更新する

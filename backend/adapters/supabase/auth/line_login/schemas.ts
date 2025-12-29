@@ -9,3 +9,4 @@ export const lineLoginRequestSchema = z.object({
 
 export type LineLoginRequest = z.infer<typeof lineLoginRequestSchema>
 
+

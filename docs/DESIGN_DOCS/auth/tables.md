@@ -42,3 +42,16 @@
 | `updated_user` | `uuid` |  | メタデータ | `user.id` FK |
 
 **設計意図**: 招待リンクは枠数制限を設けず、`expires_datetime` のみで有効性を管理する。チーム概念は扱わず単一コミュニティ運用を前提とする。
+
+## `user_list_view`（View テーブル）
+| カラム | 型 | 必須 | 説明 | 備考 |
+| --- | --- | --- | --- | --- |
+| `id` | `uuid` | ○ | ユーザー ID | `user.id` |
+| `line_user_id` | `text` | ○ | LINE ユーザ ID | `user.line_user_id` |
+| `status` | `text` | ○ | アカウント状態 | `user.status` |
+| `last_login_datetime` | `timestamptz` |  | 最終ログイン日時 | `user.last_login_datetime` |
+| `created_at` | `timestamptz` | ○ | ユーザー作成日時 | `user.created_at` |
+| `display_name` | `text` | ○ | 表示名 | `user_detail.display_name` |
+| `avatar_url` | `text` |  | プロフィール画像 URL | `user_detail.avatar_url` |
+
+**設計意図**: `user` と `user_detail` を INNER JOIN した結果を提供する。本アプリでは外部キー制約を設定しない方針のため、supabase-js で複数テーブルを JOIN して取得することができない。そのため、View テーブルを使用して DB 側で JOIN した結果をアプリ側で取得する。フィルタリング（`status='active'`）やソート（`ORDER BY created_at`）は View 定義には含めず、アプリ側（supabase-js の `.eq()` / `.order()`）で行う。

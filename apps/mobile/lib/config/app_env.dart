@@ -32,4 +32,5 @@ class AppEnv {
   static const placeCreateFunctionName = 'place_create';
   static const placeUpdateFunctionName = 'place_update';
   static const placeDeleteFunctionName = 'place_delete';
+  static const userListFunctionName = 'user_list';
 }

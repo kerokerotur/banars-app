@@ -21,6 +21,7 @@
 | [DESIGN_DOCS/events/](events) | イベントコンテキスト |
 | [DESIGN_DOCS/attendance/](attendance) | 出欠コンテキスト |
 | [DESIGN_DOCS/auth/](auth) | 認証コンテキスト |
+| [DESIGN_DOCS/user/](user) | ユーザコンテキスト |
 
 > テーブル定義はコンテキスト配下（例: `auth/tables.md`）に集約し、共通仕様として管理する。
 
