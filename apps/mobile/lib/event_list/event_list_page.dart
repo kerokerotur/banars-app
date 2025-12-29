@@ -458,7 +458,7 @@ class EventListPage extends ConsumerWidget {
       case '試合':
       case 'game':
         return _EventTypeStyle(
-          color: Colors.red.shade300,
+          color: AppColors.primary,
           icon: Icons.sports_baseball,
         );
       case '練習':
