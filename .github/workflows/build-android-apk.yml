@@ -1,0 +1,48 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_notes:
+        description: 'Release notes for Firebase App Distribution'
+        required: false
+        default: 'Build from GitHub Actions'
+        type: string
+
+jobs:
+  build:
+    name: Build and Upload APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter with FVM
+        uses: ./.github/actions/setup-flutter
+        with:
+          working-directory: apps/mobile
+
+      - name: Setup environment variables
+        uses: ./.github/actions/setup-env
+        with:
+          working-directory: apps/mobile
+          supabase-url: ${{ secrets.SUPABASE_URL }}
+          supabase-anon-key: ${{ secrets.SUPABASE_ANON_KEY }}
+          line-channel-id: ${{ secrets.LINE_CHANNEL_ID }}
+
+      - name: Build APK
+        id: build
+        uses: ./.github/actions/build-apk
+        with:
+          working-directory: apps/mobile
+
+      - name: Upload to Firebase App Distribution
+        uses: ./.github/actions/upload-to-firebase
+        with:
+          apk-path: ${{ steps.build.outputs.apk-path }}
+          firebase-service-account-key: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID }}
+          firebase-android-app-id: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
+          release-notes: ${{ github.event.inputs.release_notes }}
+

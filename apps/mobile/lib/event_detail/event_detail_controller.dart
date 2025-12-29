@@ -1,7 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile/config/app_env.dart';
+import 'package:mobile/shared/services/supabase_function_service.dart';
+import 'package:mobile/shared/services/supabase_function_error_handler.dart';
 import 'package:mobile/event_detail/event_detail_state.dart';
 import 'package:mobile/event_detail/models/event_attendance.dart';
 import 'package:mobile/event_list/models/event_list_item.dart';
@@ -24,8 +25,9 @@ class EventDetailController extends StateNotifier<EventDetailState> {
     state = state.copyWith(status: EventDetailStatus.loading, clearError: true);
 
     try {
-      final response = await _supabaseClient.functions.invoke(
-        AppEnv.eventDetailFunctionName,
+      final response = await SupabaseFunctionService.invoke(
+        client: _supabaseClient,
+        functionName: AppEnv.eventDetailFunctionName,
         method: HttpMethod.get,
         queryParameters: {
           'event_id': state.event.id,
@@ -61,13 +63,13 @@ class EventDetailController extends StateNotifier<EventDetailState> {
         myComment: myComment,
       );
     } on FunctionException catch (error) {
-      debugPrint('events_detail FunctionException: ${error.details}');
       state = state.copyWith(
         status: EventDetailStatus.error,
-        errorMessage: _extractErrorMessage(error.details) ?? '出欠の取得に失敗しました',
+        errorMessage:
+            SupabaseFunctionErrorHandler.extractErrorMessage(error.details) ??
+                '出欠の取得に失敗しました',
       );
     } catch (error) {
-      debugPrint('events_detail error: $error');
       state = state.copyWith(
         status: EventDetailStatus.error,
         errorMessage: '出欠の取得に失敗しました: $error',
@@ -113,8 +115,9 @@ class EventDetailController extends StateNotifier<EventDetailState> {
       final supabaseStatus = _mapStatusToDb(state.myStatus!);
       final comment = (state.myComment ?? '').trim();
 
-      final response = await _supabaseClient.functions.invoke(
-        AppEnv.attendanceRegisterFunctionName,
+      final response = await SupabaseFunctionService.invoke(
+        client: _supabaseClient,
+        functionName: AppEnv.attendanceRegisterFunctionName,
         method: HttpMethod.post,
         body: {
           'eventId': state.event.id,
@@ -145,12 +148,12 @@ class EventDetailController extends StateNotifier<EventDetailState> {
         myComment: updated.comment,
       );
     } on FunctionException catch (error) {
-      debugPrint('attendance_register FunctionException: ${error.details}');
       state = state.copyWith(
-        errorMessage: _extractErrorMessage(error.details) ?? '出欠登録に失敗しました',
+        errorMessage:
+            SupabaseFunctionErrorHandler.extractErrorMessage(error.details) ??
+                '出欠登録に失敗しました',
       );
     } catch (error) {
-      debugPrint('submitAttendance error: $error');
       state = state.copyWith(
         errorMessage: '出欠の更新に失敗しました: $error',
       );
@@ -197,21 +200,6 @@ class EventDetailController extends StateNotifier<EventDetailState> {
       default:
         return EventAttendanceStatus.pending;
     }
-  }
-
-  String? _extractErrorMessage(dynamic details) {
-    if (details == null) return null;
-    if (details is String) return details;
-    if (details is Map<String, dynamic>) {
-      final message = details['message'];
-      if (message is String) return message;
-      final error = details['error'];
-      if (error is Map<String, dynamic>) {
-        final errorMessage = error['message'];
-        if (errorMessage is String) return errorMessage;
-      }
-    }
-    return details.toString();
   }
 }
 

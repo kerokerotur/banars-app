@@ -1,8 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:mobile/config/app_env.dart';
+import 'package:mobile/shared/services/supabase_function_service.dart';
+import 'package:mobile/shared/services/supabase_function_error_handler.dart';
 import 'package:mobile/home/home_state.dart';
 
 final homeControllerProvider =
@@ -26,8 +27,9 @@ class HomeController extends Notifier<HomeState> {
     );
 
     try {
-      final response = await _supabaseClient.functions.invoke(
-        AppEnv.getMeFunctionName,
+      final response = await SupabaseFunctionService.invoke(
+        client: _supabaseClient,
+        functionName: AppEnv.getMeFunctionName,
         method: HttpMethod.get,
       );
 
@@ -49,15 +51,14 @@ class HomeController extends Notifier<HomeState> {
         clearError: true,
       );
     } on FunctionException catch (error) {
-      debugPrint('get_me FunctionException: ${error.details}');
       state = state.copyWith(
         status: HomeStatus.error,
-        errorMessage: _stringifyDetails(error.details) ??
-            error.reasonPhrase ??
-            'ユーザー情報の取得に失敗しました。',
+        errorMessage:
+            SupabaseFunctionErrorHandler.extractErrorMessage(error.details) ??
+                error.reasonPhrase ??
+                'ユーザー情報の取得に失敗しました。',
       );
     } catch (error) {
-      debugPrint('get_me error: $error');
       state = state.copyWith(
         status: HomeStatus.error,
         errorMessage: 'ユーザー情報の取得に失敗しました: $error',
@@ -69,21 +70,5 @@ class HomeController extends Notifier<HomeState> {
 class HomeException implements Exception {
   const HomeException(this.message);
   final String message;
-}
-
-String? _stringifyDetails(dynamic details) {
-  if (details == null) {
-    return null;
-  }
-  if (details is String) {
-    return details;
-  }
-  if (details is Map<String, dynamic>) {
-    final message = details['message'];
-    if (message is String) {
-      return message;
-    }
-  }
-  return details.toString();
 }
 

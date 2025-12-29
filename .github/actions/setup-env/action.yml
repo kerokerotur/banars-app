@@ -1,0 +1,46 @@
+name: 'Setup Environment Variables'
+description: 'GitHub Secretsから環境変数を読み込み、dart_defines.jsonを生成します'
+
+inputs:
+  working-directory:
+    description: 'Flutterプロジェクトのディレクトリパス'
+    required: false
+    default: 'apps/mobile'
+  supabase-url:
+    description: 'SupabaseプロジェクトのURL'
+    required: true
+  supabase-anon-key:
+    description: 'SupabaseのAnonymous Key'
+    required: true
+  line-channel-id:
+    description: 'LINE LoginのチャンネルID'
+    required: true
+
+outputs:
+  dart-defines-path:
+    description: '生成されたdart_defines.jsonのパス'
+    value: ${{ inputs.working-directory }}/dart_defines.json
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Generate dart_defines.json
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        jq -n \
+          --arg supabase_url "${{ inputs.supabase-url }}" \
+          --arg supabase_anon_key "${{ inputs.supabase-anon-key }}" \
+          --arg line_channel_id "${{ inputs.line-channel-id }}" \
+          '{
+            SUPABASE_URL: $supabase_url,
+            SUPABASE_ANON_KEY: $supabase_anon_key,
+            LINE_CHANNEL_ID: $line_channel_id
+          }' > dart_defines.json
+
+    - name: Verify dart_defines.json
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        cat dart_defines.json
+

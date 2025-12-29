@@ -1,7 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile/config/app_env.dart';
+import 'package:mobile/shared/services/supabase_function_service.dart';
+import 'package:mobile/shared/services/supabase_function_error_handler.dart';
 import 'package:mobile/event_list/event_list_state.dart';
 import 'package:mobile/event_list/models/event_list_item.dart';
 
@@ -26,8 +27,9 @@ class EventListController extends StateNotifier<EventListState> {
     state = state.copyWith(status: EventListStatus.loading, clearError: true);
 
     try {
-      final response = await _supabaseClient.functions.invoke(
-        AppEnv.eventListFunctionName,
+      final response = await SupabaseFunctionService.invoke(
+        client: _supabaseClient,
+        functionName: AppEnv.eventListFunctionName,
         method: HttpMethod.get,
       );
 
@@ -50,35 +52,19 @@ class EventListController extends StateNotifier<EventListState> {
         events: events,
       );
     } on FunctionException catch (error) {
-      debugPrint('event_list FunctionException: ${error.details}');
       state = state.copyWith(
         status: EventListStatus.error,
-        errorMessage: _extractErrorMessage(error.details) ??
-            error.reasonPhrase ??
-            'イベント一覧の取得に失敗しました',
+        errorMessage:
+            SupabaseFunctionErrorHandler.extractErrorMessage(error.details) ??
+                error.reasonPhrase ??
+                'イベント一覧の取得に失敗しました',
       );
     } catch (error) {
-      debugPrint('event_list error: $error');
       state = state.copyWith(
         status: EventListStatus.error,
         errorMessage: 'イベント一覧の取得に失敗しました: $error',
       );
     }
-  }
-
-  String? _extractErrorMessage(dynamic details) {
-    if (details == null) return null;
-    if (details is String) return details;
-    if (details is Map<String, dynamic>) {
-      final message = details['message'];
-      if (message is String) return message;
-      final error = details['error'];
-      if (error is Map<String, dynamic>) {
-        final errorMessage = error['message'];
-        if (errorMessage is String) return errorMessage;
-      }
-    }
-    return details.toString();
   }
 
   /// リフレッシュ

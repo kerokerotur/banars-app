@@ -1,0 +1,36 @@
+name: 'Build Android APK'
+description: 'Flutter Android APKをビルドします'
+
+inputs:
+  working-directory:
+    description: 'Flutterプロジェクトのディレクトリパス'
+    required: false
+    default: 'apps/mobile'
+
+outputs:
+  apk-path:
+    description: 'ビルドされたAPKファイルのパス'
+    value: ${{ steps.verify.outputs.apk-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Build APK
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        fvm dart run derry build-apk
+
+    - name: Verify APK file exists
+      shell: bash
+      id: verify
+      run: |
+        APK_PATH="${{ inputs.working-directory }}/build/app/outputs/flutter-apk/app-release.apk"
+        if [ ! -f "$APK_PATH" ]; then
+          echo "Error: APK file not found at $APK_PATH"
+          exit 1
+        fi
+        echo "APK file found: $APK_PATH"
+        ls -lh "$APK_PATH"
+        echo "apk-path=$APK_PATH" >> $GITHUB_OUTPUT
+

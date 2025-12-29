@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:mobile/config/app_env.dart';
 import 'package:mobile/login/login_state.dart';
+import 'package:mobile/shared/services/supabase_function_service.dart';
+import 'package:mobile/shared/services/supabase_function_error_handler.dart';
 
 final loginControllerProvider =
     NotifierProvider<LoginController, LoginState>(LoginController.new);
@@ -64,7 +66,7 @@ class LoginController extends Notifier<LoginState> {
         errorMessage: message,
       );
     } on FunctionException catch (error) {
-      final errorCode = _extractFunctionErrorCode(error.details);
+      final errorCode = SupabaseFunctionErrorHandler.extractErrorCode(error.details);
       final isUserNotFound = errorCode == 'user_not_found';
       final fallbackMessage =
           error.reasonPhrase ?? 'Edge Function でエラーが発生しました。';
@@ -72,7 +74,7 @@ class LoginController extends Notifier<LoginState> {
         status: isUserNotFound ? LoginStatus.userNotFound : LoginStatus.error,
         errorMessage: isUserNotFound
             ? '登録されていないユーザーです。招待リンクから初回登録を行ってください。'
-            : (_stringifyDetails(error.details) ?? fallbackMessage),
+            : (SupabaseFunctionErrorHandler.extractErrorMessage(error.details) ?? fallbackMessage),
       );
     } on AuthException catch (error) {
       state = state.copyWith(
@@ -101,8 +103,9 @@ class LoginController extends Notifier<LoginState> {
   Future<_LineLoginResponse> _invokeLineLogin({
     required String idToken,
   }) async {
-    final response = await _supabaseClient.functions.invoke(
-      AppEnv.lineLoginFunctionName,
+    final response = await SupabaseFunctionService.invoke(
+      client: _supabaseClient,
+      functionName: AppEnv.lineLoginFunctionName,
       body: {
         'idToken': idToken,
       },
@@ -142,28 +145,5 @@ class _LineLoginResponse {
 class LoginFlowException implements Exception {
   const LoginFlowException(this.message);
   final String message;
-}
-
-String? _extractFunctionErrorCode(dynamic details) {
-  if (details is Map<String, dynamic>) {
-    final code = details['code'];
-    if (code is String) {
-      return code;
-    }
-  }
-  if (details is String) {
-    return details;
-  }
-  return null;
-}
-
-String? _stringifyDetails(dynamic details) {
-  if (details == null) {
-    return null;
-  }
-  if (details is String) {
-    return details;
-  }
-  return details.toString();
 }
 

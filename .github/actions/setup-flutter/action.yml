@@ -1,0 +1,36 @@
+name: 'Setup Flutter with FVM'
+description: 'FVMをインストールし、Flutter SDKをセットアップして依存関係をインストールします'
+
+inputs:
+  working-directory:
+    description: 'Flutterプロジェクトのディレクトリパス'
+    required: false
+    default: 'apps/mobile'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Dart
+      uses: dart-lang/setup-dart@v1
+      with:
+        sdk: stable
+
+    - name: Install FVM
+      shell: bash
+      run: |
+        dart pub global activate fvm
+        echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
+
+    - name: Setup Flutter SDK with FVM
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        fvm install
+        fvm use
+
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        fvm dart run derry setup
+

@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:mobile/config/app_env.dart';
 import 'package:mobile/place_management/place_update/place_update_state.dart';
 import 'package:mobile/place_management/shared/validators/google_maps_url_validator.dart';
+import 'package:mobile/shared/services/supabase_function_service.dart';
+import 'package:mobile/shared/services/supabase_function_error_handler.dart';
 
 final placeUpdateControllerProvider = StateNotifierProvider.autoDispose
     .family<PlaceUpdateController, PlaceUpdateState, (String, String, String)>(
@@ -63,19 +64,18 @@ class PlaceUpdateController extends StateNotifier<PlaceUpdateState> {
     );
 
     try {
-      final response = await _supabaseClient.functions
-          .invoke(
-            AppEnv.placeUpdateFunctionName,
-            body: {
-              'place_id': state.placeId,
-              'name': state.name.trim(),
-              'google_maps_url': state.googleMapsUrl.trim(),
-            },
-          )
-          .timeout(
-            const Duration(seconds: 30),
-            onTimeout: () => throw TimeoutException('リクエストがタイムアウトしました'),
-          );
+      final response = await SupabaseFunctionService.invoke(
+        client: _supabaseClient,
+        functionName: AppEnv.placeUpdateFunctionName,
+        body: {
+          'place_id': state.placeId,
+          'name': state.name.trim(),
+          'google_maps_url': state.googleMapsUrl.trim(),
+        },
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => throw TimeoutException('リクエストがタイムアウトしました'),
+      );
 
       final data = response.data;
       if (data is Map && data['success'] == true) {
@@ -94,19 +94,18 @@ class PlaceUpdateController extends StateNotifier<PlaceUpdateState> {
         errorMessage: 'ネットワークに接続できません。インターネット接続を確認してください。',
       );
     } on FunctionException catch (error) {
-      debugPrint('place_update error: $error');
-      final errorCode = _extractErrorCode(error.details);
+      final errorCode = SupabaseFunctionErrorHandler.extractErrorCode(error.details);
 
       if (errorCode == 'duplicate_google_maps_url') {
         state = state.copyWith(
           status: PlaceUpdateStatus.error,
-          errorMessage: _extractErrorMessage(error.details) ??
+          errorMessage: SupabaseFunctionErrorHandler.extractErrorMessage(error.details) ??
               'この Google Maps URL は既に登録されています',
         );
         return;
       }
 
-      final errorMessage = _extractErrorMessage(error.details) ??
+      final errorMessage = SupabaseFunctionErrorHandler.extractErrorMessage(error.details) ??
           error.reasonPhrase ??
           '場所の更新に失敗しました';
 
@@ -115,7 +114,6 @@ class PlaceUpdateController extends StateNotifier<PlaceUpdateState> {
         errorMessage: errorMessage,
       );
     } catch (error) {
-      debugPrint('place_update error: $error');
       state = state.copyWith(
         status: PlaceUpdateStatus.error,
         errorMessage: '予期しないエラーが発生しました: $error',
@@ -147,27 +145,5 @@ class PlaceUpdateController extends StateNotifier<PlaceUpdateState> {
     }
 
     return true;
-  }
-
-  // ========== Helper Methods ==========
-
-  String? _extractErrorMessage(dynamic details) {
-    if (details is Map) {
-      if (details['error'] is Map) {
-        return details['error']['message'] as String?;
-      }
-      return details['message'] as String?;
-    }
-    return null;
-  }
-
-  String? _extractErrorCode(dynamic details) {
-    if (details is Map) {
-      if (details['error'] is Map) {
-        return details['error']['code'] as String?;
-      }
-      return details['code'] as String?;
-    }
-    return null;
   }
 }

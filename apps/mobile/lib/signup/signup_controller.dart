@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +8,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:mobile/config/app_env.dart';
 import 'package:mobile/signup/signup_state.dart';
+import 'package:mobile/shared/services/supabase_function_service.dart';
+import 'package:mobile/shared/services/supabase_function_error_handler.dart';
 
 final signupControllerProvider =
     NotifierProvider<SignupController, SignupState>(SignupController.new);
@@ -33,16 +34,16 @@ class SignupController extends Notifier<SignupState> {
     try {
       final initialUri = await _appLinks.getInitialLink();
       _handleUri(initialUri);
-    } on PlatformException catch (error) {
-      debugPrint('Failed to receive initial URI: ${error.message}');
-    } on FormatException catch (error) {
-      debugPrint('Malformed initial URI: $error');
+    } on PlatformException {
+      // Ignore PlatformException
+    } on FormatException {
+      // Ignore FormatException
     }
 
     _linkSubscription = _appLinks.uriLinkStream.listen(
       (Uri uri) => _handleUri(uri),
       onError: (Object error) {
-        debugPrint('Deep link error: $error');
+        // Ignore deep link errors
       },
     );
   }
@@ -146,7 +147,7 @@ class SignupController extends Notifier<SignupState> {
         errorMessage: message,
       );
     } on FunctionException catch (error) {
-      final errorCode = _extractFunctionErrorCode(error.details);
+      final errorCode = SupabaseFunctionErrorHandler.extractErrorCode(error.details);
       final alreadyRegistered = errorCode == 'already_registered';
       final fallbackMessage =
           error.reasonPhrase ?? 'Edge Function でエラーが発生しました。';
@@ -156,7 +157,7 @@ class SignupController extends Notifier<SignupState> {
             : SignupStatus.error,
         errorMessage: alreadyRegistered
             ? 'すでに登録済みのアカウントとして検出されました。'
-            : (_stringifyDetails(error.details) ?? fallbackMessage),
+            : (SupabaseFunctionErrorHandler.extractErrorMessage(error.details) ?? fallbackMessage),
       );
     } on AuthException catch (error) {
       state = state.copyWith(
@@ -186,8 +187,9 @@ class SignupController extends Notifier<SignupState> {
     required String accessToken,
     required UserProfile profile,
   }) async {
-    final response = await _supabaseClient.functions.invoke(
-      AppEnv.initialSignupFunctionName,
+    final response = await SupabaseFunctionService.invoke(
+      client: _supabaseClient,
+      functionName: AppEnv.initialSignupFunctionName,
       body: {
         'inviteToken': inviteToken,
         'lineTokens': {
@@ -231,27 +233,4 @@ class _InitialSignupResponse {
 class SignupFlowException implements Exception {
   const SignupFlowException(this.message);
   final String message;
-}
-
-String? _extractFunctionErrorCode(dynamic details) {
-  if (details is Map<String, dynamic>) {
-    final code = details['code'];
-    if (code is String) {
-      return code;
-    }
-  }
-  if (details is String) {
-    return details;
-  }
-  return null;
-}
-
-String? _stringifyDetails(dynamic details) {
-  if (details == null) {
-    return null;
-  }
-  if (details is String) {
-    return details;
-  }
-  return details.toString();
 }

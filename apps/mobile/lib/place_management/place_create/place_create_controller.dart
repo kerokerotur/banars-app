@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:mobile/config/app_env.dart';
 import 'package:mobile/place_management/place_create/place_create_state.dart';
 import 'package:mobile/place_management/shared/validators/google_maps_url_validator.dart';
+import 'package:mobile/shared/services/supabase_function_service.dart';
+import 'package:mobile/shared/services/supabase_function_error_handler.dart';
 
 final placeCreateControllerProvider =
     NotifierProvider<PlaceCreateController, PlaceCreateState>(
@@ -78,18 +79,17 @@ class PlaceCreateController extends Notifier<PlaceCreateState> {
     );
 
     try {
-      final response = await _supabaseClient.functions
-          .invoke(
-            AppEnv.placeCreateFunctionName,
-            body: {
-              'name': state.name.trim(),
-              'google_maps_url': state.googleMapsUrl.trim(),
-            },
-          )
-          .timeout(
-            const Duration(seconds: 30),
-            onTimeout: () => throw TimeoutException('リクエストがタイムアウトしました'),
-          );
+      final response = await SupabaseFunctionService.invoke(
+        client: _supabaseClient,
+        functionName: AppEnv.placeCreateFunctionName,
+        body: {
+          'name': state.name.trim(),
+          'google_maps_url': state.googleMapsUrl.trim(),
+        },
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => throw TimeoutException('リクエストがタイムアウトしました'),
+      );
 
       final data = response.data;
       if (data is Map && data['success'] == true) {
@@ -108,8 +108,7 @@ class PlaceCreateController extends Notifier<PlaceCreateState> {
         errorMessage: 'ネットワークに接続できません。インターネット接続を確認してください。',
       );
     } on FunctionException catch (error) {
-      debugPrint('place_create error: $error');
-      final errorCode = _extractErrorCode(error.details);
+      final errorCode = SupabaseFunctionErrorHandler.extractErrorCode(error.details);
 
       // サーバー側で重複検知された場合も既存会場を提示
       if (errorCode == 'duplicate_google_maps_url') {
@@ -118,13 +117,13 @@ class PlaceCreateController extends Notifier<PlaceCreateState> {
           status: PlaceCreateStatus.editing,
           lookupStatus: PlaceLookupStatus.duplicate,
           existingPlace: existingPlace,
-          errorMessage: _extractErrorMessage(error.details) ??
+          errorMessage: SupabaseFunctionErrorHandler.extractErrorMessage(error.details) ??
               'この Google Maps URL は既に登録されています',
         );
         return;
       }
 
-      final errorMessage = _extractErrorMessage(error.details) ??
+      final errorMessage = SupabaseFunctionErrorHandler.extractErrorMessage(error.details) ??
           error.reasonPhrase ??
           '場所の登録に失敗しました';
 
@@ -133,7 +132,6 @@ class PlaceCreateController extends Notifier<PlaceCreateState> {
         errorMessage: errorMessage,
       );
     } catch (error) {
-      debugPrint('place_create error: $error');
       state = state.copyWith(
         status: PlaceCreateStatus.error,
         errorMessage: '予期しないエラーが発生しました: $error',
@@ -180,8 +178,9 @@ class PlaceCreateController extends Notifier<PlaceCreateState> {
     final currentId = ++_lookupRequestId;
 
     try {
-      final response = await _supabaseClient.functions.invoke(
-        '${AppEnv.placeLookupFunctionName}?google_maps_url=${Uri.encodeComponent(url)}',
+      final response = await SupabaseFunctionService.invoke(
+        client: _supabaseClient,
+        functionName: '${AppEnv.placeLookupFunctionName}?google_maps_url=${Uri.encodeComponent(url)}',
         method: HttpMethod.get,
       );
 
@@ -211,7 +210,7 @@ class PlaceCreateController extends Notifier<PlaceCreateState> {
     } on FunctionException catch (error) {
       if (currentId != _lookupRequestId) return;
 
-      final message = _extractErrorMessage(error.details) ??
+      final message = SupabaseFunctionErrorHandler.extractErrorMessage(error.details) ??
           error.reasonPhrase ??
           '重複チェックに失敗しました';
 
@@ -237,26 +236,6 @@ class PlaceCreateController extends Notifier<PlaceCreateState> {
   void selectExistingPlace() {
     if (!state.canSelectExisting) return;
     state = state.copyWith(status: PlaceCreateStatus.existingSelected);
-  }
-
-  String? _extractErrorMessage(dynamic details) {
-    if (details is Map) {
-      if (details['error'] is Map) {
-        return details['error']['message'] as String?;
-      }
-      return details['message'] as String?;
-    }
-    return null;
-  }
-
-  String? _extractErrorCode(dynamic details) {
-    if (details is Map) {
-      if (details['error'] is Map) {
-        return details['error']['code'] as String?;
-      }
-      return details['code'] as String?;
-    }
-    return null;
   }
 
   Map<String, dynamic>? _extractExistingPlace(dynamic details) {

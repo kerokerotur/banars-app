@@ -1,0 +1,54 @@
+name: 'Upload to Firebase App Distribution'
+description: 'Firebase CLIを使用してAPKをFirebase App Distributionにアップロードします'
+
+inputs:
+  apk-path:
+    description: 'アップロードするAPKファイルのパス'
+    required: true
+  firebase-service-account-key:
+    description: 'Firebaseサービスアカウントキー（JSON形式）'
+    required: true
+  firebase-project-id:
+    description: 'FirebaseプロジェクトID'
+    required: true
+  firebase-android-app-id:
+    description: 'Firebase AndroidアプリID'
+    required: true
+  release-notes:
+    description: 'リリースノート'
+    required: false
+    default: 'Build from GitHub Actions'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Firebase CLI
+      shell: bash
+      run: |
+        npm install -g firebase-tools
+        echo "$(npm config get prefix)/bin" >> $GITHUB_PATH
+
+    - name: Setup Firebase service account
+      shell: bash
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase-service-account.json
+      run: |
+        echo '${{ inputs.firebase-service-account-key }}' > $GOOGLE_APPLICATION_CREDENTIALS
+
+    - name: Upload APK to Firebase App Distribution
+      shell: bash
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase-service-account.json
+      run: |
+        firebase appdistribution:distribute \
+          "${{ inputs.apk-path }}" \
+          --app "${{ inputs.firebase-android-app-id }}" \
+          --project "${{ inputs.firebase-project-id }}" \
+          --release-notes "${{ inputs.release-notes }}"
+
+    - name: Cleanup service account file
+      shell: bash
+      if: always()
+      run: |
+        rm -f /tmp/firebase-service-account.json
+

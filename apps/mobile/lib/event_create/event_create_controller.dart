@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -7,6 +6,8 @@ import 'package:mobile/config/app_env.dart';
 import 'package:mobile/event_create/event_create_state.dart';
 import 'package:mobile/event_create/models/event_place.dart';
 import 'package:mobile/shared/providers/event_types_provider.dart';
+import 'package:mobile/shared/services/supabase_function_service.dart';
+import 'package:mobile/shared/services/supabase_function_error_handler.dart';
 
 final eventCreateControllerProvider =
     NotifierProvider<EventCreateController, EventCreateState>(
@@ -49,7 +50,6 @@ class EventCreateController extends Notifier<EventCreateState> {
         status: EventCreateStatus.editing,
       );
     } catch (error) {
-      debugPrint('Failed to load cache data: $error');
       state = state.copyWith(
         status: EventCreateStatus.error,
         errorMessage: 'イベント種別・会場情報の読み込みに失敗しました',
@@ -204,8 +204,9 @@ class EventCreateController extends Notifier<EventCreateState> {
     );
 
     try {
-      final response = await _supabaseClient.functions.invoke(
-        AppEnv.eventCreateFunctionName,
+      final response = await SupabaseFunctionService.invoke(
+        client: _supabaseClient,
+        functionName: AppEnv.eventCreateFunctionName,
         body: {
           'title': state.title.trim(),
           'eventTypeId': state.selectedEventTypeId,
@@ -238,15 +239,13 @@ class EventCreateController extends Notifier<EventCreateState> {
         clearError: true,
       );
     } on FunctionException catch (error) {
-      debugPrint('event_create FunctionException: ${error.details}');
       state = state.copyWith(
         status: EventCreateStatus.error,
-        errorMessage: _extractErrorMessage(error.details) ??
+        errorMessage: SupabaseFunctionErrorHandler.extractErrorMessage(error.details) ??
             error.reasonPhrase ??
             'イベントの作成に失敗しました',
       );
     } catch (error) {
-      debugPrint('event_create error: $error');
       state = state.copyWith(
         status: EventCreateStatus.error,
         errorMessage: 'イベントの作成に失敗しました: $error',
@@ -268,7 +267,6 @@ class EventCreateController extends Notifier<EventCreateState> {
 
       state = state.copyWith(previousVenues: previousVenues);
     } catch (error) {
-      debugPrint('Failed to refresh event_places cache: $error');
       // Don't fail the overall operation if cache refresh fails
     }
   }
@@ -301,26 +299,10 @@ class EventCreateController extends Notifier<EventCreateState> {
         selectPreviousVenue(latestPlace);
       }
     } catch (error) {
-      debugPrint('Failed to refresh places and select latest: $error');
       state = state.copyWith(
         errorMessage: 'イベント会場情報の更新に失敗しました',
       );
     }
-  }
-
-  String? _extractErrorMessage(dynamic details) {
-    if (details == null) return null;
-    if (details is String) return details;
-    if (details is Map<String, dynamic>) {
-      final message = details['message'];
-      if (message is String) return message;
-      final error = details['error'];
-      if (error is Map<String, dynamic>) {
-        final errorMessage = error['message'];
-        if (errorMessage is String) return errorMessage;
-      }
-    }
-    return details.toString();
   }
 }
 

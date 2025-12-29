@@ -27,6 +27,31 @@ banars 草野球チーム向け Flutter モバイルアプリです。Flutter CL
 
 > **注意**: `dart_defines.json` には機密情報が含まれるため `.gitignore` に登録されています。Git にコミットしないでください。
 
+## GitHub Actions でのビルド
+
+GitHub Actions で Android APK をビルドするには、以下の GitHub Secrets を設定する必要があります。
+
+### 必要な Secrets
+
+| Secret 名 | 説明 |
+|-----------|------|
+| `SUPABASE_URL` | Supabase プロジェクトの URL |
+| `SUPABASE_ANON_KEY` | Supabase の Anonymous Key |
+| `LINE_CHANNEL_ID` | LINE Developers Console で発行した LINE Login のチャンネル ID |
+| `FIREBASE_SERVICE_ACCOUNT_KEY` | Firebase サービスアカウントキー（JSON形式） |
+| `FIREBASE_PROJECT_ID` | Firebase プロジェクト ID |
+| `FIREBASE_ANDROID_APP_ID` | Firebase Android アプリ ID |
+
+### ビルドの実行方法
+
+1. GitHub リポジトリの Actions タブに移動します
+2. 「Build Android APK」ワークフローを選択します
+3. 「Run workflow」ボタンをクリックします
+4. 必要に応じてリリースノートを入力します
+5. 「Run workflow」をクリックして実行します
+
+ビルドが完了すると、APK が Firebase App Distribution に自動的にアップロードされます。
+
 ## derry スクリプト一覧
 
 すべて `fvm dart run derry <script>` の形で実行してください。
