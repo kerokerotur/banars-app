@@ -5,6 +5,17 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+def dartDefines = [:];
+if (project.hasProperty('dart-defines')) {
+    // カンマ区切りかつBase64でエンコードされている dart-defines をデコードして変数に格納します。
+    dartDefines = dartDefines + project.property('dart-defines')
+            .split(',')
+            .collectEntries { entry ->
+                def pair = new String(entry.decodeBase64(), 'UTF-8').split('=')
+                pair.length == 2 ? [(pair.first()): pair.last()] : [:]
+            }
+}
+
 android {
     namespace = "com.banarsbase.app"
     compileSdk = flutter.compileSdkVersion
@@ -20,14 +31,14 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.banarsbase.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        applicationId "${dartDefines.APP_ID}"
+        resValue "string", "app_name", "${dartDefines.APP_NAME}"
     }
 
     buildTypes {
@@ -37,6 +48,15 @@ android {
             signingConfig = signingConfigs.debug
         }
     }
+}
+
+task copySources(type: Copy) {
+    from "src/${dartDefines.FLAVOR}/res"
+    into 'src/main/res'
+}
+
+tasks.whenTaskAdded { task ->
+    task.dependsOn copySources
 }
 
 flutter {
