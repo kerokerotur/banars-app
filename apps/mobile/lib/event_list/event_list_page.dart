@@ -147,6 +147,8 @@ class EventListPage extends ConsumerWidget {
     final textSecondaryColor =
         isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
     final dateFormat = DateFormat('yyyy/MM/dd (E) HH:mm', 'ja_JP');
+    final eventTypeStyle = _resolveEventTypeStyle(context, event.eventTypeName);
+    final meeting = event.meetingDatetime;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -159,107 +161,115 @@ class EventListPage extends ConsumerWidget {
           );
         },
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // タイトル行
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      event.title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
+              Container(
+                width: 6,
+                decoration: BoxDecoration(
+                  color: eventTypeStyle.color,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    bottomLeft: Radius.circular(12),
                   ),
-                  _buildAttendanceStatusBadge(
-                      context, event.userAttendanceStatus),
-                ],
+                ),
               ),
-              const SizedBox(height: 8),
-
-              // イベント種別
-              if (event.eventTypeName != null) ...[
-                Row(
-                  children: [
-                    Icon(Icons.category, size: 16, color: textSecondaryColor),
-                    const SizedBox(width: 4),
-                    Text(
-                      event.eventTypeName!,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: textSecondaryColor,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 上段: アイコン + タイトル + 出欠バッジ
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(eventTypeStyle.icon,
+                              size: 20, color: eventTypeStyle.color),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              event.title,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          _buildAttendanceStatusBadge(
+                              context, event.userAttendanceStatus),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-              ],
+                      const SizedBox(height: 12),
 
-              // 開始日時
-              if (event.startDatetime != null) ...[
-                Row(
-                  children: [
-                    Icon(Icons.event, size: 16, color: textSecondaryColor),
-                    const SizedBox(width: 4),
-                    Text(
-                      dateFormat.format(event.startDatetime!),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: textSecondaryColor,
+                      // 中段: 既存の情報（日時・会場・回答期限・出欠者）
+
+                      Row(
+                        children: [
+                          Icon(Icons.event_available,
+                              size: 16, color: textSecondaryColor),
+                          const SizedBox(width: 4),
+                          Text(
+                            '集合日時: ${meeting != null ? dateFormat.format(meeting) : '-'}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: textSecondaryColor,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-              ],
+                      const SizedBox(height: 4),
 
-              // 会場
-              if (event.eventPlaceName != null) ...[
-                Row(
-                  children: [
-                    Icon(Icons.place, size: 16, color: textSecondaryColor),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        event.eventPlaceName!,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: textSecondaryColor,
+                      if (event.eventPlaceName != null) ...[
+                        Row(
+                          children: [
+                            Icon(Icons.place,
+                                size: 16, color: textSecondaryColor),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                event.eventPlaceName!,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: textSecondaryColor,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-              ],
+                        const SizedBox(height: 4),
+                      ],
 
-              // 回答期限
-              if (event.responseDeadlineDatetime != null) ...[
-                Row(
-                  children: [
-                    Icon(Icons.access_time,
-                        size: 16, color: textSecondaryColor),
-                    const SizedBox(width: 4),
-                    Text(
-                      '回答期限: ${dateFormat.format(event.responseDeadlineDatetime!)}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: textSecondaryColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                      if (event.responseDeadlineDatetime != null) ...[
+                        Row(
+                          children: [
+                            Icon(Icons.access_time,
+                                size: 16, color: textSecondaryColor),
+                            const SizedBox(width: 4),
+                            Text(
+                              '回答期限: ${dateFormat.format(event.responseDeadlineDatetime!)}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: textSecondaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
 
-              // 出欠者アバター一覧（新規追加）
-              const SizedBox(height: 8),
-              _buildAttendanceAvatars(context, event, ref),
+                      const SizedBox(height: 8),
+                      _buildAttendanceAvatars(context, event, ref),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -292,17 +302,57 @@ class EventListPage extends ConsumerWidget {
       onTap: () => _showAttendanceModal(context, event),
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
         child: Row(
           children: [
-            Icon(Icons.people, size: 16, color: textSecondaryColor),
-            const SizedBox(width: 4),
+            Icon(Icons.people, size: 18, color: textSecondaryColor),
+            const SizedBox(width: 8),
             Expanded(
-              child: _buildAvatarStack(context, summaries, ref),
-            ),
+                child:
+                    _buildAttendanceSummaryText(textSecondaryColor, summaries)),
+            Icon(Icons.chevron_right, size: 20, color: textSecondaryColor),
           ],
         ),
       ),
+    );
+  }
+
+  /// 出欠サマリーテキスト
+  Widget _buildAttendanceSummaryText(
+    Color textColor,
+    List<AttendanceSummary> summaries,
+  ) {
+    final attendingCount = summaries
+        .where((s) => s.status == AttendanceSummaryStatus.attending)
+        .length;
+    final absentCount = summaries
+        .where((s) => s.status == AttendanceSummaryStatus.notAttending)
+        .length;
+    final pendingCount = summaries
+        .where((s) => s.status == AttendanceSummaryStatus.pending)
+        .length;
+    final answeredCount = summaries.length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '回答済み $answeredCount 人',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: textColor,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '出席 $attendingCount ・ 欠席 $absentCount ・ 保留 $pendingCount',
+          style: TextStyle(
+            fontSize: 12,
+            color: textColor,
+          ),
+        ),
+      ],
     );
   }
 
@@ -313,95 +363,6 @@ class EventListPage extends ConsumerWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => AttendanceModal(event: event),
-    );
-  }
-
-  /// アバタースタック
-  Widget _buildAvatarStack(
-    BuildContext context,
-    List<AttendanceSummary> summaries,
-    WidgetRef ref,
-  ) {
-    final displaySummaries = summaries.take(10).toList();
-    final remainingCount = summaries.length > 10 ? summaries.length - 10 : 0;
-
-    return SizedBox(
-      height: 24,
-      child: Stack(
-        children: [
-          ...displaySummaries.asMap().entries.map((entry) {
-            final index = entry.key;
-            final summary = entry.value;
-            return Positioned(
-              left: index * 16.0,
-              child: _buildAvatar(summary, ref),
-            );
-          }),
-          if (remainingCount > 0)
-            Positioned(
-              left: 10 * 16.0,
-              child: _buildRemainingBadge(remainingCount),
-            ),
-        ],
-      ),
-    );
-  }
-
-  /// アバター
-  Widget _buildAvatar(AttendanceSummary summary, WidgetRef ref) {
-    // UsersProviderからユーザー情報を取得
-    final usersState = ref.watch(usersProvider);
-    final userInfo = usersState.getUserById(summary.userId);
-
-    // ステータスごとの枠色
-    Color borderColor;
-    switch (summary.status) {
-      case AttendanceSummaryStatus.attending:
-        borderColor = Colors.green;
-        break;
-      case AttendanceSummaryStatus.notAttending:
-        borderColor = Colors.red;
-        break;
-      case AttendanceSummaryStatus.pending:
-        borderColor = Colors.orange;
-        break;
-    }
-
-    return Container(
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: borderColor, width: 2),
-        color: Colors.grey[300],
-      ),
-      child: ClipOval(
-        child: userInfo?.avatarUrl != null
-            ? Image.network(userInfo!.avatarUrl!, fit: BoxFit.cover)
-            : const Icon(Icons.person, size: 16),
-      ),
-    );
-  }
-
-  /// 残数バッジ
-  Widget _buildRemainingBadge(int count) {
-    return Container(
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.grey[600],
-      ),
-      child: Center(
-        child: Text(
-          '+$count',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
     );
   }
 
@@ -432,27 +393,32 @@ class EventListPage extends ConsumerWidget {
     Color backgroundColor;
     Color textColor;
     String label;
+    IconData icon;
 
     switch (status) {
       case UserAttendanceStatus.participating:
         backgroundColor = Colors.green.shade100;
         textColor = Colors.green.shade900;
         label = '参加';
+        icon = Icons.check_circle;
         break;
       case UserAttendanceStatus.absent:
         backgroundColor = Colors.red.shade100;
         textColor = Colors.red.shade900;
         label = '欠席';
+        icon = Icons.cancel;
         break;
       case UserAttendanceStatus.pending:
         backgroundColor = Colors.orange.shade100;
         textColor = Colors.orange.shade900;
         label = '保留';
+        icon = Icons.hourglass_empty;
         break;
       case UserAttendanceStatus.unanswered:
         backgroundColor = Colors.grey.shade200;
         textColor = Colors.grey.shade700;
         label = '未回答';
+        icon = Icons.help_outline;
         break;
     }
 
@@ -462,14 +428,56 @@ class EventListPage extends ConsumerWidget {
         color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: textColor,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: textColor),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+        ],
       ),
     );
   }
+
+  /// イベントタイプごとの色・アイコンを決定
+  _EventTypeStyle _resolveEventTypeStyle(
+    BuildContext context,
+    String? eventTypeName,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final name = eventTypeName?.trim().toLowerCase();
+
+    switch (name) {
+      case '試合':
+      case 'game':
+        return _EventTypeStyle(
+          color: Colors.red.shade300,
+          icon: Icons.sports_baseball,
+        );
+      case '練習':
+      case 'practice':
+        return _EventTypeStyle(
+          color: Colors.green.shade300,
+          icon: Icons.fitness_center,
+        );
+      default:
+        return _EventTypeStyle(
+          color: Colors.amber.shade400,
+          icon: Icons.category,
+        );
+    }
+  }
+}
+
+class _EventTypeStyle {
+  const _EventTypeStyle({required this.color, required this.icon});
+  final Color color;
+  final IconData icon;
 }
