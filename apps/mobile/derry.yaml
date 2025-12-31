@@ -5,10 +5,17 @@ analyze:
 test:
   - fvm flutter test
 run-dev:
-  - fvm flutter run --dart-define-from-file=dart_defines.json
-build-apk:
-  - fvm flutter build apk --release --dart-define-from-file=dart_defines.json
-build-ios:
-  - fvm flutter build ios --release --dart-define-from-file=dart_defines.json
+  - fvm flutter run --dart-define-from-file=env/dev.env
+run-prod:
+  - fvm flutter run --dart-define-from-file=env/prod.env
+build-apk-dev:
+  - fvm flutter build apk --release --dart-define-from-file=env/dev.env
+build-apk-prod:
+  - fvm flutter build apk --release --dart-define-from-file=env/prod.env
+build-ios-dev:
+  - fvm flutter build ios --release --dart-define-from-file=env/dev.env
+build-ios-prod:
+  - fvm flutter build ios --release --dart-define-from-file=env/prod.env
+gen-icon: flutter pub run flutter_launcher_icons:main
 clean:
   - fvm flutter clean
