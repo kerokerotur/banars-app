@@ -6,6 +6,10 @@ inputs:
     description: 'Flutterプロジェクトのディレクトリパス'
     required: false
     default: 'apps/mobile'
+  environment:
+    description: 'Environment (dev or prod)'
+    required: true
+    type: string
   supabase-url:
     description: 'SupabaseプロジェクトのURL'
     required: true

@@ -31,19 +31,34 @@ jobs:
         with:
           working-directory: apps/mobile
 
+      - name: Set environment-specific secrets
+        id: env-secrets
+        run: |
+          if [ "${{ github.event.inputs.environment }}" = "dev" ]; then
+            echo "supabase-url=${{ secrets.SUPABASE_URL_DEV }}" >> $GITHUB_OUTPUT
+            echo "supabase-anon-key=${{ secrets.SUPABASE_ANON_KEY_DEV }}" >> $GITHUB_OUTPUT
+            echo "line-channel-id=${{ secrets.LINE_CHANNEL_ID_DEV }}" >> $GITHUB_OUTPUT
+          else
+            echo "supabase-url=${{ secrets.SUPABASE_URL_PROD }}" >> $GITHUB_OUTPUT
+            echo "supabase-anon-key=${{ secrets.SUPABASE_ANON_KEY_PROD }}" >> $GITHUB_OUTPUT
+            echo "line-channel-id=${{ secrets.LINE_CHANNEL_ID_PROD }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Setup environment variables
         uses: ./.github/actions/setup-env
         with:
           working-directory: apps/mobile
-          supabase-url: ${{ secrets.SUPABASE_URL }}
-          supabase-anon-key: ${{ secrets.SUPABASE_ANON_KEY }}
-          line-channel-id: ${{ secrets.LINE_CHANNEL_ID }}
+          environment: ${{ github.event.inputs.environment }}
+          supabase-url: ${{ steps.env-secrets.outputs.supabase-url }}
+          supabase-anon-key: ${{ steps.env-secrets.outputs.supabase-anon-key }}
+          line-channel-id: ${{ steps.env-secrets.outputs.line-channel-id }}
 
       - name: Build APK
         id: build
         uses: ./.github/actions/build-apk
         with:
           working-directory: apps/mobile
+          environment: ${{ github.event.inputs.environment }}
 
       - name: Upload to Firebase App Distribution
         uses: ./.github/actions/upload-to-firebase
