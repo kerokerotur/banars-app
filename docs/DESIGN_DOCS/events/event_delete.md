@@ -1,20 +1,54 @@
 # イベント削除 (Event Delete)
 
-## 目的
-- 誤登録や中止が発生した際に、参加者へ混乱を招かず安全に削除できる運用を整える。
-- 過去の統計と監査目的で履歴を保持する。
+## ユーザーフロー / シーケンス
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Manager as 運営
+    participant App as Flutter App
+    participant Edge as Edge Function<br>(event_delete)
+    participant DB as Supabase DB
 
-## 削除ポリシー
-- `events` テーブルには `status` 列（`scheduled/cancelled/deleted`）を持たせ、論理削除を採用。
-- 出欠やコメントを保持するため、削除時は関連テーブルを消さない。
-- RLS で `manager` 権限のみ `status` を `deleted` に更新可能。
+    Manager->>App: イベント詳細で「削除」タップ
+    App->>Manager: 確認ダイアログ（未来開催時は警告文言）
+    Manager->>App: 確定
+    App->>Edge: POST /event_delete {event_id}
+    Edge->>Edge: JWT の role=manager を検証
+    Edge->>DB: SELECT events WHERE id = event_id
+    Edge->>DB: DELETE FROM attendance WHERE event_id = ...
+    Edge->>DB: DELETE FROM events WHERE id = ...
+    DB-->>Edge: 削除結果
+    Edge-->>App: {success: true}
+    App->>Manager: 完了トースト表示
+    DB-->>App: Realtime (events DELETE) を受信し一覧を更新
+```
+- 過去イベントも削除可能（制限なし）。
+- 通知配信は行わない。
 
-## フロー
-1. 詳細画面の「削除」ボタン押下で確認モーダル表示。
-2. Supabase RPC `events_cancel` を呼び、`status=deleted` と `deleted_at` を更新。
-3. Edge Function 経由で OneSignal 通知を送信し、メンバーへ中止連絡。
-4. 一覧表示では `status=deleted` を除外し、詳細画面にアクセスした場合はキャンセル表示のみ行う。
+## データモデル / API
+- 参照・更新テーブル: [`events`](tables.md#events), [`attendance`](../attendance/tables.md#attendance)
+- Edge Function: `POST /event_delete`
+  - **Request**
+    - `event_id` (`uuid`, 必須)
+  - **Success Response**
+    ```json
+    { "success": true }
+    ```
+  - **Error Response**
+    - `UNAUTHORIZED` (401): 認証なし
+    - `FORBIDDEN` (403): `role != manager`
+    - `NOT_FOUND` (404): event_id が存在しない
+    - `DB_ERROR` (500): DB 障害
 
-## 決定理由
-- 論理削除により、将来のレポートや監査ログにイベント履歴を残す運営ニーズを満たす。
-- RPC で状態遷移を一本化することで、削除時に追加通知やストレージ掃除等の副作用を付け足しやすい。
+## 権限・セキュリティ
+- `events` / `attendance` は RLS なし方針を踏襲。削除権限は Edge Function 内で `jwt.role = 'manager'` を必須チェック。
+- 入力バリデーション: `event_id` の UUID 形式検証 + DB 存在確認。
+
+## エラー・フォールバック
+- `NOT_FOUND`: 「削除済みまたは存在しません」トースト表示後、一覧へ戻る。
+- `UNAUTHORIZED` / `FORBIDDEN`: セッション再取得を促す。操作は中断。
+- `DB_ERROR`: 再試行ボタンを表示し、複数回失敗でフィードバック導線。
+- Realtime 受信失敗時は手動リロード（プルリフレッシュ）で復旧できる UI を用意。
+
+## 未決定事項 / Follow-up
+- なし。
