@@ -29,4 +29,9 @@ export interface IEventAttendanceRepository {
   findAttendancesSummaryByEventIds(
     eventIds: string[],
   ): Promise<Map<string, AttendanceSummaryItem[]>>
+
+  /**
+   * イベントIDに紐づく出欠レコードを削除する
+   */
+  deleteByEventId(eventId: string): Promise<void>
 }

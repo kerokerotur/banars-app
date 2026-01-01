@@ -135,6 +135,13 @@ export class SupabaseEventAttendanceRepository
       details: error.details,
     })
   }
+
+  async deleteByEventId(eventId: string): Promise<void> {
+    const { error } = await this.client.from("attendance").delete().eq("event_id", eventId)
+    if (error) {
+      throw this.wrapError(error, "出欠の削除に失敗しました")
+    }
+  }
 }
 
 function mapAttendanceStatus(status: string): UserAttendanceStatus {

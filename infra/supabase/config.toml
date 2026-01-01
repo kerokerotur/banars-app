@@ -257,3 +257,15 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/event_attendances_summary/deno.json"
 entrypoint = "./functions/event_attendances_summary/dist/index.ts"
+
+[functions.event_delete]
+enabled = true
+verify_jwt = true
+import_map = "./functions/event_delete/deno.json"
+entrypoint = "./functions/event_delete/dist/index.ts"
+
+[functions.event_update]
+enabled = true
+verify_jwt = true
+import_map = "./functions/event_update/deno.json"
+entrypoint = "./functions/event_update/dist/index.ts"
