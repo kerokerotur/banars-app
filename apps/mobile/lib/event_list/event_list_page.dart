@@ -148,6 +148,7 @@ class EventListPage extends ConsumerWidget {
         isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
     final dateFormat = DateFormat('yyyy/MM/dd (E) HH:mm', 'ja_JP');
     final eventTypeStyle = _resolveEventTypeStyle(context, event.eventTypeName);
+    final attendanceBarColor = _resolveAttendanceBarColor(event.userAttendanceStatus);
     final meeting = event.meetingDatetime;
 
     return Card(
@@ -168,7 +169,7 @@ class EventListPage extends ConsumerWidget {
               Container(
                 width: 6,
                 decoration: BoxDecoration(
-                  color: eventTypeStyle.color,
+                  color: attendanceBarColor,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     bottomLeft: Radius.circular(12),
@@ -187,7 +188,7 @@ class EventListPage extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Icon(eventTypeStyle.icon,
-                              size: 20, color: eventTypeStyle.color),
+                              size: 20, color: Theme.of(context).colorScheme.onSurface),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -298,21 +299,23 @@ class EventListPage extends ConsumerWidget {
     final textSecondaryColor =
         isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
 
-    return InkWell(
-      onTap: () => _showAttendanceModal(context, event),
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-        child: Row(
-          children: [
-            Icon(Icons.people, size: 18, color: textSecondaryColor),
-            const SizedBox(width: 8),
-            Expanded(
-                child:
-                    _buildAttendanceSummaryText(textSecondaryColor, summaries)),
-            Icon(Icons.chevron_right, size: 20, color: textSecondaryColor),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+      child: Row(
+        children: [
+          Icon(Icons.people, size: 18, color: textSecondaryColor),
+          const SizedBox(width: 8),
+          Expanded(
+              child:
+                  _buildAttendanceSummaryText(textSecondaryColor, summaries)),
+          IconButton(
+            onPressed: () => _showAttendanceModal(context, event),
+            icon: Icon(Icons.chevron_right, size: 20, color: textSecondaryColor),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            splashRadius: 20,
+          ),
+        ],
       ),
     );
   }
@@ -451,7 +454,6 @@ class EventListPage extends ConsumerWidget {
     BuildContext context,
     String? eventTypeName,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
     final name = eventTypeName?.trim().toLowerCase();
 
     switch (name) {
@@ -472,6 +474,20 @@ class EventListPage extends ConsumerWidget {
           color: Colors.amber.shade400,
           icon: Icons.category,
         );
+    }
+  }
+
+  /// 出欠ステータスに応じたカラーバーの色を決定
+  Color _resolveAttendanceBarColor(UserAttendanceStatus status) {
+    switch (status) {
+      case UserAttendanceStatus.participating:
+        return AppColors.success;
+      case UserAttendanceStatus.absent:
+        return AppColors.error;
+      case UserAttendanceStatus.pending:
+        return AppColors.warning;
+      case UserAttendanceStatus.unanswered:
+        return Colors.grey.shade400;
     }
   }
 }

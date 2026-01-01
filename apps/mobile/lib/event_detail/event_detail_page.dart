@@ -5,7 +5,6 @@ import 'package:mobile/event_detail/event_detail_controller.dart';
 import 'package:mobile/event_detail/event_detail_state.dart';
 import 'package:mobile/event_detail/models/event_attendance.dart';
 import 'package:mobile/event_list/models/event_list_item.dart';
-import 'package:mobile/place_management/place_create/widgets/google_maps_preview.dart';
 import 'package:mobile/shared/theme/app_colors.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
@@ -90,10 +89,15 @@ class _EventDetailPageState extends ConsumerState<EventDetailPage> {
                             widget.event.eventPlaceGoogleMapsUrlNormalized!),
               ),
               const SizedBox(height: 16),
+              _NotesSection(notesMarkdown: widget.event.notesMarkdown),
+              const SizedBox(height: 16),
               _AttendanceSelector(
                 current: state.myStatus,
                 isSubmitting: state.isSubmitting,
                 isAfterDeadline: isAfterDeadline,
+                responseDeadlineDatetime: widget.event.responseDeadlineDatetime,
+                dateFormat: _dateFormat,
+                timeFormat: _timeFormat,
                 commentController: _commentController,
                 onSelect: controller.selectMyStatus,
                 onSubmit: controller.submitAttendance,
@@ -105,8 +109,6 @@ class _EventDetailPageState extends ConsumerState<EventDetailPage> {
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ],
-              const SizedBox(height: 16),
-              _NotesSection(notesMarkdown: widget.event.notesMarkdown),
               const SizedBox(height: 16),
               _AttendanceList(attendance: state.attendance),
               if (state.status == EventDetailStatus.loading) ...[
@@ -153,9 +155,7 @@ class _EventSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final secondary = Theme.of(context).brightness == Brightness.dark
-        ? AppColors.darkTextSecondary
-        : AppColors.lightTextSecondary;
+    final eventTypeStyle = _resolveEventTypeStyle(context, event.eventTypeName);
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -164,10 +164,22 @@ class _EventSummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              event.title,
-              style:
-                  textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Icon(
+                  eventTypeStyle.icon,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    event.title,
+                    style: textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             _InfoRow(
@@ -179,7 +191,15 @@ class _EventSummaryCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _InfoRow(
-              icon: Icons.access_time,
+              icon: Icons.groups,
+              title: event.meetingDatetime != null
+                  ? timeFormat.format(event.meetingDatetime!)
+                  : '未定',
+              subtitle: '集合時刻',
+            ),
+            const SizedBox(height: 12),
+            _InfoRow(
+              icon: Icons.play_arrow,
               title: event.startDatetime != null
                   ? timeFormat.format(event.startDatetime!)
                   : '未定',
@@ -192,12 +212,7 @@ class _EventSummaryCard extends StatelessWidget {
               subtitle: event.eventPlaceGoogleMapsUrlNormalized ?? 'URL なし',
             ),
             const SizedBox(height: 16),
-            if (event.eventPlaceGoogleMapsUrlNormalized != null) ...[
-              GoogleMapsPreview(
-                googleMapsUrl: event.eventPlaceGoogleMapsUrlNormalized!,
-                height: 200,
-              ),
-              const SizedBox(height: 12),
+            if (event.eventPlaceGoogleMapsUrlNormalized != null)
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
@@ -205,7 +220,6 @@ class _EventSummaryCard extends StatelessWidget {
                   child: const Text('地図を開く'),
                 ),
               ),
-            ],
           ],
         ),
       ),
@@ -263,6 +277,9 @@ class _AttendanceSelector extends StatelessWidget {
     required this.current,
     required this.isSubmitting,
     required this.isAfterDeadline,
+    required this.responseDeadlineDatetime,
+    required this.dateFormat,
+    required this.timeFormat,
     required this.commentController,
     required this.onSelect,
     required this.onSubmit,
@@ -271,6 +288,9 @@ class _AttendanceSelector extends StatelessWidget {
   final EventAttendanceStatus? current;
   final bool isSubmitting;
   final bool isAfterDeadline;
+  final DateTime? responseDeadlineDatetime;
+  final DateFormat dateFormat;
+  final DateFormat timeFormat;
   final TextEditingController commentController;
   final void Function(EventAttendanceStatus) onSelect;
   final VoidCallback onSubmit;
@@ -278,9 +298,9 @@ class _AttendanceSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final options = [
-      (EventAttendanceStatus.attending, '出席', Icons.check_circle_outline),
-      (EventAttendanceStatus.notAttending, '欠席', Icons.cancel_outlined),
-      (EventAttendanceStatus.pending, '保留', Icons.help_outline),
+      (EventAttendanceStatus.attending, '出席', Icons.check_circle_outline, AppColors.success),
+      (EventAttendanceStatus.notAttending, '欠席', Icons.cancel_outlined, AppColors.error),
+      (EventAttendanceStatus.pending, '保留', Icons.help_outline, AppColors.warning),
     ];
 
     return Card(
@@ -291,11 +311,35 @@ class _AttendanceSelector extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('出欠状況', style: Theme.of(context).textTheme.titleMedium),
+            if (responseDeadlineDatetime != null) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    size: 16,
+                    color: isAfterDeadline
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '回答期限: ${dateFormat.format(responseDeadlineDatetime!)} ${timeFormat.format(responseDeadlineDatetime!)}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: isAfterDeadline
+                              ? Theme.of(context).colorScheme.error
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: options.map((opt) {
                 final selected = current == opt.$1;
+                final statusColor = opt.$4;
                 return Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -303,24 +347,23 @@ class _AttendanceSelector extends StatelessWidget {
                       onPressed: (isSubmitting || isAfterDeadline)
                           ? null
                           : () => onSelect(opt.$1),
-                      icon: Icon(opt.$3,
-                          color: selected
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.onSurface),
-                      label: Text(opt.$2),
+                      icon: Icon(
+                        opt.$3,
+                        color: selected ? statusColor : Theme.of(context).colorScheme.onSurface,
+                      ),
+                      label: Text(
+                        opt.$2,
+                        style: TextStyle(
+                          color: selected ? statusColor : null,
+                        ),
+                      ),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         side: BorderSide(
-                          color: selected
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.outline,
+                          color: selected ? statusColor : Theme.of(context).colorScheme.outline,
+                          width: selected ? 2 : 1,
                         ),
-                        backgroundColor: selected
-                            ? Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withOpacity(0.08)
-                            : null,
+                        backgroundColor: selected ? statusColor.withOpacity(0.1) : null,
                       ),
                     ),
                   ),
@@ -416,7 +459,7 @@ class _AttendanceList extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('参加者リスト', style: Theme.of(context).textTheme.titleMedium),
+                Text('回答者リスト', style: Theme.of(context).textTheme.titleMedium),
                 Text('${attendance.length} 名'),
               ],
             ),
@@ -506,4 +549,38 @@ class _StatusLabel {
   final String label;
   final IconData icon;
   final Color color;
+}
+
+/// イベントタイプごとの色・アイコンを決定
+_EventTypeStyle _resolveEventTypeStyle(
+  BuildContext context,
+  String? eventTypeName,
+) {
+  final name = eventTypeName?.trim().toLowerCase();
+
+  switch (name) {
+    case '試合':
+    case 'game':
+      return const _EventTypeStyle(
+        color: AppColors.primary,
+        icon: Icons.sports_baseball,
+      );
+    case '練習':
+    case 'practice':
+      return _EventTypeStyle(
+        color: Colors.green.shade300,
+        icon: Icons.fitness_center,
+      );
+    default:
+      return _EventTypeStyle(
+        color: Colors.amber.shade400,
+        icon: Icons.category,
+      );
+  }
+}
+
+class _EventTypeStyle {
+  const _EventTypeStyle({required this.color, required this.icon});
+  final Color color;
+  final IconData icon;
 }
