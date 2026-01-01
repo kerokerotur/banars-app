@@ -21,6 +21,7 @@ jobs:
   build:
     name: Build and Upload APK
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
 
     steps:
       - name: Checkout repository
@@ -34,15 +35,9 @@ jobs:
       - name: Set environment-specific secrets
         id: env-secrets
         run: |
-          if [ "${{ github.event.inputs.environment }}" = "dev" ]; then
-            echo "supabase-url=${{ secrets.SUPABASE_URL }}" >> $GITHUB_OUTPUT
-            echo "supabase-anon-key=${{ secrets.SUPABASE_ANON_KEY }}" >> $GITHUB_OUTPUT
-            echo "line-channel-id=${{ secrets.LINE_CHANNEL_ID }}" >> $GITHUB_OUTPUT
-          else
-            echo "supabase-url=${{ secrets.SUPABASE_URL_PROD }}" >> $GITHUB_OUTPUT
-            echo "supabase-anon-key=${{ secrets.SUPABASE_ANON_KEY_PROD }}" >> $GITHUB_OUTPUT
-            echo "line-channel-id=${{ secrets.LINE_CHANNEL_ID_PROD }}" >> $GITHUB_OUTPUT
-          fi
+          echo "supabase-url=${{ secrets.SUPABASE_URL }}" >> $GITHUB_OUTPUT
+          echo "supabase-anon-key=${{ secrets.SUPABASE_ANON_KEY }}" >> $GITHUB_OUTPUT
+          echo "line-channel-id=${{ secrets.LINE_CHANNEL_ID }}" >> $GITHUB_OUTPUT
 
       - name: Setup environment variables
         uses: ./.github/actions/setup-env
