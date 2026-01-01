@@ -44,4 +44,3 @@ runs:
         echo "APK file found: $APK_PATH"
         ls -lh "$APK_PATH"
         echo "apk-path=$APK_PATH" >> $GITHUB_OUTPUT
-
