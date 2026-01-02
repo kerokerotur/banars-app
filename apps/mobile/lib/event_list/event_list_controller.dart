@@ -9,19 +9,21 @@ import 'package:mobile/event_list/models/attendance_summary.dart';
 
 /// イベント一覧コントローラのプロバイダー
 final eventListControllerProvider =
-    StateNotifierProvider<EventListController, EventListState>(
-  (ref) => EventListController(),
+    NotifierProvider<EventListController, EventListState>(
+  EventListController.new,
 );
 
 /// イベント一覧のコントローラ
-class EventListController extends StateNotifier<EventListState> {
-  EventListController() : super(EventListState.initial()) {
+class EventListController extends Notifier<EventListState> {
+  late final SupabaseClient _supabaseClient;
+
+  @override
+  EventListState build() {
     _supabaseClient = Supabase.instance.client;
     // 初期化時にイベントを取得
-    fetchEvents();
+    Future.microtask(() => fetchEvents());
+    return EventListState.initial();
   }
-
-  late final SupabaseClient _supabaseClient;
 
   /// イベント一覧を取得
   Future<void> fetchEvents() async {

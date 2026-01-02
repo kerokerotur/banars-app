@@ -35,7 +35,7 @@ class EventListPage extends ConsumerWidget {
     }
 
     if (state.events.isEmpty) {
-      return _buildEmptyView(context);
+      return _buildEmptyView(context, ref);
     }
 
     return _buildEventList(context, state.events, ref);
@@ -52,70 +52,92 @@ class EventListPage extends ConsumerWidget {
     final textSecondaryColor =
         isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: colorScheme.error,
+    return RefreshIndicator(
+      onRefresh: () async {
+        await ref.read(eventListControllerProvider.notifier).refresh();
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height - 200,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: colorScheme.error,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'エラーが発生しました',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    errorMessage ?? '不明なエラー',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: textSecondaryColor),
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    onPressed: () =>
+                        ref.read(eventListControllerProvider.notifier).refresh(),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('再試行'),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'エラーが発生しました',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              errorMessage ?? '不明なエラー',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: textSecondaryColor),
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: () =>
-                  ref.read(eventListControllerProvider.notifier).refresh(),
-              icon: const Icon(Icons.refresh),
-              label: const Text('再試行'),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   /// 空の状態表示
-  Widget _buildEmptyView(BuildContext context) {
+  Widget _buildEmptyView(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textSecondaryColor =
         isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.event_note,
-              size: 64,
-              color: textSecondaryColor,
+    return RefreshIndicator(
+      onRefresh: () async {
+        await ref.read(eventListControllerProvider.notifier).refresh();
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height - 200,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.event_note,
+                    size: 64,
+                    color: textSecondaryColor,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'イベントがありません',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '右下の+ボタンから\nイベントを作成できます',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: textSecondaryColor),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'イベントがありません',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '右下の+ボタンから\nイベントを作成できます',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: textSecondaryColor),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -127,13 +149,18 @@ class EventListPage extends ConsumerWidget {
     List<EventListItem> events,
     WidgetRef ref,
   ) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: events.length,
-      itemBuilder: (context, index) {
-        final event = events[index];
-        return _buildEventCard(context, event, ref);
+    return RefreshIndicator(
+      onRefresh: () async {
+        await ref.read(eventListControllerProvider.notifier).refresh();
       },
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: events.length,
+        itemBuilder: (context, index) {
+          final event = events[index];
+          return _buildEventCard(context, event, ref);
+        },
+      ),
     );
   }
 
