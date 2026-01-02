@@ -6,6 +6,7 @@ import 'package:mobile/event_create/event_create_page.dart';
 import 'package:mobile/event_list/event_list_page.dart';
 import 'package:mobile/home/home_controller.dart';
 import 'package:mobile/home/home_state.dart';
+import 'package:mobile/schedule/schedule_page.dart';
 import 'package:mobile/settings/settings_page.dart';
 import 'package:mobile/user_list/user_list_page.dart';
 import 'package:mobile/user_profile/user_profile_page.dart';
@@ -84,8 +85,12 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildBody(BuildContext context, HomeState homeState) {
-    // イベント一覧を表示
-    return const EventListPage();
+    switch (_currentTab) {
+      case NavigationTab.home:
+        return const EventListPage();
+      case NavigationTab.schedule:
+        return const SchedulePage();
+    }
   }
 
   Future<void> _signOut(BuildContext context) async {
