@@ -21,6 +21,9 @@ export class SupabaseAuthService implements IAuthService {
         avatarUrl: params.avatarUrl,
         signupSource: "initial_signup",
       },
+      app_metadata: {
+        role: "member",
+      },
     })
 
     if (error) {

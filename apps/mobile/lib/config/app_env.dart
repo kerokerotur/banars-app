@@ -17,10 +17,13 @@ class AppEnv {
   static const inviteLinkScheme = 'banars';
   static const inviteLinkHost = 'invite';
   static const inviteTokenQueryParam = 'token';
+  // TODO: 招待リンクのドメインを確定後、環境変数に移行する
+  static const inviteLinkBaseUrl = 'https://banars.app';
 
   static const initialSignupFunctionName = 'initial_signup';
   static const lineLoginFunctionName = 'line_login';
   static const getMeFunctionName = 'get_me';
+  static const inviteIssueFunctionName = 'invite_issue';
   static const getEventTypesFunctionName = 'get_event_types';
   static const eventCreateFunctionName = 'event_create';
   static const eventListFunctionName = 'event_list';

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:mobile/home/home_controller.dart';
+import 'package:mobile/invite_issue/invite_issue_page.dart';
 import 'package:mobile/place_management/place_list/place_list_page.dart';
 import 'package:mobile/shared/providers/theme_provider.dart';
 import 'package:mobile/shared/theme/app_colors.dart';
@@ -16,6 +18,10 @@ class SettingsPage extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textSecondaryColor =
         isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+
+    // ユーザープロフィールからロールを取得
+    final homeState = ref.watch(homeControllerProvider);
+    final isManager = homeState.userProfile?.role == 'manager';
 
     return Scaffold(
       appBar: AppBar(
@@ -57,28 +63,43 @@ class SettingsPage extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 24),
-          // 管理セクション
-          _SectionHeader(title: '管理'),
-          _SettingsCard(
-            children: [
-              _SettingsTile(
-                icon: Icons.place_outlined,
-                title: 'イベント会場管理',
-                subtitle: '会場の登録・編集・削除',
-                trailing: Icon(Icons.chevron_right, color: textSecondaryColor),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const PlaceListPage(),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
+          // 管理セクション（manager ロールのみ表示）
+          if (isManager) ...[
+            const _SectionHeader(title: '管理'),
+            _SettingsCard(
+              children: [
+                _SettingsTile(
+                  icon: Icons.link,
+                  title: '招待リンク発行',
+                  subtitle: '新しいメンバーを招待',
+                  trailing: Icon(Icons.chevron_right, color: textSecondaryColor),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const InviteIssuePage(),
+                      ),
+                    );
+                  },
+                ),
+                _SettingsTile(
+                  icon: Icons.place_outlined,
+                  title: 'イベント会場管理',
+                  subtitle: '会場の登録・編集・削除',
+                  trailing: Icon(Icons.chevron_right, color: textSecondaryColor),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const PlaceListPage(),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 24),
           // アプリ情報セクション
-          _SectionHeader(title: 'アプリ情報'),
+          const _SectionHeader(title: 'アプリ情報'),
           _SettingsCard(
             children: [
               _SettingsTile(
