@@ -17,5 +17,7 @@ build-ios-dev:
 build-ios-prod:
   - fvm flutter build ios --release --dart-define-from-file=env/prod.env
 gen-icon: flutter pub run flutter_launcher_icons:main
+gen-splash: fvm flutter pub pub run flutter_native_splash:create
+reset-splash: fvm flutter pub pub run flutter_native_splash:remove
 clean:
   - fvm flutter clean
