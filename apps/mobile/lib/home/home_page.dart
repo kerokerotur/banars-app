@@ -8,7 +8,7 @@ import 'package:mobile/home/home_controller.dart';
 import 'package:mobile/home/home_state.dart';
 import 'package:mobile/schedule/schedule_page.dart';
 import 'package:mobile/settings/settings_page.dart';
-import 'package:mobile/user_list/user_list_page.dart';
+import 'package:mobile/team_management/team_management_page.dart';
 import 'package:mobile/user_profile/user_profile_page.dart';
 import 'package:mobile/shared/providers/event_types_provider.dart';
 import 'package:mobile/shared/providers/users_provider.dart';
@@ -56,10 +56,10 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   void _handleMenuItemSelected(BuildContext context, HeaderMenuItem item) {
     switch (item) {
-      case HeaderMenuItem.userList:
+      case HeaderMenuItem.teamManagement:
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => const UserListPage(),
+            builder: (context) => const TeamManagementPage(),
           ),
         );
         break;

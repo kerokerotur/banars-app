@@ -2,18 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mobile/home/home_controller.dart';
-import 'package:mobile/place_management/place_list/place_list_page.dart';
-import 'package:mobile/shared/providers/theme_provider.dart';
+import 'package:mobile/invite_issue/invite_issue_page.dart';
+import 'package:mobile/user_list/user_list_page.dart';
 import 'package:mobile/shared/theme/app_colors.dart';
 
-/// 設定画面
-class SettingsPage extends ConsumerWidget {
-  const SettingsPage({super.key});
+/// チーム管理画面
+class TeamManagementPage extends ConsumerWidget {
+  const TeamManagementPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDarkMode = ref.watch(isDarkModeProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textSecondaryColor =
         isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
@@ -29,7 +28,7 @@ class SettingsPage extends ConsumerWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          '設定',
+          'チーム管理',
           style: TextStyle(
             color: colorScheme.onSurface,
             fontWeight: FontWeight.w600,
@@ -40,42 +39,36 @@ class SettingsPage extends ConsumerWidget {
       body: ListView(
         children: [
           const SizedBox(height: 16),
-          // 外観セクション
-          _SectionHeader(title: '外観'),
           _SettingsCard(
             children: [
               _SettingsTile(
-                icon: Icons.dark_mode_outlined,
-                title: 'ダークモード',
-                subtitle: isDarkMode ? 'オン' : 'オフ',
-                trailing: Switch.adaptive(
-                  value: isDarkMode,
-                  onChanged: (value) {
-                    if (value) {
-                      ref.read(themeModeProvider.notifier).setDarkMode();
-                    } else {
-                      ref.read(themeModeProvider.notifier).setLightMode();
-                    }
-                  },
-                ),
+                icon: Icons.people_outline,
+                title: 'メンバー一覧',
+                subtitle: 'チームメンバーを確認',
+                trailing: Icon(Icons.chevron_right, color: textSecondaryColor),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const UserListPage(),
+                    ),
+                  );
+                },
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          // 管理セクション（manager ロールのみ表示）
           if (isManager) ...[
-            const _SectionHeader(title: '管理'),
+            const SizedBox(height: 16),
             _SettingsCard(
               children: [
                 _SettingsTile(
-                  icon: Icons.place_outlined,
-                  title: 'イベント会場管理',
-                  subtitle: '会場の登録・編集・削除',
+                  icon: Icons.link,
+                  title: '招待リンク発行',
+                  subtitle: '新しいメンバーを招待',
                   trailing: Icon(Icons.chevron_right, color: textSecondaryColor),
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => const PlaceListPage(),
+                        builder: (context) => const InviteIssuePage(),
                       ),
                     );
                   },
@@ -83,63 +76,8 @@ class SettingsPage extends ConsumerWidget {
               ],
             ),
           ],
-          const SizedBox(height: 24),
-          // アプリ情報セクション
-          const _SectionHeader(title: 'アプリ情報'),
-          _SettingsCard(
-            children: [
-              _SettingsTile(
-                icon: Icons.info_outline,
-                title: 'バージョン',
-                trailing: Text(
-                  '1.0.0',
-                  style: TextStyle(
-                    color: textSecondaryColor,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ],
-          ),
           const SizedBox(height: 32),
-          // 将来の設定項目についての説明
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              '今後のアップデートで設定項目が追加される予定です',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: textSecondaryColor.withValues(alpha: 0.7),
-                fontSize: 12,
-              ),
-            ),
-          ),
         ],
-      ),
-    );
-  }
-}
-
-/// セクションヘッダー
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Text(
-        title,
-        style: TextStyle(
-          color: colorScheme.primary,
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
-        ),
       ),
     );
   }
