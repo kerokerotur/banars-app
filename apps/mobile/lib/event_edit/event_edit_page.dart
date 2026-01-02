@@ -2,16 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
-import 'package:mobile/event_create/event_create_controller.dart';
-import 'package:mobile/event_create/event_create_state.dart';
+import 'package:mobile/event_edit/event_edit_controller.dart';
+import 'package:mobile/event_edit/event_edit_state.dart';
+import 'package:mobile/event_list/models/event_list_item.dart';
 import 'package:mobile/event_create/widgets/place_create_modal.dart';
-import 'package:mobile/event_list/event_list_controller.dart';
 
-class EventCreatePage extends ConsumerStatefulWidget {
-  const EventCreatePage({super.key});
+class EventEditPage extends ConsumerStatefulWidget {
+  const EventEditPage({
+    super.key,
+    required this.event,
+  });
+
+  final EventListItem event;
 
   @override
-  ConsumerState<EventCreatePage> createState() => _EventCreatePageState();
+  ConsumerState<EventEditPage> createState() => _EventEditPageState();
 }
 
 enum MeetingTimeOption {
@@ -28,11 +33,11 @@ enum ResponseDeadlineOption {
   custom,
 }
 
-class _EventCreatePageState extends ConsumerState<EventCreatePage> {
+class _EventEditPageState extends ConsumerState<EventEditPage> {
   late final TextEditingController _titleController;
   late final TextEditingController _notesController;
-  ProviderSubscription<EventCreateState>? _subscription;
-  bool _isVenueDropdownOpen = false;
+  ProviderSubscription<EventEditState>? _subscription;
+  bool _isEventPlaceDropdownOpen = false;
   bool _isEventTypeDropdownOpen = false;
   MeetingTimeOption? _selectedMeetingTimeOption;
   ResponseDeadlineOption? _selectedResponseDeadlineOption;
@@ -40,12 +45,59 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController();
-    _notesController = TextEditingController();
+    _titleController = TextEditingController(text: widget.event.title);
+    _notesController = TextEditingController(text: widget.event.notesMarkdown);
     _subscription = ref.listenManual(
-      eventCreateControllerProvider,
+      eventEditControllerProvider(widget.event),
       _onStateChanged,
     );
+    // 初期値から集合日時と回答締切のオプションを計算
+    _initializeOptionsFromEvent();
+  }
+
+  /// 既存のイベントデータから集合日時と回答締切のオプションを初期化
+  void _initializeOptionsFromEvent() {
+    final event = widget.event;
+
+    // 集合日時オプションの初期化
+    if (event.meetingDatetime != null && event.startDatetime != null) {
+      final diff = event.startDatetime!.difference(event.meetingDatetime!);
+      _selectedMeetingTimeOption = _calculateMeetingTimeOption(diff);
+    }
+
+    // 回答締切オプションの初期化
+    if (event.responseDeadlineDatetime != null && event.startDatetime != null) {
+      final diff = event.startDatetime!.difference(event.responseDeadlineDatetime!);
+      _selectedResponseDeadlineOption = _calculateResponseDeadlineOption(diff);
+    }
+  }
+
+  /// 時間差から集合日時オプションを計算
+  MeetingTimeOption _calculateMeetingTimeOption(Duration diff) {
+    final minutes = diff.inMinutes;
+    if (minutes == 30) {
+      return MeetingTimeOption.before30;
+    } else if (minutes == 60) {
+      return MeetingTimeOption.before60;
+    } else if (minutes == 90) {
+      return MeetingTimeOption.before90;
+    } else {
+      return MeetingTimeOption.custom;
+    }
+  }
+
+  /// 時間差から回答締切オプションを計算
+  ResponseDeadlineOption _calculateResponseDeadlineOption(Duration diff) {
+    final days = diff.inDays;
+    if (days == 3) {
+      return ResponseDeadlineOption.before3Days;
+    } else if (days == 7) {
+      return ResponseDeadlineOption.before7Days;
+    } else if (days == 10) {
+      return ResponseDeadlineOption.before10Days;
+    } else {
+      return ResponseDeadlineOption.custom;
+    }
   }
 
   @override
@@ -56,14 +108,12 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
     super.dispose();
   }
 
-  void _onStateChanged(EventCreateState? previous, EventCreateState next) {
-    // Success: Refresh event list and navigate back
-    if (next.status == EventCreateStatus.success &&
-        previous?.status != EventCreateStatus.success) {
-      // Refresh event list
-      ref.read(eventListControllerProvider.notifier).refresh();
-      _showSnackBar('イベントを作成しました');
-      Navigator.of(context).pop();
+  void _onStateChanged(EventEditState? previous, EventEditState next) {
+    // Success: Navigate back with success flag
+    if (next.status == EventEditStatus.success &&
+        previous?.status != EventEditStatus.success) {
+      _showSnackBar('イベントを更新しました');
+      Navigator.of(context).pop(true);
     }
 
     // Error: Show error message
@@ -75,7 +125,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(eventCreateControllerProvider);
+    final state = ref.watch(eventEditControllerProvider(widget.event));
 
     return Scaffold(
       body: SafeArea(
@@ -90,7 +140,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
                   const SizedBox(height: 24),
                   _buildEventTypeSection(state),
                   const SizedBox(height: 24),
-                  _buildVenueSection(state),
+                  _buildEventPlaceSection(state),
                   const SizedBox(height: 24),
                   _buildDateTimeSection(state),
                   const SizedBox(height: 24),
@@ -125,17 +175,12 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          const SizedBox(width: 8),
-          Text(
-            'イベント作成',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildTitleSection(EventCreateState state) {
+  Widget _buildTitleSection(EventEditState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -155,14 +200,14 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
             ),
           ),
           onChanged: (value) => ref
-              .read(eventCreateControllerProvider.notifier)
+              .read(eventEditControllerProvider(widget.event).notifier)
               .updateTitle(value),
         ),
       ],
     );
   }
 
-  Widget _buildEventTypeSection(EventCreateState state) {
+  Widget _buildEventTypeSection(EventEditState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -185,43 +230,26 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
     );
   }
 
-  Widget _buildVenueSection(EventCreateState state) {
+  Widget _buildEventPlaceSection(EventEditState state) {
+    final selectedPlace = state.eventPlaces
+        .where((place) => place.id == state.selectedEventPlaceId)
+        .firstOrNull;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Text(
-              'イベント会場',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '*',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-            ),
-          ],
+        Text(
+          'イベント会場 (任意)',
+          style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
-        _buildVenueDropdown(state),
-        if (state.validationErrors['venueName'] != null) ...[
-          const SizedBox(height: 8),
-          Text(
-            state.validationErrors['venueName']!,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.error,
-                ),
-          ),
-        ],
-        if (state.venueName.isNotEmpty &&
-            state.venueGoogleMapsUrl.isNotEmpty) ...[
+        _buildEventPlaceDropdown(state),
+        if (selectedPlace != null) ...[
           const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () => _openMap(state.venueGoogleMapsUrl),
+              onPressed: () => _openMap(selectedPlace.googleMapsUrl),
               icon: const Icon(Icons.map),
               label: const Text('地図を開く'),
             ),
@@ -231,7 +259,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
     );
   }
 
-  Widget _buildDateTimeSection(EventCreateState state) {
+  Widget _buildDateTimeSection(EventEditState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -245,7 +273,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
           datetime: state.startDatetime,
           onSelect: (datetime) {
             ref
-                .read(eventCreateControllerProvider.notifier)
+                .read(eventEditControllerProvider(widget.event).notifier)
                 .updateStartDatetime(datetime);
             // 開始日時が変更されたら、選択中の集合日時オプションに応じて集合日時を更新
             if (_selectedMeetingTimeOption != null &&
@@ -263,7 +291,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
           },
           onClear: () {
             ref
-                .read(eventCreateControllerProvider.notifier)
+                .read(eventEditControllerProvider(widget.event).notifier)
                 .clearStartDatetime();
             // 開始日時をクリアしたら集合日時と回答締切もクリア
             setState(() {
@@ -271,10 +299,10 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
               _selectedResponseDeadlineOption = null;
             });
             ref
-                .read(eventCreateControllerProvider.notifier)
+                .read(eventEditControllerProvider(widget.event).notifier)
                 .clearMeetingDatetime();
             ref
-                .read(eventCreateControllerProvider.notifier)
+                .read(eventEditControllerProvider(widget.event).notifier)
                 .clearResponseDeadline();
           },
         ),
@@ -357,7 +385,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
         '${datetime.hour.toString().padLeft(2, '0')}:${datetime.minute.toString().padLeft(2, '0')}';
   }
 
-  Widget _buildNotesSection(EventCreateState state) {
+  Widget _buildNotesSection(EventEditState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -377,14 +405,14 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
           ),
           maxLines: 5,
           onChanged: (value) => ref
-              .read(eventCreateControllerProvider.notifier)
+              .read(eventEditControllerProvider(widget.event).notifier)
               .updateNotesMarkdown(value),
         ),
       ],
     );
   }
 
-  Widget _buildSubmitButton(EventCreateState state) {
+  Widget _buildSubmitButton(EventEditState state) {
     return FilledButton.icon(
       icon: state.isSubmitting
           ? const SizedBox(
@@ -396,9 +424,11 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
               ),
             )
           : const Icon(Icons.check),
-      label: const Text('イベントを作成'),
+      label: const Text('更新する'),
       onPressed: state.canSubmit && !state.isSubmitting
-          ? () => ref.read(eventCreateControllerProvider.notifier).submitEvent()
+          ? () => ref
+              .read(eventEditControllerProvider(widget.event).notifier)
+              .submitEvent()
           : null,
       style: FilledButton.styleFrom(
         minimumSize: const Size.fromHeight(48),
@@ -406,8 +436,11 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
     );
   }
 
-  Widget _buildVenueDropdown(EventCreateState state) {
-    final hasSelectedVenue = state.venueName.isNotEmpty;
+  Widget _buildEventPlaceDropdown(EventEditState state) {
+    final selectedPlace = state.eventPlaces
+        .where((place) => place.id == state.selectedEventPlaceId)
+        .firstOrNull;
+    final hasSelectedPlace = selectedPlace != null;
     final theme = Theme.of(context);
 
     return Column(
@@ -415,23 +448,21 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
       children: [
         InkWell(
           onTap: () => setState(() {
-            _isVenueDropdownOpen = !_isVenueDropdownOpen;
+            _isEventPlaceDropdownOpen = !_isEventPlaceDropdownOpen;
           }),
           borderRadius: BorderRadius.circular(8),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
               border: Border.all(
-                color: state.validationErrors['venueName'] != null
-                    ? theme.colorScheme.error
-                    : theme.colorScheme.outline,
+                color: theme.colorScheme.outline,
               ),
               borderRadius: BorderRadius.circular(8),
               color: theme.colorScheme.surface,
             ),
             child: Row(
               children: [
-                if (hasSelectedVenue) ...[
+                if (hasSelectedPlace) ...[
                   Icon(
                     Icons.location_on,
                     color: theme.colorScheme.error,
@@ -441,16 +472,16 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
                 ],
                 Expanded(
                   child: Text(
-                    hasSelectedVenue ? state.venueName : 'イベント会場を選択',
+                    hasSelectedPlace ? selectedPlace.name : 'イベント会場を選択',
                     style: theme.textTheme.bodyLarge?.copyWith(
-                      color: hasSelectedVenue
+                      color: hasSelectedPlace
                           ? theme.colorScheme.onSurface
                           : theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
                 Icon(
-                  _isVenueDropdownOpen
+                  _isEventPlaceDropdownOpen
                       ? Icons.arrow_drop_up
                       : Icons.arrow_drop_down,
                   color: theme.colorScheme.onSurfaceVariant,
@@ -459,15 +490,15 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
             ),
           ),
         ),
-        if (_isVenueDropdownOpen) ...[
+        if (_isEventPlaceDropdownOpen) ...[
           const SizedBox(height: 4),
-          _buildVenueDropdownMenu(state, theme),
+          _buildEventPlaceDropdownMenu(state, theme),
         ],
       ],
     );
   }
 
-  Widget _buildVenueDropdownMenu(EventCreateState state, ThemeData theme) {
+  Widget _buildEventPlaceDropdownMenu(EventEditState state, ThemeData theme) {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
@@ -489,15 +520,15 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
         padding: EdgeInsets.zero,
         children: [
           // 登録済み会場のリスト
-          ...state.previousVenues.map((place) {
-            final isSelected = state.venueName == place.name;
+          ...state.eventPlaces.map((place) {
+            final isSelected = state.selectedEventPlaceId == place.id;
             return InkWell(
               onTap: () {
                 ref
-                    .read(eventCreateControllerProvider.notifier)
-                    .selectPreviousVenue(place);
+                    .read(eventEditControllerProvider(widget.event).notifier)
+                    .selectEventPlace(place.id);
                 setState(() {
-                  _isVenueDropdownOpen = false;
+                  _isEventPlaceDropdownOpen = false;
                 });
               },
               child: Container(
@@ -526,7 +557,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
             );
           }),
           // 区切り線
-          if (state.previousVenues.isNotEmpty)
+          if (state.eventPlaces.isNotEmpty)
             Divider(
               height: 1,
               color: theme.colorScheme.outline,
@@ -535,7 +566,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
           InkWell(
             onTap: () {
               setState(() {
-                _isVenueDropdownOpen = false;
+                _isEventPlaceDropdownOpen = false;
               });
               _showPlaceCreateModal();
             },
@@ -573,12 +604,12 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
     // If place was successfully created, refresh the list and select the latest
     if (result == true && mounted) {
       await ref
-          .read(eventCreateControllerProvider.notifier)
+          .read(eventEditControllerProvider(widget.event).notifier)
           .refreshPlacesAndSelectLatest();
     }
   }
 
-  Widget _buildEventTypeDropdown(EventCreateState state) {
+  Widget _buildEventTypeDropdown(EventEditState state) {
     final selectedEventType = state.eventTypes
         .where((type) => type.id == state.selectedEventTypeId)
         .firstOrNull;
@@ -642,7 +673,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
     );
   }
 
-  Widget _buildEventTypeDropdownMenu(EventCreateState state, ThemeData theme) {
+  Widget _buildEventTypeDropdownMenu(EventEditState state, ThemeData theme) {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
@@ -668,7 +699,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
           return InkWell(
             onTap: () {
               ref
-                  .read(eventCreateControllerProvider.notifier)
+                  .read(eventEditControllerProvider(widget.event).notifier)
                   .updateEventType(type.id);
               setState(() {
                 _isEventTypeDropdownOpen = false;
@@ -702,7 +733,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
     );
   }
 
-  Widget _buildMeetingTimeSection(EventCreateState state) {
+  Widget _buildMeetingTimeSection(EventEditState state) {
     final hasStartDatetime = state.startDatetime != null;
 
     return Column(
@@ -769,7 +800,8 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
                       _selectedMeetingTimeOption = null;
                     });
                     ref
-                        .read(eventCreateControllerProvider.notifier)
+                        .read(
+                            eventEditControllerProvider(widget.event).notifier)
                         .clearMeetingDatetime();
                   },
                 ),
@@ -814,7 +846,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
   Widget _buildMeetingTimeChip({
     required String label,
     required MeetingTimeOption option,
-    required EventCreateState state,
+    required EventEditState state,
   }) {
     final isSelected = _selectedMeetingTimeOption == option;
     final theme = Theme.of(context);
@@ -839,7 +871,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
   }
 
   Future<void> _onMeetingTimeOptionSelected(
-      MeetingTimeOption option, EventCreateState state) async {
+      MeetingTimeOption option, EventEditState state) async {
     if (state.startDatetime == null) return;
 
     if (option == MeetingTimeOption.custom) {
@@ -870,7 +902,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
       });
 
       ref
-          .read(eventCreateControllerProvider.notifier)
+          .read(eventEditControllerProvider(widget.event).notifier)
           .updateMeetingDatetime(datetime);
     } else {
       setState(() {
@@ -893,12 +925,12 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
       final meetingDatetime =
           startDatetime.subtract(Duration(minutes: minutes));
       ref
-          .read(eventCreateControllerProvider.notifier)
+          .read(eventEditControllerProvider(widget.event).notifier)
           .updateMeetingDatetime(meetingDatetime);
     }
   }
 
-  Widget _buildResponseDeadlineSection(EventCreateState state) {
+  Widget _buildResponseDeadlineSection(EventEditState state) {
     final hasStartDatetime = state.startDatetime != null;
 
     return Column(
@@ -965,7 +997,8 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
                       _selectedResponseDeadlineOption = null;
                     });
                     ref
-                        .read(eventCreateControllerProvider.notifier)
+                        .read(
+                            eventEditControllerProvider(widget.event).notifier)
                         .clearResponseDeadline();
                   },
                 ),
@@ -1010,7 +1043,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
   Widget _buildResponseDeadlineChip({
     required String label,
     required ResponseDeadlineOption option,
-    required EventCreateState state,
+    required EventEditState state,
   }) {
     final isSelected = _selectedResponseDeadlineOption == option;
     final theme = Theme.of(context);
@@ -1035,7 +1068,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
   }
 
   Future<void> _onResponseDeadlineOptionSelected(
-      ResponseDeadlineOption option, EventCreateState state) async {
+      ResponseDeadlineOption option, EventEditState state) async {
     if (state.startDatetime == null) return;
 
     if (option == ResponseDeadlineOption.custom) {
@@ -1073,7 +1106,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
       });
 
       ref
-          .read(eventCreateControllerProvider.notifier)
+          .read(eventEditControllerProvider(widget.event).notifier)
           .updateResponseDeadline(datetime);
     } else {
       setState(() {
@@ -1095,7 +1128,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
     if (days > 0) {
       final responseDeadline = startDatetime.subtract(Duration(days: days));
       ref
-          .read(eventCreateControllerProvider.notifier)
+          .read(eventEditControllerProvider(widget.event).notifier)
           .updateResponseDeadline(responseDeadline);
     }
   }

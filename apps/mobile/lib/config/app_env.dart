@@ -26,6 +26,8 @@ class AppEnv {
   static const inviteIssueFunctionName = 'invite_issue';
   static const getEventTypesFunctionName = 'get_event_types';
   static const eventCreateFunctionName = 'event_create';
+  static const eventUpdateFunctionName = 'event_update';
+  static const eventDeleteFunctionName = 'event_delete';
   static const eventListFunctionName = 'event_list';
   static const eventDetailFunctionName = 'event_detail';
   static const attendanceRegisterFunctionName = 'attendance_register';

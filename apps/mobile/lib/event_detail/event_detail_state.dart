@@ -35,6 +35,7 @@ class EventDetailState {
 
   EventDetailState copyWith({
     EventDetailStatus? status,
+    EventListItem? event,
     List<EventAttendance>? attendance,
     String? errorMessage,
     bool clearError = false,
@@ -44,7 +45,7 @@ class EventDetailState {
   }) {
     return EventDetailState(
       status: status ?? this.status,
-      event: event,
+      event: event ?? this.event,
       attendance: attendance ?? this.attendance,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
       myStatus: myStatus ?? this.myStatus,

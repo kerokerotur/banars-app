@@ -5,6 +5,8 @@ import 'package:mobile/event_detail/event_detail_controller.dart';
 import 'package:mobile/event_detail/event_detail_state.dart';
 import 'package:mobile/event_detail/models/event_attendance.dart';
 import 'package:mobile/event_list/models/event_list_item.dart';
+import 'package:mobile/event_list/event_list_controller.dart';
+import 'package:mobile/event_edit/event_edit_page.dart';
 import 'package:mobile/shared/theme/app_colors.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
@@ -68,7 +70,39 @@ class _EventDetailPageState extends ConsumerState<EventDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('イベント詳細'),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'edit') {
+                _navigateToEditPage(context);
+              } else if (value == 'delete') {
+                _showDeleteConfirmDialog();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit),
+                    SizedBox(width: 8),
+                    Text('編集'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('削除', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () => controller.fetchAttendance(),
@@ -79,23 +113,23 @@ class _EventDetailPageState extends ConsumerState<EventDetailPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _EventSummaryCard(
-                event: widget.event,
+                event: state.event,
                 dateFormat: _dateFormat,
                 timeFormat: _timeFormat,
                 onOpenMap:
-                    widget.event.eventPlaceGoogleMapsUrlNormalized == null
+                    state.event.eventPlaceGoogleMapsUrlNormalized == null
                         ? null
                         : () => _openMap(
-                            widget.event.eventPlaceGoogleMapsUrlNormalized!),
+                            state.event.eventPlaceGoogleMapsUrlNormalized!),
               ),
               const SizedBox(height: 16),
-              _NotesSection(notesMarkdown: widget.event.notesMarkdown),
+              _NotesSection(notesMarkdown: state.event.notesMarkdown),
               const SizedBox(height: 16),
               _AttendanceSelector(
                 current: state.myStatus,
                 isSubmitting: state.isSubmitting,
                 isAfterDeadline: isAfterDeadline,
-                responseDeadlineDatetime: widget.event.responseDeadlineDatetime,
+                responseDeadlineDatetime: state.event.responseDeadlineDatetime,
                 dateFormat: _dateFormat,
                 timeFormat: _timeFormat,
                 commentController: _commentController,
@@ -136,6 +170,127 @@ class _EventDetailPageState extends ConsumerState<EventDetailPage> {
     if (await canLaunchUrlString(url)) {
       await launchUrlString(url, mode: LaunchMode.externalApplication);
     }
+  }
+
+  Future<void> _navigateToEditPage(BuildContext context) async {
+    final state = ref.read(eventDetailControllerProvider(widget.event));
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => EventEditPage(event: state.event),
+      ),
+    );
+
+    // 編集成功時、イベント一覧のリフレッシュを待ってから最新データを取得して反映
+    if (result == true && mounted) {
+      // イベント一覧のrefreshが完了するまで待機
+      await ref.read(eventListControllerProvider.notifier).refresh();
+
+      final eventListState = ref.read(eventListControllerProvider);
+      final updatedEvent = eventListState.events
+          .where((e) => e.id == state.event.id)
+          .firstOrNull;
+
+      if (updatedEvent != null) {
+        ref
+            .read(eventDetailControllerProvider(widget.event).notifier)
+            .updateEvent(updatedEvent);
+      }
+    }
+  }
+
+  Future<void> _showDeleteConfirmDialog() async {
+    final state = ref.read(eventDetailControllerProvider(widget.event));
+    final isFutureEvent = state.event.startDatetime != null &&
+        state.event.startDatetime!.isAfter(DateTime.now());
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('イベントを削除'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('このイベントを削除してもよろしいですか？'),
+            if (isFutureEvent) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning_amber, color: Colors.orange.shade700),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '開催予定のイベントです。削除すると参加者に通知されません。',
+                        style: TextStyle(
+                          color: Colors.orange.shade900,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('キャンセル'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('削除'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await _deleteEvent();
+    }
+  }
+
+  Future<void> _deleteEvent() async {
+    final controller =
+        ref.read(eventDetailControllerProvider(widget.event).notifier);
+    final success = await controller.deleteEvent();
+
+    if (!mounted) return;
+
+    if (success) {
+      // Refresh event list
+      ref.read(eventListControllerProvider.notifier).refresh();
+      _showSnackBar('イベントを削除しました');
+      Navigator.of(context).pop();
+    } else {
+      final state = ref.read(eventDetailControllerProvider(widget.event));
+      if (state.errorMessage != null) {
+        _showSnackBar(state.errorMessage!, isError: true);
+      }
+    }
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final snackBar = SnackBar(
+      content: Text(message),
+      backgroundColor: isError ? colorScheme.error : null,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(snackBar);
   }
 }
 

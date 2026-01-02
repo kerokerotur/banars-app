@@ -201,6 +201,47 @@ class EventDetailController extends StateNotifier<EventDetailState> {
         return EventAttendanceStatus.pending;
     }
   }
+
+  void updateEvent(EventListItem updatedEvent) {
+    state = state.copyWith(event: updatedEvent);
+  }
+
+  Future<bool> deleteEvent() async {
+    state = state.copyWith(isSubmitting: true, clearError: true);
+
+    try {
+      final response = await SupabaseFunctionService.invoke(
+        client: _supabaseClient,
+        functionName: AppEnv.eventDeleteFunctionName,
+        method: HttpMethod.post,
+        body: {
+          'event_id': state.event.id,
+        },
+      );
+
+      final data = response.data;
+      if (data is! Map<String, dynamic> || data['success'] != true) {
+        throw const EventDetailException('イベントの削除に失敗しました');
+      }
+
+      return true;
+    } on FunctionException catch (error) {
+      state = state.copyWith(
+        errorMessage:
+            SupabaseFunctionErrorHandler.extractErrorMessage(error.details) ??
+                error.reasonPhrase ??
+                'イベントの削除に失敗しました',
+      );
+      return false;
+    } catch (error) {
+      state = state.copyWith(
+        errorMessage: 'イベントの削除に失敗しました: $error',
+      );
+      return false;
+    } finally {
+      state = state.copyWith(isSubmitting: false);
+    }
+  }
 }
 
 extension<T> on T {

@@ -180,7 +180,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF06292), // スプラッシュ背景色
+      backgroundColor: const Color(0xFF001F3F), // スプラッシュ背景色（紺色）
       body: Stack(
         children: [
           // スプラッシュ画像
