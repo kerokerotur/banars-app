@@ -112,13 +112,13 @@ flutter_launcher_icons:
   min_sdk_android: 21
 
 flutter_native_splash:
-  color: "#F06292"
+  color: "#001F3F"
   image: assets/images/splash/app_splash.png
   android: true
   ios: true
   fullscreen: true
   android_12:
     image: assets/images/splash/app_splash_icon.png
-    color: "#F06292"
+    color: "#001F3F"
 
 scripts: derry.yaml
