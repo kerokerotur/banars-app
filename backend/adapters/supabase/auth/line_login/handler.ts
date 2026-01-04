@@ -23,18 +23,21 @@ export function createLineLoginHandler(deps: LineLoginHandlerDeps) {
 
     // リポジトリファクトリーを使用してリポジトリとサービスを一括生成
     const factory = new AuthRepositoryFactory(supabaseClient)
-    const { userRepository, authService } = factory.createAll()
+    const { userRepository, authService, onesignalPlayerRepository } =
+      factory.createAll()
 
     // ユースケース実行（リポジトリとサービスをDI）
     const result = await executeLineLoginUseCase(
       {
         idToken: body.idToken,
+        playerId: body.playerId,
       },
       {
         lineChannelId: deps.lineChannelId,
         lineJwksUrl: deps.lineJwksUrl,
         userRepository,
         authService,
+        onesignalPlayerRepository,
       },
     )
 

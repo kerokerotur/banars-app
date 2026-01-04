@@ -34,6 +34,7 @@ export function createInitialSignupHandler(deps: InitialSignupHandlerDeps) {
       userRepository,
       userDetailRepository,
       authService,
+      onesignalPlayerRepository,
     } = factory.createAll()
 
     // ユースケース実行（リポジトリとサービスをDI）
@@ -42,6 +43,7 @@ export function createInitialSignupHandler(deps: InitialSignupHandlerDeps) {
         inviteToken: body.inviteToken,
         lineTokens,
         lineProfile,
+        playerId: body.playerId,
       },
       {
         lineChannelId: deps.lineChannelId,
@@ -50,6 +52,7 @@ export function createInitialSignupHandler(deps: InitialSignupHandlerDeps) {
         userRepository,
         userDetailRepository,
         authService,
+        onesignalPlayerRepository,
       },
     )
 

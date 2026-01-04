@@ -5,6 +5,7 @@ import { z } from "zod"
  */
 export const lineLoginRequestSchema = z.object({
   idToken: z.string().min(1, "idToken は必須です"),
+  playerId: z.string().optional(),
 })
 
 export type LineLoginRequest = z.infer<typeof lineLoginRequestSchema>

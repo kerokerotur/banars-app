@@ -3,6 +3,7 @@ import type { IAuthService } from "@core/auth/domain/service/iauth_service.ts"
 
 export interface LineLoginUseCaseRequest {
   idToken: string
+  playerId?: string
 }
 
 export interface LineLoginUseCaseResponse {
@@ -16,6 +17,7 @@ export interface LineLoginDependencies {
   expectedLineIssuer?: string
   userRepository: IUserRepository
   authService: IAuthService
+  onesignalPlayerRepository: import("../../domain/irepository/onesignal_player_repository.ts").IOneSignalPlayerRepository
 }
 
 

@@ -58,6 +58,20 @@ export async function executeLineLoginUseCase(
   // Supabase Email の再計算
   const supabaseEmail = deriveSupabaseEmail(claims.sub, claims.email ?? null)
 
+  // OneSignal Player ID登録（提供された場合）
+  if (request.playerId) {
+    try {
+      await deps.onesignalPlayerRepository.upsert({
+        userId: existingUser.id,
+        playerId: request.playerId,
+        updatedUser: existingUser.id,
+      })
+    } catch (error) {
+      // Player ID登録失敗は通知機能に影響するが、ログイン処理自体は成功させる
+      console.error("OneSignal Player ID登録に失敗しました:", error)
+    }
+  }
+
   // セッショントークン発行
   let sessionTransferToken
   try {

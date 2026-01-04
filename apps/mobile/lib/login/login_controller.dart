@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 import 'package:mobile/config/app_env.dart';
 import 'package:mobile/login/login_state.dart';
@@ -103,12 +104,29 @@ class LoginController extends Notifier<LoginState> {
   Future<_LineLoginResponse> _invokeLineLogin({
     required String idToken,
   }) async {
+    // OneSignal Player IDを取得（取得失敗時はnull）
+    String? playerId;
+    try {
+      final subscription = await OneSignal.User.pushSubscription.id;
+      playerId = subscription;
+    } catch (e) {
+      // Player ID取得失敗は通知機能に影響するが、ログイン処理自体は成功させる
+      print('OneSignal Player ID取得に失敗しました: $e');
+    }
+
+    final body = <String, dynamic>{
+      'idToken': idToken,
+    };
+
+    // Player IDが取得できた場合のみ追加
+    if (playerId != null && playerId.isNotEmpty) {
+      body['playerId'] = playerId;
+    }
+
     final response = await SupabaseFunctionService.invoke(
       client: _supabaseClient,
       functionName: AppEnv.lineLoginFunctionName,
-      body: {
-        'idToken': idToken,
-      },
+      body: body,
     );
 
     final data = response.data;

@@ -5,6 +5,7 @@ export interface InitialSignupUseCaseRequest {
   inviteToken: string
   lineTokens: LineTokens
   lineProfile: LineProfile
+  playerId?: string
 }
 
 export interface InitialSignupDependencies {
@@ -15,6 +16,7 @@ export interface InitialSignupDependencies {
   userRepository: import("../../domain/irepository/user_repository.ts").IUserRepository
   userDetailRepository: import("../../domain/irepository/user_detail_repository.ts").IUserDetailRepository
   authService: import("../../domain/service/iauth_service.ts").IAuthService
+  onesignalPlayerRepository: import("../../domain/irepository/onesignal_player_repository.ts").IOneSignalPlayerRepository
 }
 
 export interface InitialSignupUseCaseResponse {

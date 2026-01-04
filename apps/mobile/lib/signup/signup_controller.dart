@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 import 'package:mobile/config/app_env.dart';
 import 'package:mobile/signup/signup_state.dart';
@@ -187,21 +188,38 @@ class SignupController extends Notifier<SignupState> {
     required String accessToken,
     required UserProfile profile,
   }) async {
+    // OneSignal Player IDを取得（取得失敗時はnull）
+    String? playerId;
+    try {
+      final subscription = await OneSignal.User.pushSubscription.id;
+      playerId = subscription;
+    } catch (e) {
+      // Player ID取得失敗は通知機能に影響するが、登録処理自体は成功させる
+      print('OneSignal Player ID取得に失敗しました: $e');
+    }
+
+    final body = <String, dynamic>{
+      'inviteToken': inviteToken,
+      'lineTokens': {
+        'idToken': idToken,
+        'accessToken': accessToken,
+      },
+      'lineProfile': {
+        'lineUserId': profile.userId,
+        'displayName': profile.displayName,
+        'avatarUrl': profile.pictureUrl,
+      },
+    };
+
+    // Player IDが取得できた場合のみ追加
+    if (playerId != null && playerId.isNotEmpty) {
+      body['playerId'] = playerId;
+    }
+
     final response = await SupabaseFunctionService.invoke(
       client: _supabaseClient,
       functionName: AppEnv.initialSignupFunctionName,
-      body: {
-        'inviteToken': inviteToken,
-        'lineTokens': {
-          'idToken': idToken,
-          'accessToken': accessToken,
-        },
-        'lineProfile': {
-          'lineUserId': profile.userId,
-          'displayName': profile.displayName,
-          'avatarUrl': profile.pictureUrl,
-        },
-      },
+      body: body,
     );
 
     final data = response.data;

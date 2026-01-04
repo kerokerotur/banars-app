@@ -40,6 +40,19 @@ export async function executeInitialSignupUseCase(
   // 既存ユーザーチェック
   const existingUser = await deps.userRepository.findByLineId(claims.sub)
   if (existingUser) {
+    // 既存ユーザーの場合もPlayer IDがあれば登録
+    if (request.playerId) {
+      try {
+        await deps.onesignalPlayerRepository.upsert({
+          userId: existingUser.id,
+          playerId: request.playerId,
+          updatedUser: existingUser.id,
+        })
+      } catch (error) {
+        // Player ID登録失敗は通知機能に影響するが、登録処理自体は成功させる
+        console.error("OneSignal Player ID登録に失敗しました:", error)
+      }
+    }
     return {
       userId: existingUser.id,
       sessionTransferToken: null,
@@ -71,6 +84,20 @@ export async function executeInitialSignupUseCase(
     avatarUrl: request.lineProfile.avatarUrl,
     syncedDatetime: new Date(),
   })
+
+  // OneSignal Player ID登録（提供された場合）
+  if (request.playerId) {
+    try {
+      await deps.onesignalPlayerRepository.upsert({
+        userId: authUserId,
+        playerId: request.playerId,
+        updatedUser: authUserId,
+      })
+    } catch (error) {
+      // Player ID登録失敗は通知機能に影響するが、登録処理自体は成功させる
+      console.error("OneSignal Player ID登録に失敗しました:", error)
+    }
+  }
 
   // セッショントークン発行
   const sessionTransferToken = await deps.authService.generateSessionToken(

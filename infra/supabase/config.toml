@@ -269,3 +269,14 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/event_update/deno.json"
 entrypoint = "./functions/event_update/dist/index.ts"
+
+[functions.attendance_remind]
+enabled = true
+verify_jwt = true
+import_map = "./functions/attendance_remind/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/attendance_remind/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/attendance_remind/*.html" ]

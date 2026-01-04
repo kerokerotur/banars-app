@@ -13,6 +13,10 @@ class AppEnv {
     'LINE_CHANNEL_ID',
     defaultValue: '1234567890',
   );
+  static const onesignalAppId = String.fromEnvironment(
+    'ONESIGNAL_APP_ID',
+    defaultValue: 'your-onesignal-app-id-here',
+  );
 
   static const inviteLinkScheme = 'banars';
   static const inviteLinkHost = 'invite';

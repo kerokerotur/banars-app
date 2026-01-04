@@ -14,6 +14,7 @@ export const initialSignupRequestSchema = z.object({
     displayName: z.string().min(1, "lineProfile.displayName は必須です"),
     avatarUrl: z.string().nullable().optional(),
   }),
+  playerId: z.string().optional(),
 })
 
 export type InitialSignupRequest = z.infer<typeof initialSignupRequestSchema>
