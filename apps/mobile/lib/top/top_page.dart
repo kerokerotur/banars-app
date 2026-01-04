@@ -24,6 +24,10 @@ class _TopPageState extends ConsumerState<TopPage> {
   @override
   void initState() {
     super.initState();
+    // ログイン状態をリセット
+    Future.microtask(() {
+      ref.read(loginControllerProvider.notifier).reset();
+    });
     _loginSubscription =
         ref.listenManual(loginControllerProvider, _onLoginStateChanged);
   }
