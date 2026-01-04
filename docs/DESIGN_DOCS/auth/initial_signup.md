@@ -19,9 +19,10 @@ sequenceDiagram
     LINE-->>App: ID Token + Access Token を返却
     App->>LINE: Access Token で Profile API を呼び出す
     LINE-->>App: displayName / pictureUrl を返す
-    App->>Edge: `POST /initial_signup` (inviteToken + tokens + lineProfile)
+    App->>Edge: `POST /initial_signup` (inviteToken + tokens + lineProfile + playerId)
     Edge->>LINE: JWKS or verify endpointで ID Token を検証
     Edge->>DB: `invite_token` 検証 & `user` / `user_detail` upsert
+    Edge->>DB: `onesignal_players` UPSERT (playerId が提供された場合)
     Edge->>Supabase: Admin API で Auth ユーザー作成 / セッショントークン発行
     Supabase-->>Edge: `sessionTransferToken` (例: one-time OTP) を返す
     Edge-->>App: 登録結果 + sessionTransferToken
@@ -36,13 +37,14 @@ sequenceDiagram
 4. **LINE→App**: 認証完了後、LINE がリダイレクト URI へ auth code + state を付与して戻す（SDK がハンドル）。
 5. **App→LINE**: SDK から得た auth code と code_verifier をそのまま Token Endpoint に送り、ID/Access Token を取得。
 6. **App→LINE (Profile)**: 取得した Access Token を SDK 経由で Profile API へ渡し、displayName / pictureUrl を取得。
-7. **App→Edge**: `inviteToken` と LINE から得た ID Token / Profile 情報を `POST /initial_signup` に送信。Edge Function 側が以降の検証と登録を担当する。
+7. **App→Edge**: `inviteToken` と LINE から得た ID Token / Profile 情報、OneSignal Player ID（取得できた場合）を `POST /initial_signup` に送信。Edge Function 側が以降の検証と登録を担当する。
 8. **Edge→LINE**: JWKS 取得 or verify API を通じて ID Token を検証し、署名や `nonce` を確認。
 9. **Edge→DB**: `invite_token` 検証、既存 `user` 確認、未登録なら `user` / `user_detail` upsert を単一トランザクションで実施。
-10. **Edge→Supabase**: Service Role（`supabase.auth.admin`）で Supabase Auth ユーザーを作成/更新し、`auth.admin.generateLink(type='magiclink')` などで一度きりの `sessionTransferToken` を発行。
-11. **Edge→App**: トークンと登録結果を返す。既存ユーザーだった場合は `already_registered` を返し、`sessionTransferToken` は渡さない。
-12. **App→Supabase**: 受け取った `sessionTransferToken` を `verifyOtp({ type: 'magiclink' })` などで交換し、最終的な Supabase セッション (`auth.uid()`) を取得。
-13. **App→Member**: 成功したら `inviteToken` を破棄しホームへ遷移。失敗時はエラー表示と再試行導線を提供。
+10. **Edge→DB**: `playerId` が提供された場合、`onesignal_players` テーブルにUPSERT（`user_id` と `player_id` の紐付け）。
+11. **Edge→Supabase**: Service Role（`supabase.auth.admin`）で Supabase Auth ユーザーを作成/更新し、`auth.admin.generateLink(type='magiclink')` などで一度きりの `sessionTransferToken` を発行。
+12. **Edge→App**: トークンと登録結果を返す。既存ユーザーだった場合は `already_registered` を返し、`sessionTransferToken` は渡さない。
+13. **App→Supabase**: 受け取った `sessionTransferToken` を `verifyOtp({ type: 'magiclink' })` などで交換し、最終的な Supabase セッション (`auth.uid()`) を取得。
+14. **App→Member**: 成功したら `inviteToken` を破棄しホームへ遷移。失敗時はエラー表示と再試行導線を提供。
 
 ## データモデル / API
 - 本機能が利用するテーブル仕様は `auth/tables.md` に集約（`user`, `user_detail`, `invite_token`）。初回登録はこれら 3 テーブルを Edge Function 経由で更新する。
@@ -67,14 +69,16 @@ Supabase Auth はユーザー登録時にメールアドレスが必須のため
       "lineUserId": "string",
       "displayName": "string",
       "avatarUrl": "https://..."
-    }
+    },
+    "playerId": "string" // 任意: OneSignal Player ID
   }
   ```
 - **Process**
   1. LINE JWKS で `lineTokens.idToken` を検証し、`aud` を突合（`nonce` は今回未利用）。
 2. `invite_token` で `token_hash` 一致と `expires_datetime` > now を検証。
  3. `user` / `user_detail` を INSERT（または upsert）。既存ユーザーがいれば `already_registered` を返す。
-  4. Supabase Admin API で Auth ユーザーを作成/更新し、`sessionTransferToken`（例: magic link 用 OTP, 有効期限デフォルト 5 分想定）を発行。
+  4. `playerId` が提供された場合、`onesignal_players` テーブルにUPSERT（`user_id` と `player_id` の紐付け）。
+  5. Supabase Admin API で Auth ユーザーを作成/更新し、`sessionTransferToken`（例: magic link 用 OTP, 有効期限デフォルト 5 分想定）を発行。
 - **Output**
   ```json
   {

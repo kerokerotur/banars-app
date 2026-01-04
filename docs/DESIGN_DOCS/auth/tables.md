@@ -55,3 +55,28 @@
 | `avatar_url` | `text` |  | プロフィール画像 URL | `user_detail.avatar_url` |
 
 **設計意図**: `user` と `user_detail` を INNER JOIN した結果を提供する。本アプリでは外部キー制約を設定しない方針のため、supabase-js で複数テーブルを JOIN して取得することができない。そのため、View テーブルを使用して DB 側で JOIN した結果をアプリ側で取得する。フィルタリング（`status='active'`）やソート（`ORDER BY created_at`）は View 定義には含めず、アプリ側（supabase-js の `.eq()` / `.order()`）で行う。
+
+## `onesignal_players`
+
+| カラム | 型 | 必須 | 説明 | 制約 |
+| --- | --- | --- | --- | --- |
+| `id` | `uuid` | ○ | OneSignal Player IDレコード ID | PK。`gen_random_uuid()` |
+| `user_id` | `uuid` | ○ | ユーザー ID | `user.id` 参照 |
+| `player_id` | `text` | ○ | OneSignal Player ID | - |
+| `is_active` | `boolean` | ○ | 有効フラグ | `DEFAULT true`。無効なPlayer IDは `false` に更新 |
+| `created_at` | `timestamptz` | ○ | メタデータ | `DEFAULT now()` |
+| `created_user` | `uuid` |  | メタデータ | `user.id` 参照 |
+| `updated_at` | `timestamptz` | ○ | メタデータ | `DEFAULT now()` / トリガ更新 |
+| `updated_user` | `uuid` |  | メタデータ | `user.id` 参照 |
+
+**設計意図**
+- OneSignal を使用したバックグラウンド通知を送信するために、各ユーザーのOneSignal Player IDを管理する。
+- OneSignal側で端末token（device_token）の管理は自動的に行われるが、ユーザーIDとPlayer IDの紐付けが必要なため、このテーブルで管理する。
+- 1ユーザーが複数端末（iPhone + iPad、複数のスマートフォンなど）を持っている場合に対応するため、`(user_id, player_id)` のユニーク制約を設定。
+- OneSignal API から無効な Player ID が返された場合、`is_active = false` に更新し、次回のアプリ起動時に新しい Player ID を取得して再登録を促す。
+- FK 制約は設定せず、アプリケーション層で参照整合性を担保（プロジェクトポリシーに準拠）。
+
+**インデックス / 制約**
+- `UNIQUE (user_id, player_id)` — 1ユーザー・1端末につき 1 レコードのみ。UPSERT 実現のキー。
+- `CREATE INDEX onesignal_players_user_id_idx ON onesignal_players (user_id) WHERE is_active = true;` — 有効なPlayer ID取得用。
+- `CREATE INDEX onesignal_players_is_active_idx ON onesignal_players (is_active);` — 無効なPlayer IDの一括更新用。

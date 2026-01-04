@@ -15,9 +15,10 @@ sequenceDiagram
     App->>LINE: `flutter_line_sdk` で PKCE 付き認可フロー開始
     LINE-->>App: auth code + state をリダイレクトで返却（SDK が受領）
     App->>LINE: auth code + code_verifier で Token Endpoint を呼び ID Token を取得
-    App->>Edge: `POST /login_with_line` (idToken)
+    App->>Edge: `POST /login_with_line` (idToken + playerId)
     Edge->>LINE: JWKS で ID Token 実署名検証（`aud`/`exp`/`iss`）
     Edge->>DB: `user.line_user_id` で既存ユーザー検索
+    Edge->>DB: `onesignal_players` UPSERT (playerId が提供された場合)
     Edge-->>App: { sessionTransferToken } または `user_not_found`
     App->>Supabase: `verifyOtp` で sessionTransferToken をセッションへ交換
     Supabase-->>App: Supabase セッション (`auth.uid()`)
@@ -28,12 +29,13 @@ sequenceDiagram
 2. **App→LINE (SDK)**: `flutter_line_sdk` で PKCE 認可。初回のみ同意画面、以後は LINE 側に同意が残っていればワンタップで戻る（同意画面の有無は LINE 側ポリシー依存）。
 3. **LINE→App**: auth code + state をリダイレクトで受領。
 4. **App→LINE**: code + code_verifier でトークン交換し ID Token を取得（Access Token は保持するが以降は使わない）。
-5. **App→Edge**: ID Token を `login_with_line` へ送信。
+5. **App→Edge**: ID Token と OneSignal Player ID（取得できた場合）を `login_with_line` へ送信。
 6. **Edge→LINE**: JWKS で署名検証し、`aud`/`exp`/`iss` を確認（nonce は未使用）。
 7. **Edge→DB**: `user.line_user_id` に一致するレコードを検索。見つからなければ `user_not_found`。
-8. **Edge→App**: 既存ユーザーなら Admin API で発行した `sessionTransferToken` を返却。
-9. **App→Supabase**: `verifyOtp({ type: 'magiclink', token: sessionTransferToken })` で Supabase セッションを取得。
-10. **App→Member**: セッション確立後ホームへ遷移。
+8. **Edge→DB**: `playerId` が提供された場合、`onesignal_players` テーブルにUPSERT（`user_id` と `player_id` の紐付け）。
+9. **Edge→App**: 既存ユーザーなら Admin API で発行した `sessionTransferToken` を返却。
+10. **App→Supabase**: `verifyOtp({ type: 'magiclink', token: sessionTransferToken })` で Supabase セッションを取得。
+11. **App→Member**: セッション確立後ホームへ遷移。
 
 ## データモデル / API
 - 参照テーブル: `user`（`auth/tables.md`）。`user_detail` は更新しない。
@@ -41,14 +43,16 @@ sequenceDiagram
   - **Input**
     ```json
     {
-      "idToken": "string"
+      "idToken": "string",
+      "playerId": "string" // 任意: OneSignal Player ID
     }
     ```
   - **Process**
     1. LINE JWKS で ID Token を検証。
     2. `user.line_user_id` で既存ユーザーを検索。
     3. 見つからなければ `user_not_found`。
-    4. 見つかれば Admin API で Auth ユーザーの `sessionTransferToken` を発行し返却。
+    4. `playerId` が提供された場合、`onesignal_players` テーブルにUPSERT（`user_id` と `player_id` の紐付け）。
+    5. 見つかれば Admin API で Auth ユーザーの `sessionTransferToken` を発行し返却。
   - **Output (成功)**
     ```json
     {

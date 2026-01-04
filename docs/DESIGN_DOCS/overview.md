@@ -40,7 +40,8 @@
 
 ### 通知 / リマインド
 - OneSignal REST API を呼び出す Edge Function を用意し、イベント新規作成や締切リマインドをトリガーから送信する。
-- 将来の自動リマインダーは Supabase の定期実行（cron）または外部スケジューラから Edge Function を叩く構成を採用し、OneSignal のセグメント配信機能で対象メンバーを指定する。
+- 定期リマインドは Supabase の `pg_cron` 拡張機能を使用して Edge Function を定期実行し、リマインド対象ユーザーのOneSignal Player IDを取得してOneSignal REST APIで通知を送信する。
+- 端末token（device_token）の管理はOneSignal側で自動的に行われるが、ユーザーIDとOneSignal Player IDの紐付けは `onesignal_players` テーブルで管理する。
 
 ### インフラ運用
 - Supabase Free プランを前提とし、使用量が閾値に近づいたら Pro への移行を検討する。Edge Function / Storage / Realtime の利用状況は Supabase ダッシュボードで監視する。
