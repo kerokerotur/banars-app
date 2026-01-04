@@ -13,7 +13,7 @@ import 'package:mobile/home/home_page.dart';
 import 'package:mobile/home/home_state.dart';
 import 'package:mobile/shared/providers/event_types_provider.dart';
 import 'package:mobile/shared/providers/users_provider.dart';
-import 'package:mobile/signup/signup_page.dart';
+import 'package:mobile/top/top_page.dart';
 
 /// アプリケーション起動時に表示されるスプラッシュ画面
 ///
@@ -86,18 +86,18 @@ class _SplashPageState extends ConsumerState<SplashPage> {
         );
       } else {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const SignupPage()),
+          MaterialPageRoute(builder: (context) => const TopPage()),
         );
       }
     } catch (error) {
       debugPrint('Splash initialization failed: $error');
-      // エラーが発生してもサインアップ画面へ遷移
+      // エラーが発生してもトップ画面へ遷移
       if (!mounted) return;
       setState(() {
         _isInitializing = false;
       });
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const SignupPage()),
+        MaterialPageRoute(builder: (context) => const TopPage()),
       );
     }
   }

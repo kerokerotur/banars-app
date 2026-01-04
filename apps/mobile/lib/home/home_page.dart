@@ -9,6 +9,7 @@ import 'package:mobile/home/home_state.dart';
 import 'package:mobile/schedule/schedule_page.dart';
 import 'package:mobile/settings/settings_page.dart';
 import 'package:mobile/team_management/team_management_page.dart';
+import 'package:mobile/top/top_page.dart';
 import 'package:mobile/user_profile/user_profile_page.dart';
 import 'package:mobile/shared/providers/event_types_provider.dart';
 import 'package:mobile/shared/providers/users_provider.dart';
@@ -114,6 +115,15 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     if (shouldSignOut == true) {
       await Supabase.instance.client.auth.signOut();
+
+      // ログアウト後、トップページへ遷移
+      if (context.mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const TopPage(),
+          ),
+        );
+      }
     }
   }
 }
