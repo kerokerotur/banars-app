@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:mobile/home/home_controller.dart';
 import 'package:mobile/home/home_state.dart';
 import 'package:mobile/shared/theme/app_colors.dart';
 
 /// ユーザー情報ページ
-class UserProfilePage extends ConsumerWidget {
+class UserProfilePage extends ConsumerStatefulWidget {
   const UserProfilePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<UserProfilePage> createState() => _UserProfilePageState();
+}
+
+class _UserProfilePageState extends ConsumerState<UserProfilePage> {
+  @override
+  Widget build(BuildContext context) {
     final homeState = ref.watch(homeControllerProvider);
 
     return Scaffold(
@@ -17,11 +23,11 @@ class UserProfilePage extends ConsumerWidget {
         title: const Text('ユーザー情報'),
         centerTitle: true,
       ),
-      body: _buildBody(context, ref, homeState),
+      body: _buildBody(context, homeState),
     );
   }
 
-  Widget _buildBody(BuildContext context, WidgetRef ref, HomeState homeState) {
+  Widget _buildBody(BuildContext context, HomeState homeState) {
     if (homeState.isLoading) {
       return const Center(
         child: Column(
@@ -139,6 +145,53 @@ class UserProfilePage extends ConsumerWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'LINE通知',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'LINE公式アカウントを友だち追加すると、出欠回答期限のリマインド通知をLINEで受け取れます。',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
+                          ),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: _openLineFriendAddUrl,
+                      icon: const Icon(Icons.add_circle_outline),
+                      label: const Text('LINE友だち追加'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF00C300), // LINEブランドカラー
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 48),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -191,5 +244,15 @@ class UserProfilePage extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _openLineFriendAddUrl() async {
+    final url = Uri.parse('https://lin.ee/8ee7THq');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      // URLを開けない場合のエラーハンドリング
+      // 通常は発生しないが、念のため
+    }
   }
 }
