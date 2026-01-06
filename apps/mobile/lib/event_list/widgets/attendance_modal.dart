@@ -387,7 +387,7 @@ class _AttendanceModalState extends ConsumerState<AttendanceModal> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(color: statusColor, width: 2),
-            color: Colors.grey[300],
+            color: AppColors.bottomSheetHandle,
           ),
           child: ClipOval(
             child: attendance.avatarUrl != null

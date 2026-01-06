@@ -6,6 +6,7 @@ import 'package:mobile/event_edit/event_edit_controller.dart';
 import 'package:mobile/event_edit/event_edit_state.dart';
 import 'package:mobile/event_list/models/event_list_item.dart';
 import 'package:mobile/event_create/widgets/place_create_modal.dart';
+import 'package:mobile/shared/theme/app_colors.dart';
 
 class EventEditPage extends ConsumerStatefulWidget {
   const EventEditPage({
@@ -339,7 +340,7 @@ class _EventEditPageState extends ConsumerState<EventEditPage> {
         child: Text(
           datetime != null ? _formatDateTime(datetime) : '日時を選択',
           style:
-              datetime != null ? null : TextStyle(color: Colors.grey.shade600),
+              datetime != null ? null : const TextStyle(color: AppColors.disabledText),
         ),
       ),
     );

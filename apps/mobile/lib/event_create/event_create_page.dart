@@ -6,6 +6,7 @@ import 'package:mobile/event_create/event_create_controller.dart';
 import 'package:mobile/event_create/event_create_state.dart';
 import 'package:mobile/event_create/widgets/place_create_modal.dart';
 import 'package:mobile/event_list/event_list_controller.dart';
+import 'package:mobile/shared/theme/app_colors.dart';
 
 class EventCreatePage extends ConsumerStatefulWidget {
   const EventCreatePage({super.key});
@@ -311,7 +312,7 @@ class _EventCreatePageState extends ConsumerState<EventCreatePage> {
         child: Text(
           datetime != null ? _formatDateTime(datetime) : '日時を選択',
           style:
-              datetime != null ? null : TextStyle(color: Colors.grey.shade600),
+              datetime != null ? null : const TextStyle(color: AppColors.disabledText),
         ),
       ),
     );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/user_list/user_list_controller.dart';
 import 'package:mobile/user_list/user_list_state.dart';
 import 'package:mobile/user_list/models/user_list_item.dart';
+import 'package:mobile/shared/theme/app_colors.dart';
 
 class UserListPage extends ConsumerWidget {
   const UserListPage({super.key});
@@ -95,9 +96,9 @@ class _UserListTile extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               'ロール: ${_roleToDisplayName(user.role!)}',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: AppColors.disabledText,
               ),
             ),
           ],
@@ -105,9 +106,9 @@ class _UserListTile extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               '最終ログイン: ${_formatDateTime(user.lastLoginDatetime!)}',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: AppColors.disabledText,
               ),
             ),
           ],

@@ -93,18 +93,18 @@ class InviteIssuePage extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1),
+                    color: AppColors.errorBackgroundLight,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline, color: Colors.red[700]),
+                      const Icon(Icons.error_outline, color: AppColors.errorDark),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           state.errorMessage!,
-                          style: TextStyle(
-                            color: Colors.red[700],
+                          style: const TextStyle(
+                            color: AppColors.errorDark,
                             fontSize: 14,
                           ),
                         ),
@@ -192,13 +192,13 @@ class _ResultCard extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
+                decoration: const BoxDecoration(
+                  color: AppColors.successBackgroundLight,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.check_circle,
-                  color: Colors.green[700],
+                  color: AppColors.successDark,
                   size: 24,
                 ),
               ),

@@ -217,19 +217,19 @@ class _EventDetailPageState extends ConsumerState<EventDetailPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
+                  color: AppColors.warningBackgroundLight,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.shade200),
+                  border: Border.all(color: AppColors.warningBorder),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.warning_amber, color: Colors.orange.shade700),
+                    const Icon(Icons.warning_amber, color: AppColors.warningIcon),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         '開催予定のイベントです。削除すると参加者に通知されません。',
-                        style: TextStyle(
-                          color: Colors.orange.shade900,
+                        style: const TextStyle(
+                          color: AppColors.warningTextDark,
                           fontSize: 13,
                         ),
                       ),
@@ -723,12 +723,12 @@ _EventTypeStyle _resolveEventTypeStyle(
     case '練習':
     case 'practice':
       return _EventTypeStyle(
-        color: Colors.green.shade300,
+        color: AppColors.eventTypePractice,
         icon: Icons.fitness_center,
       );
     default:
       return _EventTypeStyle(
-        color: Colors.amber.shade400,
+        color: AppColors.eventTypeOther,
         icon: Icons.category,
       );
   }

@@ -175,7 +175,7 @@ class EventListPage extends ConsumerWidget {
         isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
     final dateFormat = DateFormat('yyyy/MM/dd (E) HH:mm', 'ja_JP');
     final eventTypeStyle = _resolveEventTypeStyle(context, event.eventTypeName);
-    final attendanceBarColor = _resolveAttendanceBarColor(event.userAttendanceStatus);
+    const attendanceBarColor = AppColors.eventCardBar;
     final meeting = event.meetingDatetime;
 
     return Card(
@@ -427,26 +427,26 @@ class EventListPage extends ConsumerWidget {
 
     switch (status) {
       case UserAttendanceStatus.participating:
-        backgroundColor = Colors.green.shade100;
-        textColor = Colors.green.shade900;
+        backgroundColor = AppColors.attendingBackground;
+        textColor = AppColors.attendingText;
         label = '参加';
         icon = Icons.check_circle;
         break;
       case UserAttendanceStatus.absent:
-        backgroundColor = Colors.red.shade100;
-        textColor = Colors.red.shade900;
+        backgroundColor = AppColors.absentBackground;
+        textColor = AppColors.absentText;
         label = '欠席';
         icon = Icons.cancel;
         break;
       case UserAttendanceStatus.pending:
-        backgroundColor = Colors.orange.shade100;
-        textColor = Colors.orange.shade900;
+        backgroundColor = AppColors.pendingBackground;
+        textColor = AppColors.pendingText;
         label = '保留';
         icon = Icons.hourglass_empty;
         break;
       case UserAttendanceStatus.unanswered:
-        backgroundColor = Colors.grey.shade200;
-        textColor = Colors.grey.shade700;
+        backgroundColor = AppColors.unansweredBackground;
+        textColor = AppColors.unansweredText;
         label = '未回答';
         icon = Icons.help_outline;
         break;
@@ -493,28 +493,14 @@ class EventListPage extends ConsumerWidget {
       case '練習':
       case 'practice':
         return _EventTypeStyle(
-          color: Colors.green.shade300,
+          color: AppColors.eventTypePractice,
           icon: Icons.fitness_center,
         );
       default:
         return _EventTypeStyle(
-          color: Colors.amber.shade400,
+          color: AppColors.eventTypeOther,
           icon: Icons.category,
         );
-    }
-  }
-
-  /// 出欠ステータスに応じたカラーバーの色を決定
-  Color _resolveAttendanceBarColor(UserAttendanceStatus status) {
-    switch (status) {
-      case UserAttendanceStatus.participating:
-        return AppColors.success;
-      case UserAttendanceStatus.absent:
-        return AppColors.error;
-      case UserAttendanceStatus.pending:
-        return AppColors.warning;
-      case UserAttendanceStatus.unanswered:
-        return Colors.grey.shade400;
     }
   }
 }

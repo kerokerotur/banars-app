@@ -41,7 +41,7 @@ class EventListBottomSheet extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: AppColors.bottomSheetHandle,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -262,26 +262,26 @@ class EventListBottomSheet extends StatelessWidget {
 
     switch (status) {
       case UserAttendanceStatus.participating:
-        backgroundColor = Colors.green.shade100;
-        textColor = Colors.green.shade900;
+        backgroundColor = AppColors.attendingBackground;
+        textColor = AppColors.attendingText;
         label = '参加';
         icon = Icons.check_circle;
         break;
       case UserAttendanceStatus.absent:
-        backgroundColor = Colors.red.shade100;
-        textColor = Colors.red.shade900;
+        backgroundColor = AppColors.absentBackground;
+        textColor = AppColors.absentText;
         label = '欠席';
         icon = Icons.cancel;
         break;
       case UserAttendanceStatus.pending:
-        backgroundColor = Colors.orange.shade100;
-        textColor = Colors.orange.shade900;
+        backgroundColor = AppColors.pendingBackground;
+        textColor = AppColors.pendingText;
         label = '保留';
         icon = Icons.hourglass_empty;
         break;
       case UserAttendanceStatus.unanswered:
-        backgroundColor = Colors.grey.shade200;
-        textColor = Colors.grey.shade700;
+        backgroundColor = AppColors.unansweredBackground;
+        textColor = AppColors.unansweredText;
         label = '未回答';
         icon = Icons.help_outline;
         break;
@@ -321,7 +321,7 @@ class EventListBottomSheet extends StatelessWidget {
       case UserAttendanceStatus.pending:
         return AppColors.warning;
       case UserAttendanceStatus.unanswered:
-        return Colors.grey.shade400;
+        return AppColors.greyMedium;
     }
   }
 }
