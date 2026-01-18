@@ -32,6 +32,6 @@ runs:
     - name: Push database migrations
       shell: bash
       working-directory: infra/supabase
-      run: supabase db push --db-password ${{ inputs.supabase-db-password }}
+      run: supabase db push --password ${{ inputs.supabase-db-password }}
       env:
         SUPABASE_ACCESS_TOKEN: ${{ inputs.supabase-access-token }}
