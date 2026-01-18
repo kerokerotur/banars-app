@@ -1,0 +1,47 @@
+name: Supabase Functions Deploy
+description: "Bundle and deploy Supabase Edge Functions"
+inputs:
+  supabase-access-token:
+    description: "Supabase access token"
+    required: true
+  supabase-project-ref:
+    description: "Supabase project ref"
+    required: true
+  node-version:
+    description: "Node.js version"
+    required: false
+    default: "20"
+  cli-version:
+    description: "Supabase CLI version"
+    required: false
+    default: "latest"
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+        cache-dependency-path: backend/package-lock.json
+    - name: Setup Supabase CLI
+      uses: supabase/setup-cli@v1
+      with:
+        version: ${{ inputs.cli-version }}
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ inputs.supabase-access-token }}
+    - name: Link Supabase project
+      shell: bash
+      working-directory: infra/supabase
+      run: supabase link --project-ref ${{ inputs.supabase-project-ref }}
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ inputs.supabase-access-token }}
+    - name: Install backend dependencies
+      shell: bash
+      working-directory: backend
+      run: npm ci
+    - name: Bundle and deploy Edge Functions
+      shell: bash
+      run: make deploy-functions
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ inputs.supabase-access-token }}

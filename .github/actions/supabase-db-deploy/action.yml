@@ -1,0 +1,37 @@
+name: Supabase DB Deploy
+description: "Deploy Supabase database migrations via CLI"
+inputs:
+  supabase-access-token:
+    description: "Supabase access token"
+    required: true
+  supabase-project-ref:
+    description: "Supabase project ref"
+    required: true
+  supabase-db-password:
+    description: "Database password for db push"
+    required: true
+  cli-version:
+    description: "Supabase CLI version"
+    required: false
+    default: "latest"
+runs:
+  using: composite
+  steps:
+    - name: Setup Supabase CLI
+      uses: supabase/setup-cli@v1
+      with:
+        version: ${{ inputs.cli-version }}
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ inputs.supabase-access-token }}
+    - name: Link Supabase project
+      shell: bash
+      working-directory: infra/supabase
+      run: supabase link --project-ref ${{ inputs.supabase-project-ref }}
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ inputs.supabase-access-token }}
+    - name: Push database migrations
+      shell: bash
+      working-directory: infra/supabase
+      run: supabase db push --db-password ${{ inputs.supabase-db-password }}
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ inputs.supabase-access-token }}
