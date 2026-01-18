@@ -1,7 +1,10 @@
-.PHONY: run-dev bundle-functions deploy-functions
+.PHONY: run-dev run-prod bundle-functions deploy-functions
 
 run-dev:
 	cd apps/mobile && derry run-dev
+
+run-prod:
+	cd apps/mobile && derry run-prod
 
 # Edge Functions をバンドル（backend/ 配下のコードを含めてバンドル + config.toml 自動更新）
 # 使い方:
@@ -24,7 +27,7 @@ ifdef FUNCTION
 	cd infra/supabase && supabase functions deploy $(FUNCTION)
 else
 	$(MAKE) bundle-functions
-	cd infra/supabase && supabase functions deploy
+	cd infra/supabase && supabase functions deploy --use-api
 endif
 
 migrate-dev:
