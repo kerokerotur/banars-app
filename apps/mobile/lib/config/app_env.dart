@@ -35,7 +35,6 @@ class AppEnv {
   static const eventListFunctionName = 'event_list';
   static const eventDetailFunctionName = 'event_detail';
   static const attendanceRegisterFunctionName = 'attendance_register';
-  static const searchPlacesFunctionName = 'search_places';
   static const placeListFunctionName = 'place_list';
   static const placeLookupFunctionName = 'place_lookup';
   static const placeCreateFunctionName = 'place_create';
