@@ -1,4 +1,4 @@
-name: Release Supabase
+name: Deploy Backend
 
 on:
   workflow_dispatch:
