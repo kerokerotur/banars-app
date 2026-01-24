@@ -1,6 +1,7 @@
 # 初回登録 (Initial Signup)
 
 ## ユーザーフロー / シーケンス
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -45,6 +46,10 @@ sequenceDiagram
 12. **Edge→App**: トークンと登録結果を返す。既存ユーザーだった場合は `already_registered` を返し、`sessionTransferToken` は渡さない。
 13. **App→Supabase**: 受け取った `sessionTransferToken` を `verifyOtp({ type: 'magiclink' })` などで交換し、最終的な Supabase セッション (`auth.uid()`) を取得。
 14. **App→Member**: 成功したら `inviteToken` を破棄しホームへ遷移。失敗時はエラー表示と再試行導線を提供。
+
+### Web の補足
+- Web は LIFF でログインし、ID トークンとプロフィールを取得して `POST /initial_signup` を呼び出す。
+- Edge Function の検証・ユーザー作成・セッション発行フローはモバイルと共通とする。
 
 ## データモデル / API
 - 本機能が利用するテーブル仕様は `auth/tables.md` に集約（`user`, `user_detail`, `invite_token`）。初回登録はこれら 3 テーブルを Edge Function 経由で更新する。

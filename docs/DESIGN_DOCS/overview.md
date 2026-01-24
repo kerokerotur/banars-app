@@ -1,6 +1,6 @@
-## アーキテクチャサマリ
+# アーキテクチャ概要
 
-- **クライアント層**: Flutter 製モバイルアプリを単一コードベースで iOS / Android に配信。
+- **クライアント層**: Flutter 製モバイルアプリを単一コードベースで iOS / Android に配信し、Web は React Router v7 + Vite で SPA として提供する。
 - **バックエンド / データ層**: Supabase Free プラン上の PostgreSQL を中核に据え、Auth・Storage・Realtime・Edge Functions を活用する。アプリからの API 呼び出しは Supabase Auth が発行した JWT を用い、RLS で運営ロールとメンバーロールを制御する。
 - **外部サービス**: Google Maps の共有 URL を WebView で表示して会場位置を可視化し、OneSignal Free で通知/リマインドを配信する。LINE の ID トークンは Edge Function で検証して Supabase セッションに交換するため、クライアントは以降 Supabase 発行トークンのみを利用する。
 
@@ -9,10 +9,11 @@
 | レイヤー | 採用技術 | 選定理由 |
 | --- | --- | --- |
 | モバイルクライアント | Flutter 3.x + Dart | 2025 年時点で公式 LINE SDK / Google Maps プラグインが揃っており、単一コードベースで UI を提供できる。Impeller による描画安定性とホットリロードで個人開発でも開発効率を維持できる。 |
+| Web クライアント | React Router v7 + Vite + TypeScript | SEO 要件がなく SPA で十分。Vite によるビルドの軽さと React Router v7 のデータルーターで状態管理と遷移を整理しやすい。PWA 化もしやすく、配布の手間を最小化できる。 |
 | 認証・データ | Supabase (Free) + PostgreSQL | Must 要件の RDB 需要を満たしつつ、Auth / Storage / Realtime / Edge Function がパッケージ化されているため運用コストを最低限に抑えられる。チーム 20〜30 人規模なら Free 枠内で十分に運用可能。 |
 | 地図 | WebView + Google Maps 共有 URL | Google Maps の共有 URL を WebView で表示することで、API キーや SDK の設定不要で地図を埋め込める。運用コストを最小限に抑えつつ、ユーザーに馴染みのある Google Maps UI を提供できる。 |
 | 通知 | OneSignal Free (REST API) | 無料枠でモバイルプッシュが無制限、REST ベースの送信で将来の定期リマインドやセグメント配信を組みやすい。サーバを自前で持たずに通知運用が可能。 |
-| インフラ / 配布 | Supabase マネージド基盤, （モバイル配布: 後日決定） | バックエンドは Supabase 上で完結。モバイルのビルド/配布チャネルは今後選定し、本ドキュメントを更新する。 |
+| インフラ / 配布 | Supabase マネージド基盤, Cloudflare Pages（Web） | バックエンドは Supabase 上で完結。Web は静的ホスティングで十分なため、低運用コストな Cloudflare Pages を採用する。モバイルのビルド/配布チャネルは今後選定し、本ドキュメントを更新する。 |
 
 ## ドメインコンテキスト一覧
 
@@ -24,26 +25,29 @@
 | [DESIGN_DOCS/user/](user) | ユーザコンテキスト |
 
 > テーブル定義はコンテキスト配下（例: `auth/tables.md`）に集約し、共通仕様として管理する。
-
 > 個別機能への導線は `DESIGN_DOCS/README.md` の機能一覧に統一し、overview ではディレクトリとコンテキスト名のみ管理する。
 
 ## 横断テーマ
 
 ### 認証 / 権限
+
 - LINE Login SDK で取得した ID トークンを Supabase Edge Function へ送信し、LINE JWKS で検証した後に Supabase セッションを発行する。
 - セッション以降は `supabase_flutter` の PKCE / リフレッシュ機能を利用し、クライアント側でトークンを保持。Supabase の RLS で `manager` / `member` 判定を行い、events への INSERT や attendance 集計アクセスを制御する。
 
 ### 地図表示
+
 - 会場は事前に場所管理画面で登録し、Google Maps の共有 URL を保存する（詳細は [events/place_registration.md](events/place_registration.md) 参照）。
 - イベント詳細画面では WebView で共有 URL を読み込み、Google Maps の地図を表示する。
 - WebView を使用することで API キーや SDK の設定が不要になり、運用コストを最小限に抑えられる。
 
 ### 通知 / リマインド
+
 - OneSignal REST API を呼び出す Edge Function を用意し、イベント新規作成や締切リマインドをトリガーから送信する。
 - 定期リマインドは Supabase の `pg_cron` 拡張機能を使用して Edge Function を定期実行し、リマインド対象ユーザーのOneSignal Player IDを取得してOneSignal REST APIで通知を送信する。
 - 端末token（device_token）の管理はOneSignal側で自動的に行われるが、ユーザーIDとOneSignal Player IDの紐付けは `onesignal_players` テーブルで管理する。
 
 ### インフラ運用
+
 - Supabase Free プランを前提とし、使用量が閾値に近づいたら Pro への移行を検討する。Edge Function / Storage / Realtime の利用状況は Supabase ダッシュボードで監視する。
 - 秘匿情報（LINE Channel Secret, OneSignal API Key, Supabase Service Role Key）は Supabase プロジェクトの環境変数に格納し、Git リポジトリへ含めない。
 - ローカル開発でもクラウド上の開発専用 Supabase プロジェクトへ接続し、CLI の `supabase link` を用いてマイグレーションを同期する。クラウド UI の運用に慣れることと環境構築工数の削減が理由。

@@ -1,6 +1,7 @@
 # LINE ログイン (Line Login)
 
 ## ユーザーフロー / シーケンス
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -36,6 +37,10 @@ sequenceDiagram
 9. **Edge→App**: 既存ユーザーなら Admin API で発行した `sessionTransferToken` を返却。
 10. **App→Supabase**: `verifyOtp({ type: 'magiclink', token: sessionTransferToken })` で Supabase セッションを取得。
 11. **App→Member**: セッション確立後ホームへ遷移。
+
+### Web の補足
+- Web は LIFF で ID トークンを取得し、同じ `POST /login_with_line` を呼び出す。
+- Edge Function の検証・セッション発行フローはモバイルと共通とする。
 
 ## データモデル / API
 - 参照テーブル: `user`（`auth/tables.md`）。`user_detail` は更新しない。
