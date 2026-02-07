@@ -1,0 +1,26 @@
+:root {
+  color-scheme: light;
+  font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #f6f7f9;
+  color: #222;
+}
+
+.app {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+
+.lead {
+  margin: 0;
+  color: #555;
+}
