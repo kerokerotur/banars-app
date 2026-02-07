@@ -2,7 +2,9 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import { LoginPage } from "./features/auth/pages/LoginPage";
 import { SignupPage } from "./features/auth/pages/SignupPage";
 import { AuthGuard } from "./components/auth/AuthGuard";
-import Root from "./routes/root";
+import { EventListPage } from "./features/events/pages/EventListPage";
+import { EventDetailPage } from "./features/events/pages/EventDetailPage";
+import { EventCreatePage } from "./features/events/pages/EventCreatePage";
 
 export const router = createBrowserRouter([
   {
@@ -28,7 +30,11 @@ export const router = createBrowserRouter([
           },
           {
             path: "events",
-            element: <Root />,
+            children: [
+              { index: true, element: <EventListPage /> },
+              { path: "new", element: <EventCreatePage /> },
+              { path: ":eventId", element: <EventDetailPage /> },
+            ],
           },
         ],
       },

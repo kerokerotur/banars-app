@@ -1,4 +1,4 @@
-.PHONY: run-dev run-prod run-web install-deps install-deps-web install-deps-backend install-deps-mobile bundle-functions deploy-functions
+.PHONY: run-dev run-prod run-web build-web install-deps install-deps-web install-deps-backend install-deps-mobile bundle-functions deploy-functions
 
 run-dev:
 	cd apps/mobile && derry run-dev
@@ -8,6 +8,9 @@ run-prod:
 
 run-web:
 	cd apps/web && npm run dev
+
+build-web:
+	cd apps/web && npm run build
 
 # 依存関係のインストール
 # 使い方:
