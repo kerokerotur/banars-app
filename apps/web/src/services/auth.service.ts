@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
  */
 export const loginWithLine = async (idToken: string) => {
   const { data, error } = await supabase.functions.invoke("line_login", {
-    body: { lineTokens: { idToken } },
+    body: { idToken },
   });
 
   if (error) throw error;
