@@ -1,4 +1,4 @@
-.PHONY: run-dev run-prod run-web build-web install-deps install-deps-web install-deps-backend install-deps-mobile bundle-functions deploy-functions
+.PHONY: run-dev run-prod run-web build-web preview-web build-preview-web install-deps install-deps-web install-deps-backend install-deps-mobile bundle-functions deploy-functions
 
 run-dev:
 	cd apps/mobile && derry run-dev
@@ -11,6 +11,13 @@ run-web:
 
 build-web:
 	cd apps/web && npm run build
+
+preview-web:
+	cd apps/web && npm run preview
+
+# ビルドしてプレビューサーバーを起動（http://localhost:4173）
+build-preview-web: build-web
+	cd apps/web && npm run preview
 
 # 依存関係のインストール
 # 使い方:
