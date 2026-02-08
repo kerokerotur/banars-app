@@ -1,5 +1,6 @@
 import { Hono } from "hono"
 import type { MiddlewareHandler } from "hono"
+import { corsHeaders } from "../cors.ts"
 import { supabaseMiddleware } from "../middleware/supabase.ts"
 import { errorHandler } from "../middleware/error.ts"
 import type { HonoVariables } from "../types/hono.ts"
@@ -27,6 +28,17 @@ export function createBaseHonoApp(
 
   // エラーハンドリング
   app.onError(errorHandler)
+
+  // CORS: OPTIONS プリフライトは即 200 返却、その他メソッドはレスポンスに CORS ヘッダー付与
+  app.use("*", async (c, next) => {
+    if (c.req.method === "OPTIONS") {
+      return new Response("ok", { status: 200, headers: corsHeaders })
+    }
+    await next()
+    for (const [key, value] of Object.entries(corsHeaders)) {
+      c.res.headers.set(key, value)
+    }
+  })
 
   // リクエストパスのデバッグログ
   app.use("*", async (c, next) => {
