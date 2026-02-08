@@ -49,7 +49,7 @@ export const SignupPage = () => {
       }
 
       // initial_signup Edge Function呼び出し
-      const { sessionToken } = await initialSignup({
+      const { sessionTransferToken } = await initialSignup({
         inviteToken,
         idToken,
         lineProfile: {
@@ -60,7 +60,7 @@ export const SignupPage = () => {
       });
 
       // Supabaseセッション交換
-      const { session } = await exchangeSessionToken(sessionToken);
+      const { session } = await exchangeSessionToken(sessionTransferToken);
       setSession(session);
 
       // ホーム画面へ遷移

@@ -19,9 +19,9 @@ async function completeLoginWithLiffSession(
     throw new Error("IDトークンの取得に失敗しました");
   }
   console.log("[Login] completeLoginWithLiffSession: loginWithLine 呼び出し");
-  const { sessionToken } = await loginWithLine(idToken);
+  const { sessionTransferToken } = await loginWithLine(idToken);
   console.log("[Login] completeLoginWithLiffSession: exchangeSessionToken 呼び出し");
-  const { session } = await exchangeSessionToken(sessionToken);
+  const { session } = await exchangeSessionToken(sessionTransferToken);
   setSession(session);
   console.log("[Login] completeLoginWithLiffSession: セッション設定済み、/events へ遷移");
   navigate("/events");
