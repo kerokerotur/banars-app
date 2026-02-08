@@ -12,13 +12,18 @@ async function completeLoginWithLiffSession(
   setSession: (session: Session | null) => void,
   navigate: (path: string) => void
 ): Promise<void> {
+  console.log("[Login] completeLoginWithLiffSession: 開始");
   const idToken = await getLiffIdToken();
   if (!idToken) {
+    console.log("[Login] completeLoginWithLiffSession: idToken なし");
     throw new Error("IDトークンの取得に失敗しました");
   }
+  console.log("[Login] completeLoginWithLiffSession: loginWithLine 呼び出し");
   const { sessionToken } = await loginWithLine(idToken);
+  console.log("[Login] completeLoginWithLiffSession: exchangeSessionToken 呼び出し");
   const { session } = await exchangeSessionToken(sessionToken);
   setSession(session);
+  console.log("[Login] completeLoginWithLiffSession: セッション設定済み、/events へ遷移");
   navigate("/events");
 }
 
@@ -35,47 +40,69 @@ export const LoginPage = () => {
   // リダイレクト戻り時: LIFF初期化後にログイン済みなら自動でログイン完了まで進める
   useEffect(() => {
     let cancelled = false;
+    console.log("[Login] useEffect: マウント時チェック開始", {
+      href: typeof window !== "undefined" ? window.location.href : "",
+    });
 
     const run = async () => {
       try {
         setIsLoading(true);
         setError(null);
+        console.log("[Login] useEffect: initializeLiff 呼び出し");
         const isLoggedIn = await initializeLiff();
-        if (cancelled) return;
-        if (!isLoggedIn) return;
+        if (cancelled) {
+          console.log("[Login] useEffect: キャンセル済み（init 後）");
+          return;
+        }
+        console.log("[Login] useEffect: initializeLiff 完了", { isLoggedIn });
+        if (!isLoggedIn) {
+          console.log("[Login] useEffect: 未ログインのため自動ログインスキップ");
+          return;
+        }
+        console.log("[Login] useEffect: ログイン済み、completeLogin 開始");
         await completeLogin();
+        if (!cancelled) console.log("[Login] useEffect: completeLogin 完了");
       } catch (err) {
         if (cancelled) return;
-        console.error("ログインエラー:", err);
+        console.error("[Login] useEffect: エラー", err);
         setError(
           err instanceof Error ? err.message : "ログインに失敗しました"
         );
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+          console.log("[Login] useEffect: 処理完了");
+        }
       }
     };
 
     run();
     return () => {
       cancelled = true;
+      console.log("[Login] useEffect: クリーンアップ");
     };
   }, [completeLogin]);
 
   const handleLogin = async () => {
+    console.log("[Login] handleLogin: ボタンクリック");
     try {
       setIsLoading(true);
       setError(null);
 
       const isLoggedIn = await initializeLiff();
+      console.log("[Login] handleLogin: initializeLiff 完了", { isLoggedIn });
 
       if (!isLoggedIn) {
+        console.log("[Login] handleLogin: 未ログイン、LINE へリダイレクト");
         await loginWithLiff();
         return;
       }
 
+      console.log("[Login] handleLogin: ログイン済み、completeLogin 開始");
       await completeLogin();
+      console.log("[Login] handleLogin: completeLogin 完了");
     } catch (err) {
-      console.error("ログインエラー:", err);
+      console.error("[Login] handleLogin: エラー", err);
       setError(
         err instanceof Error ? err.message : "ログインに失敗しました"
       );
