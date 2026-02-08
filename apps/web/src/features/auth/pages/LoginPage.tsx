@@ -1,8 +1,26 @@
-import { useState } from "react";
+import type { Session } from "@supabase/supabase-js";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { initializeLiff, getLiffIdToken, loginWithLiff } from "@/lib/liff";
 import { loginWithLine, exchangeSessionToken } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth";
+
+/**
+ * LIFFでログイン済みの状態から、IDトークン取得〜セッション確立〜ホーム遷移まで行う
+ */
+async function completeLoginWithLiffSession(
+  setSession: (session: Session | null) => void,
+  navigate: (path: string) => void
+): Promise<void> {
+  const idToken = await getLiffIdToken();
+  if (!idToken) {
+    throw new Error("IDトークンの取得に失敗しました");
+  }
+  const { sessionToken } = await loginWithLine(idToken);
+  const { session } = await exchangeSessionToken(sessionToken);
+  setSession(session);
+  navigate("/events");
+}
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -10,37 +28,52 @@ export const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const completeLogin = useCallback(() => {
+    return completeLoginWithLiffSession(setSession, navigate);
+  }, [setSession, navigate]);
+
+  // リダイレクト戻り時: LIFF初期化後にログイン済みなら自動でログイン完了まで進める
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const isLoggedIn = await initializeLiff();
+        if (cancelled) return;
+        if (!isLoggedIn) return;
+        await completeLogin();
+      } catch (err) {
+        if (cancelled) return;
+        console.error("ログインエラー:", err);
+        setError(
+          err instanceof Error ? err.message : "ログインに失敗しました"
+        );
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [completeLogin]);
+
   const handleLogin = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // LIFF初期化
       const isLoggedIn = await initializeLiff();
 
       if (!isLoggedIn) {
-        // LINEログインページへリダイレクト
         await loginWithLiff();
-        console.log("after loginWithLiff");
         return;
       }
 
-      // IDトークン取得
-      const idToken = await getLiffIdToken();
-      if (!idToken) {
-        throw new Error("IDトークンの取得に失敗しました");
-      }
-
-      // line_login Edge Function呼び出し
-      const { sessionToken } = await loginWithLine(idToken);
-
-      // Supabaseセッション交換
-      const { session } = await exchangeSessionToken(sessionToken);
-      setSession(session);
-
-      console.log("before navigate to /events");
-      // ホーム画面へ遷移
-      navigate("/events");
+      await completeLogin();
     } catch (err) {
       console.error("ログインエラー:", err);
       setError(
