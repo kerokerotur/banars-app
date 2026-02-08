@@ -52,20 +52,29 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-light-background dark:bg-dark-background">
-      <div className="max-w-md w-full px-6">
+    <div
+      className="min-h-screen flex items-center justify-center relative"
+      style={{
+        backgroundColor: '#001F3F',
+        backgroundImage: 'url(/images/app_splash.png)',
+        backgroundSize: 'contain',
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center',
+      }}
+    >
+      <div className="max-w-md w-full px-6 relative z-10">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-light-text-primary dark:text-dark-text-primary mb-2">
+          <h1 className="text-3xl font-bold text-white mb-2">
             banars
           </h1>
-          <p className="text-light-text-secondary dark:text-dark-text-secondary">
+          <p className="text-white text-opacity-90">
             草野球チーム管理アプリ
           </p>
         </div>
 
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800 text-sm">{error}</p>
+          <div className="mb-4 p-4 bg-red-100 bg-opacity-90 border border-red-300 rounded-lg">
+            <p className="text-red-900 text-sm">{error}</p>
           </div>
         )}
 
@@ -87,7 +96,7 @@ export const LoginPage = () => {
           )}
         </button>
 
-        <p className="mt-4 text-center text-sm text-light-text-secondary dark:text-dark-text-secondary">
+        <p className="mt-4 text-center text-sm text-white text-opacity-80">
           招待リンクからアカウント登録してください
         </p>
       </div>
