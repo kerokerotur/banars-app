@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { initializeLiff, getLiffIdToken } from "@/lib/liff";
+import { initializeLiff, getLiffIdToken, loginWithLiff } from "@/lib/liff";
 import { loginWithLine, exchangeSessionToken } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth";
 
@@ -20,7 +20,8 @@ export const LoginPage = () => {
 
       if (!isLoggedIn) {
         // LINEログインページへリダイレクト
-        setError("LINEログインが必要です。");
+        await loginWithLiff();
+        console.log("after loginWithLiff");
         return;
       }
 
@@ -37,6 +38,7 @@ export const LoginPage = () => {
       const { session } = await exchangeSessionToken(sessionToken);
       setSession(session);
 
+      console.log("before navigate to /events");
       // ホーム画面へ遷移
       navigate("/events");
     } catch (err) {
