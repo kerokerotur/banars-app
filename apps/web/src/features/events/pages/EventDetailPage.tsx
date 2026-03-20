@@ -1,40 +1,27 @@
 import { useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { useEventDetail } from "@/hooks/useEvents";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { useAttendanceSummary } from "@/hooks/useAttendance";
 import { formatDate } from "@/utils/date";
 import { AttendanceModal } from "@/features/attendance/components/AttendanceModal";
-import { AttendanceList } from "@/features/attendance/components/AttendanceList";
+import { AttendanceListModal } from "@/features/attendance/components/AttendanceListModal";
+import type { EventListItem } from "@/types/event";
 
 export const EventDetailPage = () => {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
-  const { data: event, isLoading, error } = useEventDetail(eventId || "");
+  const location = useLocation();
+  const event = (location.state as { event?: EventListItem } | null)?.event;
   const { data: summary } = useAttendanceSummary(eventId || "");
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [showAttendanceList, setShowAttendanceList] = useState(false);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-light-background dark:bg-dark-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin text-4xl">⏳</div>
-          <p className="text-light-text-secondary dark:text-dark-text-secondary">
-            イベント詳細を読み込み中...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !event) {
+  if (!event) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-light-background dark:bg-dark-background px-4">
         <div className="max-w-md w-full">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
             <p className="text-red-800 text-sm">
-              {error instanceof Error
-                ? error.message
-                : "イベントが見つかりませんでした"}
+              イベントが見つかりませんでした
             </p>
           </div>
           <button
@@ -176,12 +163,17 @@ export const EventDetailPage = () => {
           </div>
         </div>
 
-        {/* 出欠者一覧 */}
-        <div className="bg-light-surface dark:bg-dark-surface rounded-lg p-6 shadow-sm border border-light-divider dark:border-dark-divider mb-4">
-          <h2 className="text-lg font-bold text-light-text-primary dark:text-dark-text-primary mb-4">
-            出欠状況
-          </h2>
-          <AttendanceList eventId={eventId || ""} />
+        {/* 出欠一覧ボタン */}
+        <div className="mb-4">
+          <button
+            onClick={() => setShowAttendanceList(true)}
+            className="w-full bg-light-surface dark:bg-dark-surface rounded-lg p-4 shadow-sm border border-light-divider dark:border-dark-divider flex items-center justify-between hover:shadow-md transition-shadow"
+          >
+            <span className="font-medium text-light-text-primary dark:text-dark-text-primary">
+              出欠一覧を見る
+            </span>
+            <span className="text-light-text-secondary dark:text-dark-text-secondary">›</span>
+          </button>
         </div>
 
         {/* 編集・削除ボタン（運営のみ） */}
@@ -213,6 +205,15 @@ export const EventDetailPage = () => {
           currentComment={currentAttendance?.comment || null}
           isDeadlinePassed={isDeadlinePassed}
           onClose={() => setShowAttendanceModal(false)}
+        />
+      )}
+
+      {/* 出欠一覧モーダル */}
+      {showAttendanceList && (
+        <AttendanceListModal
+          eventId={eventId || ""}
+          eventTitle={event.title}
+          onClose={() => setShowAttendanceList(false)}
         />
       )}
     </div>

@@ -30,7 +30,21 @@ export const loginWithLiff = async (): Promise<void> => {
 };
 
 /**
- * LINE ID Tokenを取得します
+ * JWTの有効期限が切れているか確認します（30秒のバッファあり）
+ */
+const isJwtExpired = (token: string): boolean => {
+  try {
+    const parts = token.split(".");
+    if (parts.length < 3 || !parts[1]) return true;
+    const payload = JSON.parse(atob(parts[1]));
+    return payload.exp * 1000 < Date.now() + 30_000;
+  } catch {
+    return true;
+  }
+};
+
+/**
+ * LINE ID Tokenを取得します。期限切れの場合はリフレッシュします。
  * @returns IDトークン（未ログインの場合はnull）
  */
 export const getLiffIdToken = async (): Promise<string | null> => {
@@ -39,9 +53,24 @@ export const getLiffIdToken = async (): Promise<string | null> => {
   if (!isLoggedIn) {
     return null;
   }
+
   const token = liff.getIDToken();
   console.log("[LIFF] getLiffIdToken: トークン取得", token ? "あり" : "なし");
-  return token;
+
+  if (!token) {
+    return null;
+  }
+
+  if (!isJwtExpired(token)) {
+    return token;
+  }
+
+  // トークン期限切れ: localStorage のキャッシュをクリアしてから再ログイン
+  // liff.logout() を先に呼ばないと古いトークンが localStorage に残り続ける
+  console.log("[LIFF] getLiffIdToken: トークン期限切れ、キャッシュクリア後に再ログイン");
+  liff.logout();
+  liff.login();
+  return null; // login() はリダイレクトするため到達しない
 };
 
 /**

@@ -1,6 +1,7 @@
 import type { Session } from "@supabase/supabase-js";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { LogIn, UserPlus } from "lucide-react";
 import { initializeLiff, getLiffIdToken, loginWithLiff } from "@/lib/liff";
 import { loginWithLine, exchangeSessionToken } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth";
@@ -113,27 +114,22 @@ export const LoginPage = () => {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center relative"
-      style={{
-        backgroundColor: '#001F3F',
-        backgroundImage: 'url(/images/app_splash.png)',
-        backgroundSize: 'contain',
-        backgroundRepeat: 'no-repeat',
-        backgroundPosition: 'center',
-      }}
+      className="h-screen flex flex-col"
+      style={{ backgroundColor: '#001F3F' }}
     >
-      <div className="max-w-md w-full px-6 relative z-10">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            banars
-          </h1>
-          <p className="text-white text-opacity-90">
-            草野球チーム管理アプリ
-          </p>
-        </div>
+      {/* スプラッシュ画像 */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <img
+          src="/images/app_splash.png"
+          alt="Banars"
+          className="w-full h-full object-cover object-center"
+        />
+      </div>
 
+      {/* ボタンエリア */}
+      <div className="px-6 pt-4 pb-10 space-y-3" style={{ backgroundColor: '#001F3F' }}>
         {error && (
-          <div className="mb-4 p-4 bg-red-100 bg-opacity-90 border border-red-300 rounded-lg">
+          <div className="mb-2 p-4 bg-red-100/90 border border-red-300 rounded-lg">
             <p className="text-red-900 text-sm">{error}</p>
           </div>
         )}
@@ -141,7 +137,7 @@ export const LoginPage = () => {
         <button
           onClick={handleLogin}
           disabled={isLoading}
-          className="w-full bg-line hover:bg-line/90 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full bg-line hover:bg-line/90 text-white font-bold py-4 px-4 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base"
         >
           {isLoading ? (
             <>
@@ -150,15 +146,20 @@ export const LoginPage = () => {
             </>
           ) : (
             <>
-              <span>LINE</span>
-              <span>でログイン</span>
+              <LogIn size={20} />
+              <span>LINE でログイン</span>
             </>
           )}
         </button>
 
-        <p className="mt-4 text-center text-sm text-white text-opacity-80">
-          招待リンクからアカウント登録してください
-        </p>
+        <button
+          onClick={() => navigate("/signup")}
+          className="w-full text-white font-bold py-4 px-4 rounded-xl border border-white/60 flex items-center justify-center gap-2 text-base hover:bg-white/10 transition-colors"
+          style={{ backgroundColor: 'transparent' }}
+        >
+          <UserPlus size={20} />
+          <span>新規登録</span>
+        </button>
       </div>
     </div>
   );
