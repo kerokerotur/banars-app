@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* class ベースのダークモード（html 要素に .dark クラスを付与して切り替え） */
+@custom-variant dark (&:is(.dark, .dark *));
+
 @layer base {
   * {
     box-sizing: border-box;
