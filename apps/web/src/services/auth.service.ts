@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import type { UserProfile } from "@/types/user";
 
 /**
  * LINEログイン（既存ユーザー向け）
@@ -50,13 +51,19 @@ export const exchangeSessionToken = async (sessionToken: string) => {
 };
 
 /**
- * ログインユーザー情報を取得
+ * ログインユーザー情報を取得（get_me Edge Function）
  */
-export const getMe = async () => {
+export const getMe = async (): Promise<UserProfile> => {
   const { data, error } = await supabase.functions.invoke("get_me", {
     method: "GET",
   });
 
   if (error) throw error;
-  return data;
+
+  return {
+    userId: data.userId ?? "",
+    displayName: data.displayName ?? "名前未設定",
+    avatarUrl: data.avatarUrl ?? null,
+    role: data.role ?? null,
+  };
 };

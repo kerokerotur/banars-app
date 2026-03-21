@@ -95,9 +95,9 @@ export const Header = () => {
           )}
         </div>
 
-        {/* 右側: ユーザーアバター */}
+        {/* 右側: ユーザーアバター → ユーザー情報ページへ */}
         <Link
-          to="/settings"
+          to="/profile"
           className="flex items-center gap-2 p-1 rounded-full hover:bg-light-background dark:hover:bg-dark-background transition-colors"
         >
           <div className="w-11 h-11 rounded-full border-2 border-primary-light/30 overflow-hidden bg-primary-light/20 flex items-center justify-center">

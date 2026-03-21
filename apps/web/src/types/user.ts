@@ -3,6 +3,16 @@
  */
 
 /**
+ * ログインユーザーのプロフィール（get_me API レスポンス準拠）
+ */
+export interface UserProfile {
+  userId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  role: string | null;
+}
+
+/**
  * ユーザー情報
  */
 export interface UserInfo {

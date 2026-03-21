@@ -8,6 +8,7 @@ import { EventCreatePage } from "./features/events/pages/EventCreatePage";
 import { SchedulePage } from "./features/schedule/pages/SchedulePage";
 import { MemberListPage } from "./features/members/pages/MemberListPage";
 import { SettingsPage } from "./features/settings/pages/SettingsPage";
+import { UserProfilePage } from "./features/user/pages/UserProfilePage";
 import { RootLayout } from "./components/layout/RootLayout";
 
 export const router = createBrowserRouter([
@@ -50,6 +51,10 @@ export const router = createBrowserRouter([
               {
                 path: "members",
                 element: <MemberListPage />,
+              },
+              {
+                path: "profile",
+                element: <UserProfilePage />,
               },
               {
                 path: "settings",
