@@ -1,13 +1,25 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Spinner } from "@/components/ui/Spinner";
-import { ArrowLeft, User, BadgeCheck, MessageCircle, PlusCircle } from "lucide-react";
+import { ArrowLeft, User, BadgeCheck, Copy, Check } from "lucide-react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
-const LINE_FRIEND_ADD_URL = "https://lin.ee/8ee7THq";
+const ROLE_LABELS: Record<string, string> = {
+  manager: "運営",
+  member: "メンバー",
+};
 
 export const UserProfilePage = () => {
   const navigate = useNavigate();
   const { data: userProfile, isLoading, isError, error, refetch } = useUserProfile();
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyUserId = async () => {
+    if (!userProfile?.userId) return;
+    await navigator.clipboard.writeText(userProfile.userId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="pb-8">
@@ -76,7 +88,7 @@ export const UserProfilePage = () => {
             </h2>
             {userProfile.role && (
               <span className="mt-3 px-4 py-1.5 rounded-full text-sm font-medium bg-primary-light/20 text-primary border border-primary-light/30">
-                {userProfile.role}
+                {ROLE_LABELS[userProfile.role] ?? userProfile.role}
               </span>
             )}
           </div>
@@ -88,39 +100,25 @@ export const UserProfilePage = () => {
             </h3>
             <div className="flex items-start gap-3">
               <BadgeCheck size={20} className="text-light-text-secondary dark:text-dark-text-secondary mt-0.5 shrink-0" />
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
                   ユーザーID
                 </p>
-                <p className="text-sm text-light-text-primary dark:text-dark-text-primary break-all mt-0.5">
-                  {userProfile.userId}
-                </p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-sm text-light-text-primary dark:text-dark-text-primary break-all flex-1">
+                    {userProfile.userId}
+                  </p>
+                  <button
+                    onClick={handleCopyUserId}
+                    className="shrink-0 p-1.5 rounded text-light-text-secondary dark:text-dark-text-secondary hover:text-primary transition-colors"
+                  >
+                    {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* LINE通知カード */}
-          <div className="bg-light-surface dark:bg-dark-surface rounded-lg p-5 shadow-sm border border-light-divider dark:border-dark-divider">
-            <div className="flex items-center gap-2 mb-3">
-              <MessageCircle size={20} className="text-primary shrink-0" />
-              <h3 className="text-base font-bold text-light-text-primary dark:text-dark-text-primary">
-                LINE通知
-              </h3>
-            </div>
-            <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-4">
-              LINE公式アカウントを友だち追加すると、出欠回答期限のリマインド通知をLINEで受け取れます。
-            </p>
-            <a
-              href={LINE_FRIEND_ADD_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-lg text-white font-medium text-sm transition-opacity hover:opacity-90"
-              style={{ backgroundColor: "#00C300" }}
-            >
-              <PlusCircle size={20} />
-              LINE友だち追加
-            </a>
-          </div>
         </div>
       )}
 
