@@ -2,13 +2,33 @@ import liff from "@line/liff";
 import { env } from "@/config/env";
 
 /**
+ * liff.init() は同時・短時間の複数回呼び出しで PKCE の code_verifier が不整合になり
+ * LINE の token エンドポイントが code_verifier does not match を返すことがある。
+ * モジュール単位で init を一度にまとめ、常に最新の isLoggedIn を返す。
+ */
+let liffInitInFlight: Promise<void> | null = null;
+
+async function ensureLiffInitializedOnce(): Promise<void> {
+  if (!liffInitInFlight) {
+    liffInitInFlight = liff
+      .init({ liffId: env.lineLiffId })
+      .then(() => undefined)
+      .catch((error) => {
+        liffInitInFlight = null;
+        throw error;
+      });
+  }
+  await liffInitInFlight;
+}
+
+/**
  * LIFF SDKを初期化します
  * @returns ログイン状態（true: ログイン済み, false: 未ログイン）
  */
 export const initializeLiff = async (): Promise<boolean> => {
   try {
     console.log("[LIFF] initializeLiff: init 開始", { liffId: env.lineLiffId });
-    await liff.init({ liffId: env.lineLiffId });
+    await ensureLiffInitializedOnce();
     const isLoggedIn = liff.isLoggedIn();
     console.log("[LIFF] initializeLiff: init 完了", { isLoggedIn });
     return isLoggedIn;
