@@ -1,12 +1,18 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronDown, Info } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Info, MapPin, Trophy, Dumbbell, Tag } from "lucide-react";
 import {
   useCreateEvent,
   useEventTypes,
   useEventPlaces,
 } from "@/hooks/useEvents";
 import type { CreateEventInput } from "@/types/event";
+
+const getEventTypeIcon = (name: string): React.ElementType => {
+  if (name.includes("試合")) return Trophy;
+  if (name.includes("練習")) return Dumbbell;
+  return Tag;
+};
 
 type MeetingPreset = "30min" | "60min" | "90min" | "custom";
 type DeadlinePreset = "3days" | "7days" | "10days" | "custom";
@@ -43,6 +49,10 @@ export const EventCreatePage = () => {
   const [title, setTitle] = useState("");
   const [eventTypeId, setEventTypeId] = useState("");
   const [selectedPlaceId, setSelectedPlaceId] = useState("");
+  const [isEventTypeOpen, setIsEventTypeOpen] = useState(false);
+  const [isVenueOpen, setIsVenueOpen] = useState(false);
+  const eventTypeRef = useRef<HTMLDivElement>(null);
+  const venueRef = useRef<HTMLDivElement>(null);
   const [startDatetime, setStartDatetime] = useState("");
   const [meetingDatetime, setMeetingDatetime] = useState("");
   const [meetingPreset, setMeetingPreset] = useState<MeetingPreset | null>(null);
@@ -56,6 +66,24 @@ export const EventCreatePage = () => {
     () => eventPlaces?.find((p) => p.id === selectedPlaceId) ?? null,
     [eventPlaces, selectedPlaceId]
   );
+
+  const selectedEventType = useMemo(
+    () => eventTypes?.find((t) => t.id === eventTypeId) ?? null,
+    [eventTypes, eventTypeId]
+  );
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (eventTypeRef.current && !eventTypeRef.current.contains(e.target as Node)) {
+        setIsEventTypeOpen(false);
+      }
+      if (venueRef.current && !venueRef.current.contains(e.target as Node)) {
+        setIsVenueOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const hasStartDatetime = !!startDatetime;
 
@@ -196,23 +224,56 @@ export const EventCreatePage = () => {
           <label className="block text-sm font-medium text-light-text-primary dark:text-dark-text-primary mb-2">
             イベント種別
           </label>
-          <div className="relative">
-            <select
-              value={eventTypeId}
-              onChange={(e) => setEventTypeId(e.target.value)}
-              className="w-full px-4 py-3 bg-light-surface-container dark:bg-dark-surface-container rounded-lg text-light-text-primary dark:text-dark-text-primary text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+          <div ref={eventTypeRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setIsEventTypeOpen((v) => !v)}
+              className={`w-full flex items-center gap-3 px-4 py-3 bg-light-surface dark:bg-dark-surface rounded-lg border text-sm transition-colors ${
+                validationErrors.eventType
+                  ? "border-red-400"
+                  : "border-light-divider dark:border-dark-divider"
+              }`}
             >
-              <option value="">イベント種別を選択</option>
-              {eventTypes?.map((type) => (
-                <option key={type.id} value={type.id}>
-                  {type.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              size={18}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-light-text-secondary dark:text-dark-text-secondary pointer-events-none"
-            />
+              {selectedEventType ? (
+                <>
+                  {(() => { const Icon = getEventTypeIcon(selectedEventType.name); return <Icon size={18} className="text-light-text-primary dark:text-dark-text-primary shrink-0" />; })()}
+                  <span className="flex-1 text-left text-light-text-primary dark:text-dark-text-primary">
+                    {selectedEventType.name}
+                  </span>
+                </>
+              ) : (
+                <span className="flex-1 text-left text-light-text-secondary dark:text-dark-text-secondary">
+                  イベント種別を選択
+                </span>
+              )}
+              {isEventTypeOpen
+                ? <ChevronUp size={18} className="text-light-text-secondary dark:text-dark-text-secondary shrink-0" />
+                : <ChevronDown size={18} className="text-light-text-secondary dark:text-dark-text-secondary shrink-0" />
+              }
+            </button>
+            {isEventTypeOpen && (
+              <div className="absolute z-20 mt-1 w-full bg-light-surface dark:bg-dark-surface border border-light-divider dark:border-dark-divider rounded-lg shadow-lg overflow-hidden max-h-72 overflow-y-auto">
+                {eventTypes?.map((type) => {
+                  const Icon = getEventTypeIcon(type.name);
+                  const isSelected = type.id === eventTypeId;
+                  return (
+                    <button
+                      key={type.id}
+                      type="button"
+                      onClick={() => { setEventTypeId(type.id); setIsEventTypeOpen(false); }}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-sm text-left transition-colors ${
+                        isSelected
+                          ? "bg-primary/10 text-primary"
+                          : "text-light-text-primary dark:text-dark-text-primary hover:bg-light-surface-container dark:hover:bg-dark-surface-container"
+                      }`}
+                    >
+                      <Icon size={18} className="shrink-0" />
+                      <span>{type.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
           {validationErrors.eventType && (
             <p className="text-red-500 text-xs mt-1">{validationErrors.eventType}</p>
@@ -224,23 +285,55 @@ export const EventCreatePage = () => {
           <label className="block text-sm font-medium text-light-text-primary dark:text-dark-text-primary mb-2">
             イベント会場 <span className="text-red-500">*</span>
           </label>
-          <div className="relative">
-            <select
-              value={selectedPlaceId}
-              onChange={(e) => setSelectedPlaceId(e.target.value)}
-              className="w-full px-4 py-3 bg-light-surface-container dark:bg-dark-surface-container rounded-lg text-light-text-primary dark:text-dark-text-primary text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+          <div ref={venueRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setIsVenueOpen((v) => !v)}
+              className={`w-full flex items-center gap-3 px-4 py-3 bg-light-surface dark:bg-dark-surface rounded-lg border text-sm transition-colors ${
+                validationErrors.place
+                  ? "border-red-400"
+                  : "border-light-divider dark:border-dark-divider"
+              }`}
             >
-              <option value="">イベント会場を選択</option>
-              {eventPlaces?.map((place) => (
-                <option key={place.id} value={place.id}>
-                  {place.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              size={18}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-light-text-secondary dark:text-dark-text-secondary pointer-events-none"
-            />
+              {selectedPlace ? (
+                <>
+                  <MapPin size={18} className="text-red-500 shrink-0" />
+                  <span className="flex-1 text-left text-light-text-primary dark:text-dark-text-primary">
+                    {selectedPlace.name}
+                  </span>
+                </>
+              ) : (
+                <span className="flex-1 text-left text-light-text-secondary dark:text-dark-text-secondary">
+                  イベント会場を選択
+                </span>
+              )}
+              {isVenueOpen
+                ? <ChevronUp size={18} className="text-light-text-secondary dark:text-dark-text-secondary shrink-0" />
+                : <ChevronDown size={18} className="text-light-text-secondary dark:text-dark-text-secondary shrink-0" />
+              }
+            </button>
+            {isVenueOpen && (
+              <div className="absolute z-20 mt-1 w-full bg-light-surface dark:bg-dark-surface border border-light-divider dark:border-dark-divider rounded-lg shadow-lg overflow-hidden max-h-72 overflow-y-auto">
+                {eventPlaces?.map((place) => {
+                  const isSelected = place.id === selectedPlaceId;
+                  return (
+                    <button
+                      key={place.id}
+                      type="button"
+                      onClick={() => { setSelectedPlaceId(place.id); setIsVenueOpen(false); }}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-sm text-left transition-colors ${
+                        isSelected
+                          ? "bg-red-50 dark:bg-red-900/20"
+                          : "text-light-text-primary dark:text-dark-text-primary hover:bg-light-surface-container dark:hover:bg-dark-surface-container"
+                      }`}
+                    >
+                      <MapPin size={18} className="text-red-500 shrink-0" />
+                      <span className={isSelected ? "text-red-600 dark:text-red-400" : ""}>{place.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
           {validationErrors.place && (
             <p className="text-red-500 text-xs mt-1">{validationErrors.place}</p>
