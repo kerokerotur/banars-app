@@ -22,8 +22,7 @@ export interface EventListItem {
   responseDeadlineDatetime: string;
   eventPlaceId: string | null;
   eventPlaceName: string | null;
-  eventPlaceAddress: string | null;
-  eventPlaceGoogleMapsUrl: string | null;
+  eventPlaceGoogleMapsUrlNormalized: string | null;
   notesMarkdown: string | null;
   userAttendanceStatus: EventListUserAttendanceStatus;
 }
@@ -41,8 +40,7 @@ export interface EventDetail {
   responseDeadlineDatetime: string;
   eventPlaceId: string | null;
   eventPlaceName: string | null;
-  eventPlaceAddress: string | null;
-  eventPlaceGoogleMapsUrl: string | null;
+  eventPlaceGoogleMapsUrlNormalized: string | null;
   notesMarkdown: string | null;
   createdByUserId: string;
   createdAt: string;

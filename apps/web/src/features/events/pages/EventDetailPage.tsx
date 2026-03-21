@@ -281,13 +281,13 @@ export const EventDetailPage = () => {
           <InfoRow
             icon={MapPin}
             title={event.eventPlaceName ?? "場所未設定"}
-            subtitle={event.eventPlaceGoogleMapsUrl ?? ""}
+            subtitle=""
           />
 
           {/* 地図を開くボタン */}
-          {event.eventPlaceGoogleMapsUrl && (
+          {event.eventPlaceGoogleMapsUrlNormalized && (
             <a
-              href={event.eventPlaceGoogleMapsUrl}
+              href={event.eventPlaceGoogleMapsUrlNormalized}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-4 w-full flex items-center justify-center gap-2 py-3 border border-light-divider dark:border-dark-divider rounded-lg text-light-text-primary dark:text-dark-text-primary hover:bg-light-surface-container dark:hover:bg-dark-surface-container transition-colors"
