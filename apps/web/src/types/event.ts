@@ -59,15 +59,28 @@ export interface EventType {
 }
 
 /**
- * イベント作成の入力データ
+ * イベント会場
+ */
+export interface EventPlace {
+  id: string;
+  name: string;
+  googleMapsUrl: string | null;
+  createdAt: string;
+}
+
+/**
+ * イベント作成の入力データ（バックエンド event_create API 準拠）
  */
 export interface CreateEventInput {
   title: string;
   eventTypeId: string;
-  startDatetime: string;
-  meetingDatetime?: string;
-  responseDeadlineDatetime: string;
-  eventPlaceId?: string;
+  startDatetime?: string | null;
+  meetingDatetime?: string | null;
+  responseDeadlineDatetime?: string | null;
+  place: {
+    name: string;
+    googleMapsUrl: string;
+  };
   notesMarkdown?: string;
 }
 

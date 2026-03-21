@@ -3,6 +3,7 @@ import {
   getEventList,
   getEventDetail,
   getEventTypes,
+  getEventPlaces,
   createEvent,
   updateEvent,
   deleteEvent,
@@ -37,6 +38,16 @@ export const useEventTypes = () => {
   return useQuery({
     queryKey: ["events", "types"],
     queryFn: getEventTypes,
+  });
+};
+
+/**
+ * イベント会場一覧を取得
+ */
+export const useEventPlaces = () => {
+  return useQuery({
+    queryKey: ["events", "places"],
+    queryFn: getEventPlaces,
   });
 };
 

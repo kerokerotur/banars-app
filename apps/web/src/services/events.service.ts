@@ -3,6 +3,7 @@ import type {
   EventListItem,
   EventDetail,
   EventType,
+  EventPlace,
   CreateEventInput,
   UpdateEventInput,
 } from "@/types/event";
@@ -44,6 +45,26 @@ export const getEventTypes = async (): Promise<EventType[]> => {
 
   if (error) throw error;
   return data.eventTypes as EventType[];
+};
+
+/**
+ * イベント会場一覧を取得（Supabase テーブル直接参照）
+ */
+export const getEventPlaces = async (): Promise<EventPlace[]> => {
+  const { data, error } = await supabase
+    .from("event_places")
+    .select("id, name, google_maps_url, created_at")
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    name: row.name,
+    googleMapsUrl: row.google_maps_url,
+    createdAt: row.created_at,
+  }));
 };
 
 /**
