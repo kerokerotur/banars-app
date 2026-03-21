@@ -9,6 +9,7 @@ import { SchedulePage } from "./features/schedule/pages/SchedulePage";
 import { MemberListPage } from "./features/members/pages/MemberListPage";
 import { SettingsPage } from "./features/settings/pages/SettingsPage";
 import { UserProfilePage } from "./features/user/pages/UserProfilePage";
+import { PlaceManagementPage } from "./features/places/pages/PlaceManagementPage";
 import { RootLayout } from "./components/layout/RootLayout";
 
 export const router = createBrowserRouter([
@@ -58,7 +59,10 @@ export const router = createBrowserRouter([
               },
               {
                 path: "settings",
-                element: <SettingsPage />,
+                children: [
+                  { index: true, element: <SettingsPage /> },
+                  { path: "places", element: <PlaceManagementPage /> },
+                ],
               },
             ],
           },

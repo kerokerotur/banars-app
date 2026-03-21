@@ -105,3 +105,45 @@ export const deleteEvent = async (eventId: string): Promise<void> => {
 
   if (error) throw error;
 };
+
+export interface PlaceLookupResult {
+  exists: boolean;
+  place?: { id: string; name: string; google_maps_url_normalized: string };
+}
+
+/**
+ * Google Maps URL で会場を検索（重複チェック）
+ */
+export const lookupPlace = async (googleMapsUrl: string): Promise<PlaceLookupResult> => {
+  const params = new URLSearchParams({ google_maps_url: googleMapsUrl });
+  const { data, error } = await supabase.functions.invoke(
+    `place_lookup?${params}`,
+    { method: "GET" }
+  );
+  if (error) throw error;
+  return data as PlaceLookupResult;
+};
+
+/**
+ * 会場を作成（運営のみ）
+ */
+export const createPlace = async (input: {
+  name: string;
+  googleMapsUrl: string;
+}): Promise<{ placeId: string }> => {
+  const { data, error } = await supabase.functions.invoke("place_create", {
+    body: { name: input.name, google_maps_url: input.googleMapsUrl },
+  });
+  if (error) throw error;
+  return { placeId: data.place_id };
+};
+
+/**
+ * 会場を削除（運営のみ）
+ */
+export const deletePlace = async (placeId: string): Promise<void> => {
+  const { error } = await supabase.functions.invoke("place_delete", {
+    body: { place_id: placeId },
+  });
+  if (error) throw error;
+};

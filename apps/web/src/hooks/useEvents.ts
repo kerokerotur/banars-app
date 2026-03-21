@@ -7,6 +7,8 @@ import {
   createEvent,
   updateEvent,
   deleteEvent,
+  createPlace,
+  deletePlace,
 } from "@/services/events.service";
 import type { CreateEventInput, UpdateEventInput } from "@/types/event";
 
@@ -92,6 +94,34 @@ export const useDeleteEvent = () => {
     mutationFn: (eventId: string) => deleteEvent(eventId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events", "list"] });
+    },
+  });
+};
+
+/**
+ * 会場作成
+ */
+export const useCreatePlace = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: { name: string; googleMapsUrl: string }) => createPlace(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events", "places"] });
+    },
+  });
+};
+
+/**
+ * 会場削除
+ */
+export const useDeletePlace = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (placeId: string) => deletePlace(placeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events", "places"] });
     },
   });
 };

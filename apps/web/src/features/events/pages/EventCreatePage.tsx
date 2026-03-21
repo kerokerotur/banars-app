@@ -1,12 +1,13 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronDown, ChevronUp, Info, MapPin, Trophy, Dumbbell, Tag } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Info, MapPin, Trophy, Dumbbell, Tag, Plus } from "lucide-react";
 import {
   useCreateEvent,
   useEventTypes,
   useEventPlaces,
 } from "@/hooks/useEvents";
 import type { CreateEventInput } from "@/types/event";
+import { PlaceCreateModal } from "@/features/places/components/PlaceCreateModal";
 
 const getEventTypeIcon = (name: string): React.ElementType => {
   if (name.includes("試合")) return Trophy;
@@ -51,6 +52,7 @@ export const EventCreatePage = () => {
   const [selectedPlaceId, setSelectedPlaceId] = useState("");
   const [isEventTypeOpen, setIsEventTypeOpen] = useState(false);
   const [isVenueOpen, setIsVenueOpen] = useState(false);
+  const [showPlaceCreateModal, setShowPlaceCreateModal] = useState(false);
   const eventTypeRef = useRef<HTMLDivElement>(null);
   const venueRef = useRef<HTMLDivElement>(null);
   const [startDatetime, setStartDatetime] = useState("");
@@ -332,6 +334,17 @@ export const EventCreatePage = () => {
                     </button>
                   );
                 })}
+                {(eventPlaces?.length ?? 0) > 0 && (
+                  <div className="h-px bg-light-divider dark:bg-dark-divider" />
+                )}
+                <button
+                  type="button"
+                  onClick={() => { setIsVenueOpen(false); setShowPlaceCreateModal(true); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-left text-red-500 hover:bg-light-surface-container dark:hover:bg-dark-surface-container transition-colors"
+                >
+                  <Plus size={18} className="shrink-0" />
+                  <span>新しい場所を追加</span>
+                </button>
               </div>
             )}
           </div>
@@ -507,6 +520,16 @@ export const EventCreatePage = () => {
           {createEventMutation.isPending ? "作成中..." : "イベントを作成"}
         </button>
       </div>
+
+      {/* 会場作成モーダル */}
+      {showPlaceCreateModal && (
+        <PlaceCreateModal
+          onClose={() => setShowPlaceCreateModal(false)}
+          onCreated={(place) => {
+            setSelectedPlaceId(place.id);
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -65,13 +65,14 @@ export const SettingsPage = () => {
               <SettingsTile
                 icon={<MapPin size={20} />}
                 title="イベント会場管理"
-                subtitle="会場の登録・編集・削除"
+                subtitle="会場の登録・削除"
                 trailing={
                   <ChevronRight
                     size={20}
                     className="text-light-text-secondary dark:text-dark-text-secondary"
                   />
                 }
+                onClick={() => navigate("/settings/places")}
               />
             </SettingsCard>
           </>
