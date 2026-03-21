@@ -26,10 +26,11 @@ export const getEventList = async (): Promise<EventListItem[]> => {
 export const getEventDetail = async (
   eventId: string
 ): Promise<EventDetail> => {
-  const { data, error } = await supabase.functions.invoke("event_detail", {
-    method: "GET",
-    body: { eventId },
-  });
+  const params = new URLSearchParams({ event_id: eventId });
+  const { data, error } = await supabase.functions.invoke(
+    `event_detail?${params}`,
+    { method: "GET" }
+  );
 
   if (error) throw error;
   return data as EventDetail;

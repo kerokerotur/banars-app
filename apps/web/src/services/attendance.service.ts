@@ -20,14 +20,16 @@ export const registerAttendance = async (
 
 /**
  * イベントの出欠詳細一覧を取得（event_detail API、モバイルアプリと同じロジック）
+ * GET リクエストなのでクエリパラメータはURL に含める（Fetch API は GET + body を許可しない）
  */
 export const getEventAttendance = async (
   eventId: string
 ): Promise<EventAttendanceDetail[]> => {
-  const { data, error } = await supabase.functions.invoke("event_detail", {
-    method: "GET",
-    body: { event_id: eventId },
-  });
+  const params = new URLSearchParams({ event_id: eventId });
+  const { data, error } = await supabase.functions.invoke(
+    `event_detail?${params}`,
+    { method: "GET" }
+  );
 
   if (error) throw error;
   return (data.attendance ?? []) as EventAttendanceDetail[];
@@ -41,12 +43,10 @@ export const getAttendanceSummariesBatch = async (
 ): Promise<Record<string, AttendanceSummaryBatchItem[]>> => {
   if (eventIds.length === 0) return {};
 
+  const params = new URLSearchParams({ event_ids: eventIds.join(",") });
   const { data, error } = await supabase.functions.invoke(
-    "event_attendances_summary",
-    {
-      method: "GET",
-      body: { event_ids: eventIds.join(",") },
-    }
+    `event_attendances_summary?${params}`,
+    { method: "GET" }
   );
 
   if (error) throw error;
