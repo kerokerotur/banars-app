@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Spinner } from "@/components/ui/Spinner";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   initializeLiff,
@@ -90,7 +91,7 @@ export const SignupPage = () => {
 
         {isLoading ? (
           <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin text-4xl">⏳</div>
+            <Spinner />
             <p className="text-light-text-secondary dark:text-dark-text-secondary">
               LINEアカウントで登録しています
             </p>

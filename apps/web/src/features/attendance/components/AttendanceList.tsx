@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { User } from "lucide-react";
+import { Spinner } from "@/components/ui/Spinner";
 import { useEventAttendance } from "@/hooks/useAttendance";
 import type { EventAttendanceDetail } from "@/types/attendance";
 
@@ -71,7 +72,7 @@ export const AttendanceList = ({ eventId }: AttendanceListProps) => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin text-2xl">⏳</div>
+        <Spinner size="md" />
       </div>
     );
   }

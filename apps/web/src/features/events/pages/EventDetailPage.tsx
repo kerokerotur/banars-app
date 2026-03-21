@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Spinner } from "@/components/ui/Spinner";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
@@ -416,7 +417,7 @@ export const EventDetailPage = () => {
 
           {isLoadingAttendance ? (
             <div className="flex items-center justify-center py-6">
-              <div className="animate-spin text-2xl">⏳</div>
+              <Spinner size="md" />
             </div>
           ) : !attendance || attendance.length === 0 ? (
             <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary text-center py-4">

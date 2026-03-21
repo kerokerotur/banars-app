@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { Spinner } from "@/components/ui/Spinner";
 import { ArrowLeft, User, BadgeCheck, MessageCircle, PlusCircle } from "lucide-react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
@@ -26,7 +27,7 @@ export const UserProfilePage = () => {
       {/* ローディング */}
       {isLoading && (
         <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <Spinner />
           <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
             ユーザー情報を取得中...
           </p>

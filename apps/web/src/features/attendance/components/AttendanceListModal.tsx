@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { X, User } from "lucide-react";
+import { Spinner } from "@/components/ui/Spinner";
 import { useEventAttendance } from "@/hooks/useAttendance";
 import type { EventAttendanceDetail } from "@/types/attendance";
 
@@ -115,7 +116,7 @@ export const AttendanceListModal = ({
         <div className="overflow-y-auto flex-1 px-4 py-4 space-y-4">
           {isLoading && (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin text-2xl">⏳</div>
+              <Spinner size="md" />
             </div>
           )}
 

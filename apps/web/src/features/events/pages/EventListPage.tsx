@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useEventList } from "@/hooks/useEvents";
+import { Spinner } from "@/components/ui/Spinner";
 import {
   useAttendanceSummariesBatch,
   computeAttendanceCounts,
@@ -31,7 +32,7 @@ export const EventListPage = () => {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin text-4xl">⏳</div>
+          <Spinner />
           <p className="text-light-text-secondary dark:text-dark-text-secondary">
             イベントを読み込み中...
           </p>

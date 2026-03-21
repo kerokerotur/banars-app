@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getUserList } from "@/services/users.service";
+import { Spinner } from "@/components/ui/Spinner";
 
 export const MemberListPage = () => {
   const { data: members, isLoading, error } = useQuery({
@@ -11,7 +12,7 @@ export const MemberListPage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-light-background dark:bg-dark-background">
         <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin text-4xl">⏳</div>
+          <Spinner />
           <p className="text-light-text-secondary dark:text-dark-text-secondary">
             メンバーを読み込み中...
           </p>

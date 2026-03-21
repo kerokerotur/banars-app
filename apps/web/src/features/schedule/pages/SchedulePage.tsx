@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Spinner } from "@/components/ui/Spinner";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import { useEventList } from "@/hooks/useEvents";
@@ -56,7 +57,7 @@ export const SchedulePage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-light-background dark:bg-dark-background">
         <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin text-4xl">⏳</div>
+          <Spinner />
           <p className="text-light-text-secondary dark:text-dark-text-secondary">
             イベントを取得中...
           </p>

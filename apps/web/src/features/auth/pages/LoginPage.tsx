@@ -1,4 +1,5 @@
 import type { Session } from "@supabase/supabase-js";
+import { Spinner } from "@/components/ui/Spinner";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogIn, UserPlus } from "lucide-react";
@@ -165,7 +166,7 @@ export const LoginPage = () => {
         >
           {isLoading ? (
             <>
-              <span className="animate-spin">⏳</span>
+              <Spinner size="sm" />
               <span>ログイン中...</span>
             </>
           ) : (
