@@ -1,6 +1,7 @@
+import { useMemo } from "react";
 import { X, User } from "lucide-react";
-import { useAttendanceSummary } from "@/hooks/useAttendance";
-import type { AttendanceSummaryUser } from "@/types/attendance";
+import { useEventAttendance } from "@/hooks/useAttendance";
+import type { EventAttendanceDetail } from "@/types/attendance";
 
 interface AttendanceListModalProps {
   eventId: string;
@@ -8,13 +9,13 @@ interface AttendanceListModalProps {
   onClose: () => void;
 }
 
-const UserCard = ({ user }: { user: AttendanceSummaryUser }) => (
+const UserCard = ({ attendance }: { attendance: EventAttendanceDetail }) => (
   <div className="flex items-center gap-3 bg-light-surface dark:bg-dark-surface rounded-xl p-3">
     <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary-light/30 flex-shrink-0">
-      {user.avatarUrl ? (
+      {attendance.avatarUrl ? (
         <img
-          src={user.avatarUrl}
-          alt={user.displayName}
+          src={attendance.avatarUrl}
+          alt={attendance.displayName ?? ""}
           className="w-full h-full object-cover"
         />
       ) : (
@@ -25,11 +26,11 @@ const UserCard = ({ user }: { user: AttendanceSummaryUser }) => (
     </div>
     <div className="flex-1 min-w-0">
       <p className="font-bold text-light-text-primary dark:text-dark-text-primary">
-        {user.displayName}
+        {attendance.displayName ?? attendance.memberId}
       </p>
-      {user.comment && (
-        <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-          {user.comment}
+      {attendance.comment && (
+        <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary truncate">
+          {attendance.comment}
         </p>
       )}
     </div>
@@ -38,13 +39,13 @@ const UserCard = ({ user }: { user: AttendanceSummaryUser }) => (
 
 interface SectionProps {
   label: string;
-  users: AttendanceSummaryUser[];
+  attendances: EventAttendanceDetail[];
   borderColor: string;
   badgeClass: string;
 }
 
-const Section = ({ label, users, borderColor, badgeClass }: SectionProps) => {
-  if (users.length === 0) return null;
+const Section = ({ label, attendances, borderColor, badgeClass }: SectionProps) => {
+  if (attendances.length === 0) return null;
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
@@ -53,12 +54,12 @@ const Section = ({ label, users, borderColor, badgeClass }: SectionProps) => {
           {label}
         </span>
         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badgeClass}`}>
-          {users.length}名
+          {attendances.length}名
         </span>
       </div>
       <div className="space-y-2">
-        {users.map((user) => (
-          <UserCard key={user.userId} user={user} />
+        {attendances.map((a) => (
+          <UserCard key={a.id} attendance={a} />
         ))}
       </div>
     </div>
@@ -70,7 +71,16 @@ export const AttendanceListModal = ({
   eventTitle,
   onClose,
 }: AttendanceListModalProps) => {
-  const { data: summary, isLoading, error } = useAttendanceSummary(eventId);
+  const { data: attendanceList, isLoading, error } = useEventAttendance(eventId);
+
+  const grouped = useMemo(() => {
+    if (!attendanceList) return null;
+    return {
+      attending: attendanceList.filter((a) => a.status === "attending"),
+      pending: attendanceList.filter((a) => a.status === "pending"),
+      notAttending: attendanceList.filter((a) => a.status === "not_attending"),
+    };
+  }, [attendanceList]);
 
   return (
     <div
@@ -115,14 +125,14 @@ export const AttendanceListModal = ({
             </div>
           )}
 
-          {summary && (
+          {grouped && (
             <>
               {/* サマリーカード */}
               <div className="bg-light-surface dark:bg-dark-surface rounded-xl p-4 shadow-sm">
                 <div className="flex justify-around">
                   <div className="text-center">
                     <p className="text-3xl font-bold text-status-attending-text">
-                      {summary.attending.length}
+                      {grouped.attending.length}
                     </p>
                     <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mt-1">
                       出席
@@ -130,7 +140,7 @@ export const AttendanceListModal = ({
                   </div>
                   <div className="text-center">
                     <p className="text-3xl font-bold text-status-pending-text">
-                      {summary.pending.length}
+                      {grouped.pending.length}
                     </p>
                     <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mt-1">
                       保留
@@ -138,7 +148,7 @@ export const AttendanceListModal = ({
                   </div>
                   <div className="text-center">
                     <p className="text-3xl font-bold text-status-absent-text">
-                      {summary.notAttending.length}
+                      {grouped.notAttending.length}
                     </p>
                     <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mt-1">
                       欠席
@@ -150,28 +160,30 @@ export const AttendanceListModal = ({
               {/* セクション */}
               <Section
                 label="出席"
-                users={summary.attending}
+                attendances={grouped.attending}
                 borderColor="bg-status-attending-text"
                 badgeClass="bg-status-attending-bg text-status-attending-text"
               />
               <Section
                 label="保留"
-                users={summary.pending}
+                attendances={grouped.pending}
                 borderColor="bg-status-pending-text"
                 badgeClass="bg-status-pending-bg text-status-pending-text"
               />
               <Section
                 label="欠席"
-                users={summary.notAttending}
+                attendances={grouped.notAttending}
                 borderColor="bg-status-absent-text"
                 badgeClass="bg-status-absent-bg text-status-absent-text"
               />
-              <Section
-                label="未回答"
-                users={summary.unanswered}
-                borderColor="bg-status-unanswered-text"
-                badgeClass="bg-status-unanswered-bg text-status-unanswered-text"
-              />
+
+              {grouped.attending.length === 0 &&
+                grouped.pending.length === 0 &&
+                grouped.notAttending.length === 0 && (
+                  <p className="text-center text-sm text-light-text-secondary dark:text-dark-text-secondary py-4">
+                    まだ回答がありません
+                  </p>
+                )}
             </>
           )}
         </div>

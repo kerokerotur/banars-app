@@ -29,27 +29,6 @@ export interface RegisterAttendanceInput {
 }
 
 /**
- * 出欠者情報（サマリー用）
- */
-export interface AttendanceSummaryUser {
-  userId: string;
-  displayName: string;
-  avatarUrl: string | null;
-  status: AttendanceStatus;
-  comment: string | null;
-}
-
-/**
- * 出欠サマリー
- */
-export interface AttendanceSummary {
-  attending: AttendanceSummaryUser[];
-  notAttending: AttendanceSummaryUser[];
-  pending: AttendanceSummaryUser[];
-  unanswered: AttendanceSummaryUser[];
-}
-
-/**
  * イベント出欠詳細（event_detail API のレスポンス）
  */
 export interface EventAttendanceDetail {

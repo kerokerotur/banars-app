@@ -1,7 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import type {
   RegisterAttendanceInput,
-  AttendanceSummary,
   AttendanceSummaryBatchItem,
   EventAttendanceDetail,
 } from "@/types/attendance";
@@ -20,25 +19,7 @@ export const registerAttendance = async (
 };
 
 /**
- * イベントの出欠サマリーを取得
- */
-export const getAttendanceSummary = async (
-  eventId: string
-): Promise<AttendanceSummary> => {
-  const { data, error } = await supabase.functions.invoke(
-    "event_attendances_summary",
-    {
-      method: "GET",
-      body: { eventId },
-    }
-  );
-
-  if (error) throw error;
-  return data as AttendanceSummary;
-};
-
-/**
- * イベントの出欠詳細一覧を取得（event_detail API）
+ * イベントの出欠詳細一覧を取得（event_detail API、モバイルアプリと同じロジック）
  */
 export const getEventAttendance = async (
   eventId: string

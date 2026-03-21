@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   registerAttendance,
-  getAttendanceSummary,
   getAttendanceSummariesBatch,
   getEventAttendance,
 } from "@/services/attendance.service";
@@ -10,17 +9,6 @@ import type {
   AttendanceSummaryBatchItem,
   AttendanceCounts,
 } from "@/types/attendance";
-
-/**
- * 出欠サマリーを取得
- */
-export const useAttendanceSummary = (eventId: string) => {
-  return useQuery({
-    queryKey: ["attendance", "summary", eventId],
-    queryFn: () => getAttendanceSummary(eventId),
-    enabled: !!eventId,
-  });
-};
 
 /**
  * 複数イベントの出欠サマリーを一括取得
