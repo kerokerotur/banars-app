@@ -74,25 +74,15 @@ export const loginWithLiff = async (): Promise<void> => {
 };
 
 /**
- * JWTの有効期限が切れているか確認します（30秒のバッファあり）
- */
-const isJwtExpired = (token: string): boolean => {
-  try {
-    const parts = token.split(".");
-    if (parts.length < 3 || !parts[1]) return true;
-    const payload = JSON.parse(atob(parts[1]));
-    return payload.exp * 1000 < Date.now() + 30_000;
-  } catch {
-    return true;
-  }
-};
-
-/**
  * LINE ID Tokenを取得します。
  *
- * liff.logout() は呼ばない。logout すると LINE 内ブラウザで
- * liff.login() が正常に機能せず無限ループになるため、
- * セッション破棄は呼び出し元（LoginPage）の責務とする。
+ * JWT の有効期限チェックはクライアント側では行わない。
+ * LIFF SDK は isLoggedIn (access token) と getIDToken (id token) の
+ * 有効期限が異なり、access token が有効でも id token が切れているケースがある。
+ * クライアントで弾くと再 init もされず無限に同じ期限切れトークンが返される。
+ * トークンの有効性検証は Edge Function (JWKS) に委ねる。
+ *
+ * liff.logout() も呼ばない。セッション破棄は呼び出し元（LoginPage）の責務。
  */
 export const getLiffIdToken = async (): Promise<string | null> => {
   const isLoggedIn = liff.isLoggedIn();
@@ -108,27 +98,7 @@ export const getLiffIdToken = async (): Promise<string | null> => {
     isInClient: liff.isInClient(),
   });
 
-  if (!token) {
-    return null;
-  }
-
-  if (isJwtExpired(token)) {
-    console.log("[LIFF] getLiffIdToken: トークン期限切れ");
-    return null;
-  }
-
-  return token;
-};
-
-/**
- * LINE内ブラウザ（LIFFクライアント）で実行中かどうかを返します
- */
-export const isLiffInClient = (): boolean => {
-  try {
-    return liff.isInClient();
-  } catch {
-    return false;
-  }
+  return token ?? null;
 };
 
 /**

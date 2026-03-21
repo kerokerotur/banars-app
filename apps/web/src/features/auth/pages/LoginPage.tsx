@@ -7,7 +7,6 @@ import {
   getLiffIdToken,
   loginWithLiff,
   logoutLiff,
-  isLiffInClient,
 } from "@/lib/liff";
 import { loginWithLine, exchangeSessionToken } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth";
@@ -49,14 +48,13 @@ export const LoginPage = () => {
   }, [setSession, navigate]);
 
   /**
-   * トークン取得失敗時のエラーハンドリング。
-   * 外部ブラウザの場合のみ LIFF セッションをクリアして再ログインを可能にする。
-   * LINE 内ブラウザでは liff.logout() → liff.login() が正常に動作しないため行わない。
+   * ログインフロー失敗時に LIFF セッションをクリアする。
+   * 次回ボタン押下で isLoggedIn=false → liff.login() → フレッシュな認証フローへ。
+   * LINE 内ブラウザでも liff.login() がページリロードを起こし、
+   * 再 init 時に LINE クライアントからフレッシュなトークンを取得できる。
    */
   const handleTokenError = useCallback(() => {
-    if (!isLiffInClient()) {
-      logoutLiff();
-    }
+    logoutLiff();
   }, []);
 
   // リダイレクト戻り時: LIFF初期化後にログイン済みなら自動でログイン完了まで進める
