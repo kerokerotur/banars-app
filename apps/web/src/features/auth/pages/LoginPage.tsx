@@ -131,6 +131,9 @@ export const LoginPage = () => {
         {error && (
           <div className="mb-2 p-4 bg-red-100/90 border border-red-300 rounded-lg">
             <p className="text-red-900 text-sm">{error}</p>
+            <p className="text-red-800 text-xs mt-1">
+              もう一度「LINE でログイン」を押してください。
+            </p>
           </div>
         )}
 

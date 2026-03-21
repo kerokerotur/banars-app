@@ -78,6 +78,10 @@ export const getLiffIdToken = async (): Promise<string | null> => {
   console.log("[LIFF] getLiffIdToken: トークン取得", token ? "あり" : "なし");
 
   if (!token) {
+    // isLoggedIn=true なのにトークンが取得できない場合（別端末でのログイン後など LIFF セッションが不整合な状態）
+    // 自動リダイレクトすると同じ状態でループするため、セッションのみクリアしてユーザー操作に委ねる
+    console.log("[LIFF] getLiffIdToken: isLoggedIn=true だがトークンなし、LIFF セッションをクリア");
+    liff.logout();
     return null;
   }
 
@@ -85,12 +89,11 @@ export const getLiffIdToken = async (): Promise<string | null> => {
     return token;
   }
 
-  // トークン期限切れ: localStorage のキャッシュをクリアしてから再ログイン
-  // liff.logout() を先に呼ばないと古いトークンが localStorage に残り続ける
-  console.log("[LIFF] getLiffIdToken: トークン期限切れ、キャッシュクリア後に再ログイン");
+  // トークン期限切れ: localStorage のキャッシュをクリアして null を返す
+  // 自動で liff.login() を呼ぶとループするため、再ログインはユーザー操作に委ねる
+  console.log("[LIFF] getLiffIdToken: トークン期限切れ、キャッシュクリア（再ログインはユーザー操作に委ねる）");
   liff.logout();
-  liff.login();
-  return null; // login() はリダイレクトするため到達しない
+  return null;
 };
 
 /**
