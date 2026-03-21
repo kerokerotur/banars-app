@@ -45,7 +45,7 @@ export const getEventTypes = async (): Promise<EventType[]> => {
   });
 
   if (error) throw error;
-  return data.eventTypes as EventType[];
+  return data as EventType[];
 };
 
 /**
@@ -54,7 +54,7 @@ export const getEventTypes = async (): Promise<EventType[]> => {
 export const getEventPlaces = async (): Promise<EventPlace[]> => {
   const { data, error } = await supabase
     .from("event_places")
-    .select("id, name, google_maps_url, created_at")
+    .select("id, name, google_maps_url_normalized, created_at")
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -63,7 +63,7 @@ export const getEventPlaces = async (): Promise<EventPlace[]> => {
   return (data ?? []).map((row) => ({
     id: row.id,
     name: row.name,
-    googleMapsUrl: row.google_maps_url,
+    googleMapsUrl: row.google_maps_url_normalized,
     createdAt: row.created_at,
   }));
 };
