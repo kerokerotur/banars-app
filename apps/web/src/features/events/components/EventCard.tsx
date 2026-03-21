@@ -14,7 +14,7 @@ import {
   MinusCircle,
   HelpCircle,
 } from "lucide-react";
-import type { EventListItem } from "@/types/event";
+import type { EventListItem, EventListUserAttendanceStatus } from "@/types/event";
 import { formatDate } from "@/utils/date";
 import { AttendanceListModal } from "@/features/attendance/components/AttendanceListModal";
 
@@ -29,18 +29,16 @@ const getEventTypeIcon = (eventTypeName: string) => {
   return CalendarDays;
 };
 
-type AttendanceStatus = "attending" | "not_attending" | "pending" | null;
-
 const STATUS_CONFIG: Record<
-  NonNullable<AttendanceStatus> | "unanswered",
+  EventListUserAttendanceStatus,
   { label: string; icon: React.ElementType; className: string }
 > = {
-  attending: {
+  participating: {
     label: "参加",
     icon: CheckCircle,
     className: "bg-status-attending-bg text-status-attending-text",
   },
-  not_attending: {
+  absent: {
     label: "欠席",
     icon: XCircle,
     className: "bg-status-absent-bg text-status-absent-text",
@@ -57,10 +55,8 @@ const STATUS_CONFIG: Record<
   },
 };
 
-const getStatusConfig = (status: AttendanceStatus) => {
-  const key = status ?? "unanswered";
-  return STATUS_CONFIG[key];
-};
+const getStatusConfig = (status: EventListUserAttendanceStatus) =>
+  STATUS_CONFIG[status] ?? STATUS_CONFIG.unanswered;
 
 export const EventCard = ({ event }: EventCardProps) => {
   const navigate = useNavigate();

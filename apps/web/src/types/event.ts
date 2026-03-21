@@ -2,6 +2,13 @@
  * イベント関連の型定義
  */
 
+/** イベント一覧 API（event_list）が返す、ログインユーザーの出欠状態 */
+export type EventListUserAttendanceStatus =
+  | "participating"
+  | "absent"
+  | "pending"
+  | "unanswered";
+
 /**
  * イベント一覧のアイテム
  */
@@ -18,7 +25,7 @@ export interface EventListItem {
   eventPlaceAddress: string | null;
   eventPlaceGoogleMapsUrl: string | null;
   notesMarkdown: string | null;
-  userAttendanceStatus: "attending" | "not_attending" | "pending" | null;
+  userAttendanceStatus: EventListUserAttendanceStatus;
   attendingCount: number;
   notAttendingCount: number;
   pendingCount: number;

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
-import type { EventListItem } from "@/types/event";
+import type { EventListItem, EventListUserAttendanceStatus } from "@/types/event";
 
 interface EventListModalProps {
   selectedDate: Date;
@@ -63,15 +63,13 @@ export const EventListModal = ({
                     <span className="inline-block px-2 py-1 bg-light-surface-container dark:bg-dark-surface-container rounded text-xs font-medium text-light-text-secondary dark:text-dark-text-secondary">
                       {event.eventTypeName}
                     </span>
-                    {event.userAttendanceStatus && (
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-xs font-medium ${getStatusBadgeClass(
-                          event.userAttendanceStatus
-                        )}`}
-                      >
-                        {getStatusLabel(event.userAttendanceStatus)}
-                      </span>
-                    )}
+                    <span
+                      className={`inline-block px-2 py-1 rounded text-xs font-medium ${getStatusBadgeClass(
+                        event.userAttendanceStatus
+                      )}`}
+                    >
+                      {getStatusLabel(event.userAttendanceStatus)}
+                    </span>
                   </div>
 
                   {/* タイトル */}
@@ -132,29 +130,37 @@ export const EventListModal = ({
 };
 
 // ステータスバッジのクラス名を取得
-function getStatusBadgeClass(status: string): string {
+function getStatusBadgeClass(status: EventListUserAttendanceStatus): string {
   switch (status) {
-    case "attending":
+    case "participating":
       return "bg-status-attending-bg text-status-attending-text";
-    case "not_attending":
+    case "absent":
       return "bg-status-absent-bg text-status-absent-text";
     case "pending":
       return "bg-status-pending-bg text-status-pending-text";
-    default:
+    case "unanswered":
       return "bg-status-unanswered-bg text-status-unanswered-text";
+    default: {
+      const _exhaustive: never = status;
+      return _exhaustive;
+    }
   }
 }
 
 // ステータスラベルを取得
-function getStatusLabel(status: string): string {
+function getStatusLabel(status: EventListUserAttendanceStatus): string {
   switch (status) {
-    case "attending":
+    case "participating":
       return "参加";
-    case "not_attending":
+    case "absent":
       return "欠席";
     case "pending":
       return "保留";
-    default:
+    case "unanswered":
       return "未回答";
+    default: {
+      const _exhaustive: never = status;
+      return _exhaustive;
+    }
   }
 }
