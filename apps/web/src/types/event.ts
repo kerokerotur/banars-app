@@ -26,10 +26,6 @@ export interface EventListItem {
   eventPlaceGoogleMapsUrl: string | null;
   notesMarkdown: string | null;
   userAttendanceStatus: EventListUserAttendanceStatus;
-  attendingCount: number;
-  notAttendingCount: number;
-  pendingCount: number;
-  unansweredCount: number;
 }
 
 /**
