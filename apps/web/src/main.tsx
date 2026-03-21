@@ -3,8 +3,13 @@ import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+import { startLiffInit } from "./lib/liff";
 import { router } from "./router";
 import "./styles.css";
+
+// React Router が認証コールバック URL パラメータを strip する前に
+// LIFF SDK が処理できるよう、ルーティング前に init を開始する
+startLiffInit();
 
 const queryClient = new QueryClient({
   defaultOptions: {

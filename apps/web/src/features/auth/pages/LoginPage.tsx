@@ -2,7 +2,13 @@ import type { Session } from "@supabase/supabase-js";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogIn, UserPlus } from "lucide-react";
-import { initializeLiff, getLiffIdToken, loginWithLiff } from "@/lib/liff";
+import {
+  initializeLiff,
+  getLiffIdToken,
+  loginWithLiff,
+  logoutLiff,
+  isLiffInClient,
+} from "@/lib/liff";
 import { loginWithLine, exchangeSessionToken } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth";
 
@@ -21,10 +27,14 @@ async function completeLoginWithLiffSession(
   }
   console.log("[Login] completeLoginWithLiffSession: loginWithLine 呼び出し");
   const { sessionTransferToken } = await loginWithLine(idToken);
-  console.log("[Login] completeLoginWithLiffSession: exchangeSessionToken 呼び出し");
+  console.log(
+    "[Login] completeLoginWithLiffSession: exchangeSessionToken 呼び出し"
+  );
   const { session } = await exchangeSessionToken(sessionTransferToken);
   setSession(session);
-  console.log("[Login] completeLoginWithLiffSession: セッション設定済み、/events へ遷移");
+  console.log(
+    "[Login] completeLoginWithLiffSession: セッション設定済み、/events へ遷移"
+  );
   navigate("/events");
 }
 
@@ -37,6 +47,17 @@ export const LoginPage = () => {
   const completeLogin = useCallback(() => {
     return completeLoginWithLiffSession(setSession, navigate);
   }, [setSession, navigate]);
+
+  /**
+   * トークン取得失敗時のエラーハンドリング。
+   * 外部ブラウザの場合のみ LIFF セッションをクリアして再ログインを可能にする。
+   * LINE 内ブラウザでは liff.logout() → liff.login() が正常に動作しないため行わない。
+   */
+  const handleTokenError = useCallback(() => {
+    if (!isLiffInClient()) {
+      logoutLiff();
+    }
+  }, []);
 
   // リダイレクト戻り時: LIFF初期化後にログイン済みなら自動でログイン完了まで進める
   useEffect(() => {
@@ -66,6 +87,7 @@ export const LoginPage = () => {
       } catch (err) {
         if (cancelled) return;
         console.error("[Login] useEffect: エラー", err);
+        handleTokenError();
         setError(
           err instanceof Error ? err.message : "ログインに失敗しました"
         );
@@ -82,7 +104,7 @@ export const LoginPage = () => {
       cancelled = true;
       console.log("[Login] useEffect: クリーンアップ");
     };
-  }, [completeLogin]);
+  }, [completeLogin, handleTokenError]);
 
   const handleLogin = async () => {
     console.log("[Login] handleLogin: ボタンクリック");
@@ -104,6 +126,7 @@ export const LoginPage = () => {
       console.log("[Login] handleLogin: completeLogin 完了");
     } catch (err) {
       console.error("[Login] handleLogin: エラー", err);
+      handleTokenError();
       setError(
         err instanceof Error ? err.message : "ログインに失敗しました"
       );
