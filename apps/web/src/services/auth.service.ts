@@ -2,6 +2,42 @@ import { supabase } from "@/lib/supabase";
 import type { UserProfile } from "@/types/user";
 
 /**
+ * Edge Function から返されるドメインエラー
+ */
+export class ApiError extends Error {
+  constructor(
+    public readonly code: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+/**
+ * FunctionsHttpError のレスポンスボディを展開して ApiError を投げるユーティリティ
+ */
+async function throwApiError(error: unknown): Promise<never> {
+  if (
+    error instanceof Error &&
+    error.name === "FunctionsHttpError" &&
+    "context" in error &&
+    error.context instanceof Response
+  ) {
+    try {
+      const body = await error.context.json();
+      throw new ApiError(
+        body.code ?? "unknown",
+        body.message ?? error.message,
+      );
+    } catch (e) {
+      if (e instanceof ApiError) throw e;
+    }
+  }
+  throw error;
+}
+
+/**
  * LINEログイン（既存ユーザー向け）
  */
 export const loginWithLine = async (idToken: string) => {
@@ -9,7 +45,7 @@ export const loginWithLine = async (idToken: string) => {
     body: { idToken },
   });
 
-  if (error) throw error;
+  if (error) await throwApiError(error);
   return data;
 };
 

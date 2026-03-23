@@ -9,7 +9,7 @@ import {
   loginWithLiff,
   logoutLiff,
 } from "@/lib/liff";
-import { loginWithLine, exchangeSessionToken } from "@/services/auth.service";
+import { loginWithLine, exchangeSessionToken, ApiError } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth";
 
 /**
@@ -43,6 +43,7 @@ export const LoginPage = () => {
   const setSession = useAuthStore((state) => state.setSession);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isUserNotFound, setIsUserNotFound] = useState(false);
 
   const completeLogin = useCallback(() => {
     return completeLoginWithLiffSession(setSession, navigate);
@@ -69,6 +70,7 @@ export const LoginPage = () => {
       try {
         setIsLoading(true);
         setError(null);
+        setIsUserNotFound(false);
         console.log("[Login] useEffect: initializeLiff 呼び出し");
         const isLoggedIn = await initializeLiff();
         if (cancelled) {
@@ -87,9 +89,11 @@ export const LoginPage = () => {
         if (cancelled) return;
         console.error("[Login] useEffect: エラー", err);
         handleTokenError();
-        setError(
-          err instanceof Error ? err.message : "ログインに失敗しました"
-        );
+        if (err instanceof ApiError && err.code === "user_not_found") {
+          setIsUserNotFound(true);
+        } else {
+          setError(err instanceof Error ? err.message : "ログインに失敗しました");
+        }
       } finally {
         if (!cancelled) {
           setIsLoading(false);
@@ -110,6 +114,7 @@ export const LoginPage = () => {
     try {
       setIsLoading(true);
       setError(null);
+      setIsUserNotFound(false);
 
       const isLoggedIn = await initializeLiff();
       console.log("[Login] handleLogin: initializeLiff 完了", { isLoggedIn });
@@ -126,9 +131,11 @@ export const LoginPage = () => {
     } catch (err) {
       console.error("[Login] handleLogin: エラー", err);
       handleTokenError();
-      setError(
-        err instanceof Error ? err.message : "ログインに失敗しました"
-      );
+      if (err instanceof ApiError && err.code === "user_not_found") {
+        setIsUserNotFound(true);
+      } else {
+        setError(err instanceof Error ? err.message : "ログインに失敗しました");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -150,6 +157,16 @@ export const LoginPage = () => {
 
       {/* ボタンエリア */}
       <div className="px-6 pt-4 pb-10 space-y-3" style={{ backgroundColor: '#001F3F' }}>
+        {isUserNotFound && (
+          <div className="mb-2 p-4 bg-yellow-50/90 border border-yellow-400 rounded-lg">
+            <p className="text-yellow-900 text-sm font-medium">
+              このLINEアカウントはまだ登録されていません
+            </p>
+            <p className="text-yellow-800 text-xs mt-1">
+              下の「新規登録」ボタンから登録を行ってください。
+            </p>
+          </div>
+        )}
         {error && (
           <div className="mb-2 p-4 bg-red-100/90 border border-red-300 rounded-lg">
             <p className="text-red-900 text-sm">{error}</p>
@@ -179,7 +196,8 @@ export const LoginPage = () => {
 
         <button
           onClick={() => navigate("/signup")}
-          className="w-full text-white font-bold py-4 px-4 rounded-xl border border-white/60 flex items-center justify-center gap-2 text-base hover:bg-white/10 transition-colors"
+          disabled={isLoading}
+          className="w-full text-white font-bold py-4 px-4 rounded-xl border border-white/60 flex items-center justify-center gap-2 text-base hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ backgroundColor: 'transparent' }}
         >
           <UserPlus size={20} />
