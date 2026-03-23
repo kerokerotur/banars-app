@@ -9,7 +9,7 @@ export const RootLayout = () => {
       <Header />
 
       {/* メインコンテンツ */}
-      <main className="flex-1 overflow-y-auto pb-16">
+      <main className="flex-1 flex flex-col overflow-y-auto pb-16">
         <Outlet />
       </main>
 

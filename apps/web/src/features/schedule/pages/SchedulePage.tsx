@@ -55,7 +55,7 @@ export const SchedulePage = () => {
   // ローディング状態
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-light-background dark:bg-dark-background">
+      <div className="flex-1 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Spinner />
           <p className="text-light-text-secondary dark:text-dark-text-secondary">

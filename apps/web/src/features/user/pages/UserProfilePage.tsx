@@ -22,7 +22,7 @@ export const UserProfilePage = () => {
   };
 
   return (
-    <div className="pb-8">
+    <div className="flex flex-col flex-1 pb-8">
       {/* ヘッダー */}
       <div className="flex items-center gap-3 px-4 py-3 sticky top-0 bg-light-background dark:bg-dark-background z-10">
         <button
@@ -38,7 +38,7 @@ export const UserProfilePage = () => {
 
       {/* ローディング */}
       {isLoading && (
-        <div className="flex flex-col items-center justify-center py-24 gap-4">
+        <div className="flex-1 flex flex-col items-center justify-center gap-4">
           <Spinner />
           <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
             ユーザー情報を取得中...
