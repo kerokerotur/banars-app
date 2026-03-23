@@ -3,6 +3,27 @@
 /* class ベースのダークモード（html 要素に .dark クラスを付与して切り替え） */
 @custom-variant dark (&:is(.dark, .dark *));
 
+/* ─── テーマカラー変数（.dark で上書き） ─── */
+:root {
+  --color-background: #FAFAFA;
+  --color-surface: #FFFFFF;
+  --color-surface-container: #F5F5F5;
+  --color-text-primary: #212121;
+  --color-text-secondary: #757575;
+  --color-text-disabled: #BDBDBD;
+  --color-divider: #EEEEEE;
+}
+
+.dark {
+  --color-background: #121212;
+  --color-surface: #1E1E1E;
+  --color-surface-container: #2C2C2C;
+  --color-text-primary: #E0E0E0;
+  --color-text-secondary: #9E9E9E;
+  --color-text-disabled: #616161;
+  --color-divider: #424242;
+}
+
 @layer base {
   * {
     box-sizing: border-box;
@@ -11,13 +32,8 @@
   body {
     margin: 0;
     font-family: "M PLUS Rounded 1c", sans-serif;
-    background-color: #FAFAFA;
-    color: #212121;
-  }
-
-  .dark body {
-    background-color: #121212;
-    color: #E0E0E0;
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
   }
 }
 
@@ -42,33 +58,33 @@
     color: #C2185B;
   }
 
-  /* ライトテーマ */
+  /* ライトテーマ（CSS変数で .dark 時に自動切り替え） */
   .bg-light-background {
-    background-color: #FAFAFA;
+    background-color: var(--color-background);
   }
   .bg-light-surface {
-    background-color: #FFFFFF;
+    background-color: var(--color-surface);
   }
   .bg-light-surface-container {
-    background-color: #F5F5F5;
+    background-color: var(--color-surface-container);
   }
   .text-light-text-primary {
-    color: #212121;
+    color: var(--color-text-primary);
   }
   .text-light-text-secondary {
-    color: #757575;
+    color: var(--color-text-secondary);
   }
   .text-light-text-disabled {
-    color: #BDBDBD;
+    color: var(--color-text-disabled);
   }
   .border-light-divider {
-    border-color: #EEEEEE;
+    border-color: var(--color-divider);
   }
   .bg-light-divider {
-    background-color: #EEEEEE;
+    background-color: var(--color-divider);
   }
 
-  /* ダークテーマ（スタンドアロン定義 — dark: バリアントで適用） */
+  /* ダークテーマ（dark:bg-dark-X パターンが機能しない場合の補完 ― 値は変数と同値） */
   .bg-dark-background {
     background-color: #121212;
   }
