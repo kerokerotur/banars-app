@@ -55,6 +55,7 @@ export const EventListModal = ({
                 <Link
                   key={event.id}
                   to={`/events/${event.id}`}
+                  state={{ event }}
                   onClick={onClose}
                   className="block bg-light-background dark:bg-dark-background rounded-lg p-4 border border-light-divider dark:border-dark-divider hover:border-primary transition-colors"
                 >
