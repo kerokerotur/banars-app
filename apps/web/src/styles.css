@@ -68,32 +68,29 @@
     background-color: #EEEEEE;
   }
 
-  /* ダークテーマ */
-  .dark .bg-dark-background {
+  /* ダークテーマ（スタンドアロン定義 — dark: バリアントで適用） */
+  .bg-dark-background {
     background-color: #121212;
   }
-  .dark .bg-dark-surface {
+  .bg-dark-surface {
     background-color: #1E1E1E;
   }
-  .dark .bg-dark-surface-container {
+  .bg-dark-surface-container {
     background-color: #2C2C2C;
   }
-  .dark .text-dark-text-primary {
+  .text-dark-text-primary {
     color: #E0E0E0;
   }
-  .dark .text-dark-text-secondary {
+  .text-dark-text-secondary {
     color: #9E9E9E;
   }
-  .dark .text-dark-text-disabled {
+  .text-dark-text-disabled {
     color: #616161;
   }
-  .dark .border-dark-divider {
+  .border-dark-divider {
     border-color: #424242;
   }
-  .dark .bg-dark-divider {
-    background-color: #424242;
-  }
-  .dark .hover\:bg-dark-divider:hover {
+  .bg-dark-divider {
     background-color: #424242;
   }
 
