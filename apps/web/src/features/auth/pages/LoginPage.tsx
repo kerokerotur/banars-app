@@ -157,52 +157,61 @@ export const LoginPage = () => {
 
       {/* ボタンエリア */}
       <div className="px-6 pt-4 pb-10 space-y-3" style={{ backgroundColor: '#001F3F' }}>
-        {isUserNotFound && (
-          <div className="mb-2 p-4 bg-yellow-50/90 border border-yellow-400 rounded-lg">
-            <p className="text-yellow-900 text-sm font-medium">
+        {/* 未登録ユーザー：新規登録ボタンのみ表示 */}
+        {isUserNotFound ? (
+          <>
+            <p className="text-center text-white/80 text-sm pb-1">
               このLINEアカウントはまだ登録されていません
             </p>
-            <p className="text-yellow-800 text-xs mt-1">
-              下の「新規登録」ボタンから登録を行ってください。
-            </p>
-          </div>
-        )}
-        {error && (
-          <div className="mb-2 p-4 bg-red-100/90 border border-red-300 rounded-lg">
-            <p className="text-red-900 text-sm">{error}</p>
-            <p className="text-red-800 text-xs mt-1">
-              もう一度「LINE でログイン」を押してください。
-            </p>
-          </div>
-        )}
+            <button
+              onClick={() => navigate("/signup")}
+              className="w-full text-white font-bold py-4 px-4 rounded-xl border border-white/60 flex items-center justify-center gap-2 text-base hover:bg-white/10 transition-colors"
+              style={{ backgroundColor: 'transparent' }}
+            >
+              <UserPlus size={20} />
+              <span>新規登録</span>
+            </button>
+          </>
+        ) : (
+          <>
+            {error && (
+              <div className="mb-2 p-4 bg-red-100/90 border border-red-300 rounded-lg">
+                <p className="text-red-900 text-sm">{error}</p>
+                <p className="text-red-800 text-xs mt-1">
+                  もう一度「LINE でログイン」を押してください。
+                </p>
+              </div>
+            )}
 
-        <button
-          onClick={handleLogin}
-          disabled={isLoading}
-          className="w-full bg-line hover:bg-line/90 text-white font-bold py-4 px-4 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base"
-        >
-          {isLoading ? (
-            <>
-              <Spinner size="sm" />
-              <span>ログイン中...</span>
-            </>
-          ) : (
-            <>
-              <LogIn size={20} />
-              <span>LINE でログイン</span>
-            </>
-          )}
-        </button>
+            <button
+              onClick={handleLogin}
+              disabled={isLoading}
+              className="w-full bg-line hover:bg-line/90 text-white font-bold py-4 px-4 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base"
+            >
+              {isLoading ? (
+                <>
+                  <Spinner size="sm" />
+                  <span>ログイン中...</span>
+                </>
+              ) : (
+                <>
+                  <LogIn size={20} />
+                  <span>LINE でログイン</span>
+                </>
+              )}
+            </button>
 
-        <button
-          onClick={() => navigate("/signup")}
-          disabled={isLoading}
-          className="w-full text-white font-bold py-4 px-4 rounded-xl border border-white/60 flex items-center justify-center gap-2 text-base hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ backgroundColor: 'transparent' }}
-        >
-          <UserPlus size={20} />
-          <span>新規登録</span>
-        </button>
+            <button
+              onClick={() => navigate("/signup")}
+              disabled={isLoading}
+              className="w-full text-white font-bold py-4 px-4 rounded-xl border border-white/60 flex items-center justify-center gap-2 text-base hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: 'transparent' }}
+            >
+              <UserPlus size={20} />
+              <span>新規登録</span>
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
