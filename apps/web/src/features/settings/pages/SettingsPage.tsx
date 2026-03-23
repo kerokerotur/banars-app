@@ -6,7 +6,7 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 export const SettingsPage = () => {
   const navigate = useNavigate();
   const { theme, setTheme } = useThemeStore();
-  const { data: userProfile } = useUserProfile();
+  const { data: userProfile, isLoading: isProfileLoading } = useUserProfile();
 
   const isDarkMode = theme === "dark";
   const isManager = userProfile?.role === "manager";
@@ -57,8 +57,21 @@ export const SettingsPage = () => {
           />
         </SettingsCard>
 
-        {/* 管理セクション（manager のみ） */}
-        {isManager && (
+        {/* 管理セクション（取得中はスケルトン、manager のみ表示） */}
+        {isProfileLoading ? (
+          <>
+            <SectionHeader title="管理" />
+            <SettingsCard>
+              <div className="flex items-center gap-3 px-4 py-3.5">
+                <div className="w-10 h-10 rounded-full bg-light-surface-container dark:bg-dark-surface-container animate-pulse shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3.5 w-32 rounded bg-light-surface-container dark:bg-dark-surface-container animate-pulse" />
+                  <div className="h-3 w-20 rounded bg-light-surface-container dark:bg-dark-surface-container animate-pulse" />
+                </div>
+              </div>
+            </SettingsCard>
+          </>
+        ) : isManager ? (
           <>
             <SectionHeader title="管理" />
             <SettingsCard>
@@ -76,7 +89,7 @@ export const SettingsPage = () => {
               />
             </SettingsCard>
           </>
-        )}
+        ) : null}
 
         {/* アプリ情報セクション */}
         <SectionHeader title="アプリ情報" />
