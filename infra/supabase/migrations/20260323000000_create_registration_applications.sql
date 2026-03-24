@@ -31,18 +31,21 @@ CREATE INDEX registration_applications_line_user_id_idx
 -- RLS 有効化
 ALTER TABLE public.registration_applications ENABLE ROW LEVEL SECURITY;
 
--- manager ロールのみ参照可能
-CREATE POLICY "managers can select registration_applications"
+-- manager ロールのみ操作可能
+DROP POLICY IF EXISTS registration_applications_manager_select ON public.registration_applications;
+CREATE POLICY registration_applications_manager_select
   ON public.registration_applications
   FOR SELECT
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public."user" u
-      JOIN public.user_detail ud ON u.id = ud.user_id
-      WHERE u.id = auth.uid()
-        AND (
-          SELECT role FROM public.user_list_view WHERE id = auth.uid()
-        ) = 'manager'
-    )
-  );
+  USING (coalesce(auth.jwt() ->> 'role', '') = 'manager');
+
+DROP POLICY IF EXISTS registration_applications_manager_insert ON public.registration_applications;
+CREATE POLICY registration_applications_manager_insert
+  ON public.registration_applications
+  FOR INSERT
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS registration_applications_manager_update ON public.registration_applications;
+CREATE POLICY registration_applications_manager_update
+  ON public.registration_applications
+  FOR UPDATE
+  USING (coalesce(auth.jwt() ->> 'role', '') = 'manager');
