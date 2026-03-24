@@ -80,3 +80,19 @@
 - `UNIQUE (user_id, player_id)` — 1ユーザー・1端末につき 1 レコードのみ。UPSERT 実現のキー。
 - `CREATE INDEX onesignal_players_user_id_idx ON onesignal_players (user_id) WHERE is_active = true;` — 有効なPlayer ID取得用。
 - `CREATE INDEX onesignal_players_is_active_idx ON onesignal_players (is_active);` — 無効なPlayer IDの一括更新用。
+
+## `registration_applications`
+
+| カラム | 型 | 必須 | 説明 | 制約 |
+| --- | --- | --- | --- | --- |
+| `id` | `uuid` | ○ | 申請 ID | PK。`gen_random_uuid()` |
+| `line_user_id` | `text` | ○ | 申請者の LINE ユーザー ID | - |
+| `display_name` | `text` | ○ | 申請時の LINE 表示名 | - |
+| `avatar_url` | `text` |  | 申請時の LINE プロフィール画像 URL | - |
+| `status` | `text` | ○ | 申請ステータス | `'pending'` / `'approved'` / `'rejected'`。`DEFAULT 'pending'` |
+| `created_at` | `timestamptz` | ○ | メタデータ | `DEFAULT now()` |
+| `created_user` | `uuid` |  | メタデータ | - |
+| `updated_at` | `timestamptz` | ○ | メタデータ | `DEFAULT now()` / トリガ更新 |
+| `updated_user` | `uuid` |  | メタデータ | - |
+
+**設計意図**: 招待リンクなしでの登録申請を管理する。拒否後の再申請を許可するため、同一 `line_user_id` でも複数レコードを許容する（UNIQUE 制約なし）。承認・拒否の判断は `status` カラムで管理し、申請履歴は削除せずに保持する。

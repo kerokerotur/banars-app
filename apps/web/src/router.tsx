@@ -1,12 +1,14 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { LoginPage } from "./features/auth/pages/LoginPage";
 import { SignupPage } from "./features/auth/pages/SignupPage";
+import { RegistrationApplyPage } from "./features/auth/pages/RegistrationApplyPage";
 import { AuthGuard } from "./components/auth/AuthGuard";
 import { EventListPage } from "./features/events/pages/EventListPage";
 import { EventDetailPage } from "./features/events/pages/EventDetailPage";
 import { EventCreatePage } from "./features/events/pages/EventCreatePage";
 import { SchedulePage } from "./features/schedule/pages/SchedulePage";
 import { MemberListPage } from "./features/members/pages/MemberListPage";
+import { RegistrationApplicationListPage } from "./features/members/pages/RegistrationApplicationListPage";
 import { SettingsPage } from "./features/settings/pages/SettingsPage";
 import { UserProfilePage } from "./features/user/pages/UserProfilePage";
 import { PlaceManagementPage } from "./features/places/pages/PlaceManagementPage";
@@ -24,6 +26,10 @@ export const router = createBrowserRouter([
       {
         path: "signup",
         element: <SignupPage />,
+      },
+      {
+        path: "apply",
+        element: <RegistrationApplyPage />,
       },
 
       // 認証必須ルート（RootLayoutを適用）
@@ -51,7 +57,10 @@ export const router = createBrowserRouter([
               },
               {
                 path: "members",
-                element: <MemberListPage />,
+                children: [
+                  { index: true, element: <MemberListPage /> },
+                  { path: "applications", element: <RegistrationApplicationListPage /> },
+                ],
               },
               {
                 path: "profile",

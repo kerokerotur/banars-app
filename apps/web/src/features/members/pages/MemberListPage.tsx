@@ -1,12 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { ClipboardList } from "lucide-react";
 import { getUserList } from "@/services/users.service";
+import { getRegistrationApplications } from "@/services/auth.service";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { Spinner } from "@/components/ui/Spinner";
 
 export const MemberListPage = () => {
+  const navigate = useNavigate();
   const { data: members, isLoading, error } = useQuery({
     queryKey: ["users", "list"],
     queryFn: getUserList,
   });
+  const { data: userProfile } = useUserProfile();
+  const isManager = userProfile?.role === "manager";
+  const { data: pendingApplications } = useQuery({
+    queryKey: ["registration_applications", "pending"],
+    queryFn: () => getRegistrationApplications("pending"),
+    enabled: isManager,
+  });
+  const pendingCount = pendingApplications?.applications.length ?? 0;
 
   if (isLoading) {
     return (
@@ -40,9 +53,25 @@ export const MemberListPage = () => {
   return (
     <div className="min-h-screen bg-light-background dark:bg-dark-background">
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-light-text-primary dark:text-dark-text-primary mb-6">
-          メンバー一覧
-        </h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-light-text-primary dark:text-dark-text-primary">
+            メンバー一覧
+          </h1>
+          {isManager && (
+            <button
+              onClick={() => navigate("/members/applications")}
+              className="relative flex items-center gap-1.5 text-sm font-medium text-primary hover:opacity-75 transition-opacity"
+            >
+              <ClipboardList size={18} />
+              <span>登録申請</span>
+              {pendingCount > 0 && (
+                <span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                  {pendingCount}
+                </span>
+              )}
+            </button>
+          )}
+        </div>
 
         {members && members.length > 0 ? (
           <div className="space-y-3">

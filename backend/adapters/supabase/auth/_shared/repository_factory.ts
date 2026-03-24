@@ -3,6 +3,7 @@ import { SupabaseInviteTokenRepository } from "../repositories/invite_token_repo
 import { SupabaseUserRepository } from "../repositories/user_repository.ts"
 import { SupabaseUserDetailRepository } from "../repositories/user_detail_repository.ts"
 import { SupabaseOneSignalPlayerRepository } from "../repositories/onesignal_player_repository.ts"
+import { SupabaseRegistrationApplicationRepository } from "../repositories/registration_application_repository.ts"
 import { SupabaseAuthService } from "../services/auth_service.ts"
 
 /**
@@ -31,6 +32,10 @@ export class AuthRepositoryFactory {
     return new SupabaseOneSignalPlayerRepository(this.client)
   }
 
+  createRegistrationApplicationRepository() {
+    return new SupabaseRegistrationApplicationRepository(this.client)
+  }
+
   /**
    * すべてのリポジトリとサービスを一括生成
    */
@@ -41,6 +46,8 @@ export class AuthRepositoryFactory {
       userDetailRepository: this.createUserDetailRepository(),
       authService: this.createAuthService(),
       onesignalPlayerRepository: this.createOneSignalPlayerRepository(),
+      registrationApplicationRepository:
+        this.createRegistrationApplicationRepository(),
     }
   }
 }

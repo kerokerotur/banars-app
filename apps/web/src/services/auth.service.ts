@@ -87,6 +87,70 @@ export const exchangeSessionToken = async (sessionToken: string) => {
 };
 
 /**
+ * 新規登録申請
+ */
+export const registrationApply = async (idToken: string) => {
+  const { data, error } = await supabase.functions.invoke(
+    "registration_apply",
+    { body: { idToken } },
+  );
+
+  if (error) await throwApiError(error);
+  return data as { applicationId: string };
+};
+
+/**
+ * 登録申請一覧を取得（manager のみ）
+ */
+export const getRegistrationApplications = async (
+  status?: "pending" | "approved" | "rejected",
+) => {
+  const params = status ? `?status=${status}` : "";
+  const { data, error } = await supabase.functions.invoke(
+    `registration_applications${params}`,
+    { method: "GET" },
+  );
+
+  if (error) await throwApiError(error);
+  return data as {
+    applications: {
+      id: string;
+      lineUserId: string;
+      displayName: string;
+      avatarUrl: string | null;
+      status: "pending" | "approved" | "rejected";
+      createdAt: string;
+    }[];
+  };
+};
+
+/**
+ * 登録申請を承認（manager のみ）
+ */
+export const approveRegistrationApplication = async (applicationId: string) => {
+  const { data, error } = await supabase.functions.invoke(
+    "registration_approve",
+    { body: { applicationId } },
+  );
+
+  if (error) await throwApiError(error);
+  return data as { userId: string };
+};
+
+/**
+ * 登録申請を拒否（manager のみ）
+ */
+export const rejectRegistrationApplication = async (applicationId: string) => {
+  const { data, error } = await supabase.functions.invoke(
+    "registration_reject",
+    { body: { applicationId } },
+  );
+
+  if (error) await throwApiError(error);
+  return data as { applicationId: string };
+};
+
+/**
  * ログインユーザー情報を取得（get_me Edge Function）
  */
 export const getMe = async (): Promise<UserProfile> => {

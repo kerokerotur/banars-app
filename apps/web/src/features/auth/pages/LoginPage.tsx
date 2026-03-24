@@ -2,7 +2,7 @@ import type { Session } from "@supabase/supabase-js";
 import { Spinner } from "@/components/ui/Spinner";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogIn, UserPlus } from "lucide-react";
+import { LogIn, UserPlus, ClipboardList } from "lucide-react";
 import {
   initializeLiff,
   getLiffIdToken,
@@ -169,7 +169,15 @@ export const LoginPage = () => {
               style={{ backgroundColor: 'transparent' }}
             >
               <UserPlus size={20} />
-              <span>新規登録</span>
+              <span>招待コードで登録</span>
+            </button>
+            <button
+              onClick={() => navigate("/apply")}
+              className="w-full text-white font-bold py-4 px-4 rounded-xl border border-white/60 flex items-center justify-center gap-2 text-base hover:bg-white/10 transition-colors"
+              style={{ backgroundColor: 'transparent' }}
+            >
+              <ClipboardList size={20} />
+              <span>新規登録を申請する</span>
             </button>
           </>
         ) : (
@@ -208,7 +216,17 @@ export const LoginPage = () => {
               style={{ backgroundColor: 'transparent' }}
             >
               <UserPlus size={20} />
-              <span>新規登録</span>
+              <span>招待コードで登録</span>
+            </button>
+
+            <button
+              onClick={() => navigate("/apply")}
+              disabled={isLoading}
+              className="w-full text-white font-bold py-4 px-4 rounded-xl border border-white/60 flex items-center justify-center gap-2 text-base hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: 'transparent' }}
+            >
+              <ClipboardList size={20} />
+              <span>新規登録を申請する</span>
             </button>
           </>
         )}
